@@ -1,0 +1,78 @@
+.page {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+.loginCard {
+  max-width: 520px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 28px;
+  padding: 30px 28px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.loginCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.04) 30%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  pointer-events: none;
+}
+
+.loginCard h1 {
+  margin: 0 0 18px;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.form label {
+  display: grid;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.form input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(10,14,23,0.08);
+  background: rgba(255,255,255,0.78);
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.form small,
+.error {
+  color: var(--error);
+}
+
+.helperRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+.helperRow a {
+  color: var(--ink-soft);
+}

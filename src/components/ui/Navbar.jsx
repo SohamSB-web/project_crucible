@@ -1,0 +1,149 @@
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import SpecularButton from './SpecularButton';
+
+const NAV_ITEMS = [
+  { id: 'tracks', label: 'Tracks' },
+  { id: 'roadmap', label: 'Roadmap' },
+  { id: 'team', label: 'Team' },
+  { id: 'rewards', label: 'Rewards' },
+  { id: 'faq', label: 'FAQ' },
+  { id: 'contact', label: 'Contact' },
+];
+
+export default function Navbar() {
+  const { auth, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { scrollY } = useScroll();
+  const headerHeight = useTransform(scrollY, [0, 160], [88, 68]);
+  const blurValue = useTransform(scrollY, [0, 120], [18, 24]);
+
+  const [activeSection, setActiveSection] = useState('');
+
+  useEffect(() => {
+    // Section active highlighting using IntersectionObserver
+    const sectionElements = NAV_ITEMS.map((item) => document.getElementById(item.id)).filter(Boolean);
+
+    if (sectionElements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries.find((entry) => entry.isIntersecting);
+        if (visibleEntry) {
+          setActiveSection(visibleEntry.target.id);
+        }
+      },
+      {
+        rootMargin: '-30% 0px -50% 0px',
+        threshold: 0.1,
+      }
+    );
+
+    sectionElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [location.pathname]);
+
+  const handleNavClick = (e, targetId) => {
+    e.preventDefault();
+    if (location.pathname !== '/') {
+      navigate(`/#${targetId}`);
+      return;
+    }
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <motion.header
+      className="site-header"
+      style={{ height: headerHeight, backdropFilter: `blur(${blurValue})` }}
+    >
+      <div className="container nav-shell">
+        <Link to="/" className="brand" aria-label="Crucible home">
+          <span className="brand-mark">C</span>
+          <span>CRUCIBLE</span>
+        </Link>
+
+        <nav className="main-nav" aria-label="Main navigation">
+          {NAV_ITEMS.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className={isActive ? 'active' : ''}
+                onClick={(e) => handleNavClick(e, item.id)}
+              >
+                {item.label}
+              </a>
+            );
+          })}
+        </nav>
+
+        <div className="nav-actions">
+          {auth ? (
+            <>
+              <SpecularButton
+                size="sm"
+                radius={14}
+                lineColor="#71a7ff"
+                baseColor="#142034"
+                textColor="#ffffff"
+                intensity={1}
+                speed={0.35}
+                onClick={() => navigate(`/dashboard/${auth.role}`)}
+              >
+                Dashboard
+              </SpecularButton>
+              <SpecularButton
+                size="sm"
+                radius={14}
+                lineColor="#ff6b75"
+                baseColor="#2a1215"
+                textColor="#ff6b75"
+                intensity={1}
+                speed={0.35}
+                onClick={logout}
+              >
+                Logout
+              </SpecularButton>
+            </>
+          ) : (
+            <>
+              <SpecularButton
+                size="sm"
+                radius={14}
+                lineColor="#71a7ff"
+                baseColor="#142034"
+                textColor="#ffffff"
+                intensity={1}
+                speed={0.35}
+                onClick={() => navigate('/login')}
+              >
+                Login
+              </SpecularButton>
+              <SpecularButton
+                size="sm"
+                radius={14}
+                lineColor="#71a7ff"
+                baseColor="#2d5bff"
+                textColor="#ffffff"
+                intensity={1.2}
+                speed={0.4}
+                onClick={() => navigate('/register')}
+              >
+                Register Now
+              </SpecularButton>
+            </>
+          )}
+        </div>
+      </div>
+    </motion.header>
+  );
+}

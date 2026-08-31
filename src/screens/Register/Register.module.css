@@ -1,0 +1,199 @@
+.page {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-shell {
+  padding-top: 120px;
+  padding-bottom: 80px;
+}
+
+.formCard,
+.closedCard,
+.successCard {
+  max-width: 760px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 28px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.formCard::before,
+.closedCard::before,
+.successCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.04) 30%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  pointer-events: none;
+}
+
+.progressHeader {
+  margin-bottom: 18px;
+}
+
+.progressBar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.progressDot {
+  display: grid;
+  place-items: center;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.05);
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.progressDot.active {
+  background: var(--blue-primary);
+  color: white;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.stepPanel {
+  display: grid;
+  gap: 16px;
+}
+
+.stepPanel h2 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.stepPanel label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.stepPanel input,
+.stepPanel select,
+.stepPanel textarea {
+  width: 100%;
+  border: 1px solid rgba(10,14,23,0.08);
+  background: rgba(255,255,255,0.7);
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.stepPanel small {
+  color: var(--error);
+}
+
+.splitFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stepHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.memberRow {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(10,14,23,0.06);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.3);
+}
+
+.removeBtn {
+  background: rgba(220,74,74,0.08);
+  color: var(--error);
+  border: 1px solid rgba(220,74,74,0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  width: max-content;
+}
+
+.reviewGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.reviewGrid div {
+  display: grid;
+  gap: 8px;
+  background: rgba(255,255,255,0.32);
+  border: 1px solid rgba(10,14,23,0.06);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.reviewGrid span {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.formActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.metaBox {
+  background: rgba(45,91,255,0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 20px 0;
+  font-weight: 600;
+}
+
+.authActions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .splitFields,
+  .reviewGrid,
+  .progressBar,
+  .authActions,
+  .formActions {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .formActions {
+    display: grid;
+  }
+}
