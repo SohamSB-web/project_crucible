@@ -729,11 +729,23 @@ export default function UserDashboard() {
             <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {Icons.bell} Notifications
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {notifications.map((n) => (
-                <div key={n.id} style={{ padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 12 }}>
-                  <strong style={{ fontSize: '0.9rem' }}>{n.title}</strong>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)' }}>{n.detail}</p>
+                <div
+                  key={n.id}
+                  style={{
+                    padding: '16px 20px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 16,
+                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                  }}
+                >
+                  <strong style={{ fontSize: '0.96rem', color: '#ffffff' }}>{n.title}</strong>
+                  <p style={{ margin: '6px 0 0', fontSize: '0.86rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.5 }}>{n.detail}</p>
+                  <span style={{ fontSize: '0.72rem', color: '#71a7ff', fontFamily: 'JetBrains Mono', marginTop: 8, display: 'inline-block' }}>{n.time}</span>
                 </div>
               ))}
             </div>
