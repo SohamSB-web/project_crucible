@@ -67,8 +67,7 @@ export default function Navbar() {
         <Link to="/" className="brand" aria-label="Crucible home">
           <span className="brand-mark">C</span>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-            <span style={{ fontWeight: 800, fontSize: '1.02rem', color: '#ffffff', letterSpacing: '-0.01em' }}>MISSION CRUCIBLE</span>
-            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.62rem', color: '#71a7ff', letterSpacing: '0.12em' }}>INNOVATEX 2026</span>
+            <span style={{ fontWeight: 800, fontSize: '1.02rem', color: '#ffffff', letterSpacing: '-0.01em' }}>MISSION <br /> CRUCIBLE</span>
           </div>
         </Link>
 

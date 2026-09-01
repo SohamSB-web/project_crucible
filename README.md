@@ -1,5 +1,4 @@
 # Crucible Hackathon Website
-
 A premium frontend concept for the 2026 Hackathon event. The app is built with React + Vite and uses a mock API layer so the UI is fully demoable without a backend.
 
 ## Setup

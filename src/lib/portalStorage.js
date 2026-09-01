@@ -163,7 +163,7 @@ export const DEFAULT_TEAMS = [
 ];
 
 export const DEFAULT_SETTINGS = {
-  name: 'InnovateX Hackathon 2026',
+  name: 'CRUCIBLE Hackathon 2026',
   year: 2026,
   deadline: '2026-08-30',
   hackathonStatus: 'Live', // 'Live' | 'Paused' | 'Closed'
@@ -171,7 +171,7 @@ export const DEFAULT_SETTINGS = {
 };
 
 export const DEFAULT_NOTIFICATIONS = [
-  { id: 1, title: 'Problem Statements Released', time: '2 hours ago', unread: true, detail: 'All 10 official problem statements for InnovateX 2026 are now active.' },
+  { id: 1, title: 'Problem Statements Released', time: '2 hours ago', unread: true, detail: 'All 10 official problem statements for CRUCIBLE 2026 are now active.' },
   { id: 2, title: 'Final Presentation Deadline', time: '1 day ago', unread: true, detail: 'Ensure your PPT or PDF presentation is uploaded before 30 August 2026.' },
   { id: 3, title: 'Shortlist Announcement Date', time: '3 days ago', unread: false, detail: 'Shortlisted teams will be published immediately following jury evaluation.' },
 ];
@@ -326,11 +326,11 @@ export function saveUserSubmission(teamId, fileInfo) {
     const updated = teams.map((t) =>
       t.id === teamId
         ? {
-            ...t,
-            submitted: true,
-            submissionFile: submission.fileName,
-            submissionDate: submission.date,
-          }
+          ...t,
+          submitted: true,
+          submissionFile: submission.fileName,
+          submissionDate: submission.date,
+        }
         : t,
     );
     saveTeamsData(updated);
@@ -367,9 +367,9 @@ export function saveUserPayment(teamId, paymentInfo) {
     const updated = teams.map((t) =>
       t.id === teamId
         ? {
-            ...t,
-            paymentStatus: 'Pending',
-          }
+          ...t,
+          paymentStatus: 'Pending',
+        }
         : t,
     );
     saveTeamsData(updated);

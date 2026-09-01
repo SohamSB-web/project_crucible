@@ -59,9 +59,32 @@ const cardReveal = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
 };
 
+// Milestone dates for automatic active status activation
+const milestoneDates = {
+  '01': '2026-08-20T00:00:00',
+  '02': '2026-09-20T00:00:00',
+  '03': '2026-09-26T00:00:00',
+  '04': '2026-09-27T00:00:00',
+  '05': '2026-09-30T00:00:00',
+  '06': '2026-10-02T00:00:00',
+  '07': '2026-10-03T08:00:00',
+  '08': '2026-10-03T08:30:00',
+  '09': '2026-10-03T09:00:00',
+  '10': '2026-10-03T11:00:00',
+  '11': '2026-10-03T13:00:00',
+  '12': '2026-10-03T14:00:00',
+  '13': '2026-10-03T15:00:00',
+  '14': '2026-10-03T17:00:00',
+};
+
+const isDateReached = (dateStr) => {
+  if (!dateStr) return false;
+  return new Date(dateStr).getTime() <= Date.now();
+};
+
 export default function Landing() {
   const location = useLocation();
-  const [openFaq, setOpenFaq] = useState(null);
+  const [openFaq, setOpenFaq] = useState(0);
   const [selectedTrack, setSelectedTrack] = useState(null);
 
   // ── Parallax refs ────────────────────────────────────────────────────────
@@ -299,19 +322,12 @@ export default function Landing() {
             <div className={styles.milestoneRowTop}>
               {/* Connected Line and Badges */}
               <div className={styles.milestoneLineHeader}>
-                {[
-                  { num: '01', active: true },
-                  { num: '02', active: false },
-                  { num: '03', active: false },
-                  { num: '04', active: false },
-                  { num: '05', active: false },
-                  { num: '06', active: false },
-                ].map((b) => (
+                {['01', '02', '03', '04', '05', '06'].map((num) => (
                   <div
-                    key={b.num}
-                    className={`${styles.milestoneBadgeCircle} ${b.active ? styles.badgeActive : ''}`}
+                    key={num}
+                    className={`${styles.milestoneBadgeCircle} ${isDateReached(milestoneDates[num]) ? styles.badgeActive : ''}`}
                   >
-                    {b.num}
+                    {num}
                   </div>
                 ))}
               </div>
@@ -319,7 +335,7 @@ export default function Landing() {
               {/* Cards Grid Top */}
               <div className={styles.milestoneGridTop}>
                 {/* 01: Registrations Ongoing */}
-                <div className={`${styles.milestoneCard} ${styles.cardActive}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['01']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.cardTopStatus}>
                     <span className={styles.statusMuted}>ONGOING</span>
                     <span className={styles.statusPillActive}>ACTIVE</span>
@@ -329,7 +345,7 @@ export default function Landing() {
                 </div>
 
                 {/* 02: Problem Statement Release */}
-                <div className={`${styles.milestoneCard} ${styles.cardLightGreen}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['02']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelDark}>20 SEPT</div>
                   <div className={styles.dateSubtextDark}></div>
                   <h3>Problem Statement Release</h3>
@@ -337,7 +353,7 @@ export default function Landing() {
                 </div>
 
                 {/* 03: Registration Deadline */}
-                <div className={`${styles.milestoneCard} ${styles.cardLightGreen}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['03']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelDark}>26 SEPT</div>
                   <div className={styles.dateSubtextDark}></div>
                   <h3>Registration Deadline</h3>
@@ -345,7 +361,7 @@ export default function Landing() {
                 </div>
 
                 {/* 04: PPT & SOP Submission Deadline */}
-                <div className={`${styles.milestoneCard} ${styles.cardLightGreen}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['04']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelDark}>27 SEPT</div>
                   <div className={styles.dateSubtextDark}></div>
                   <h3>PPT & SOP Submission Deadline</h3>
@@ -353,7 +369,7 @@ export default function Landing() {
                 </div>
 
                 {/* 05: Shortlisting */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['05']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>30 SEPT</div>
                   <div className={styles.dateSubtextGreen}></div>
                   <h3>Shortlisting</h3>
@@ -361,11 +377,11 @@ export default function Landing() {
                 </div>
 
                 {/* 06: Final Registration */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['06']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>2 OCT</div>
                   <div className={styles.dateSubtextGreen}></div>
                   <h3>Final Registration</h3>
-                  <p>Shortlisted teams have to pay and complete registration for final round.</p>
+                  <p>Shortlisted teams based have to pay and complete register for final round.</p>
                 </div>
               </div>
             </div>
@@ -377,12 +393,15 @@ export default function Landing() {
               <div className={styles.dividerLine} />
             </div>
 
-            {/* Bottom Row: Milestones 06 to 09 */}
+            {/* Bottom Row: Milestones 07 to 10 */}
             <div className={styles.milestoneRowBottom}>
               {/* Badges Header */}
               <div className={styles.milestoneLineHeaderBottom}>
                 {['07', '08', '09', '10'].map((num) => (
-                  <div key={num} className={styles.milestoneBadgeCircle}>
+                  <div
+                    key={num}
+                    className={`${styles.milestoneBadgeCircle} ${isDateReached(milestoneDates[num]) ? styles.badgeActive : ''}`}
+                  >
                     {num}
                   </div>
                 ))}
@@ -391,28 +410,28 @@ export default function Landing() {
               {/* Cards Grid Bottom */}
               <div className={styles.milestoneGridBottom}>
                 {/* 07: Hackathon Begins */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['07']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>8:00 AM</div>
                   <h3>Registration Begins</h3>
                   <p>Entry for offline hackathon begins. Please be on time.</p>
                 </div>
 
                 {/* 08: Inauguration */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['08']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>8:30 AM</div>
                   <h3>Inuguration Ceremony</h3>
                   <p>A short ceremony to declare the hackathon open.</p>
                 </div>
 
                 {/* 09: Coding Begins */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['09']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>9:00 AM</div>
                   <h3>Coding Begins</h3>
                   <p>Labs will be allotted and participants can work on their projects.</p>
                 </div>
 
                 {/* 10: Judging Round 1 */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['10']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>11:00 AM</div>
                   <h3>Judging Round 1</h3>
                   <p>Panel of judges will judge the product and shortlist teams for final round</p>
@@ -430,7 +449,10 @@ export default function Landing() {
               {/* Badges Header */}
               <div className={styles.milestoneLineHeaderBottom}>
                 {['11', '12', '13', '14'].map((num) => (
-                  <div key={num} className={styles.milestoneBadgeCircle}>
+                  <div
+                    key={num}
+                    className={`${styles.milestoneBadgeCircle} ${isDateReached(milestoneDates[num]) ? styles.badgeActive : ''}`}
+                  >
                     {num}
                   </div>
                 ))}
@@ -439,28 +461,28 @@ export default function Landing() {
               {/* Cards Grid Bottom */}
               <div className={styles.milestoneGridBottom}>
                 {/* 11: Lunch */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['11']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>1:00 PM</div>
                   <h3>Lunch</h3>
                   <p>Lunch will be served to all participants</p>
                 </div>
 
                 {/* 12: Result of Judging 1 */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['12']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>2:00 PM</div>
                   <h3>Results of Judging Round 1</h3>
                   <p>The final Shortlisted teams will be announced</p>
                 </div>
 
                 {/* 13: Judging Round 2 */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['13']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>3:00 PM</div>
                   <h3>Judging Round 2</h3>
                   <p>Present the final product on-stage in front of the full judging panel and audience.</p>
                 </div>
 
                 {/* 14 : Valedictory Ceremony */}
-                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['14']) ? styles.cardActive : styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>5:00 PM</div>
                   <h3>Valedictory Ceremony</h3>
                   <p>Felicitation of the winners and closing of the event.</p>
@@ -506,11 +528,11 @@ export default function Landing() {
                   glareSize={250}
                   transitionDuration={600}
                 >
-                  <div className={styles.cardHeaderTop}>
+                  <div className={styles.valueHeader}>
                     <div className={styles.valueBadge}>✦</div>
+                    <h3>{title}</h3>
                   </div>
-                  <h3 className={styles.cardTitle}>{title}</h3>
-                  <p className={styles.cardDesc}>{text}</p>
+                  <p>{text}</p>
                 </MotionGlareHover>
               ))}
             </motion.div>
@@ -598,11 +620,11 @@ export default function Landing() {
                   glareSize={250}
                   transitionDuration={600}
                 >
-                  <div className={styles.cardHeaderTop}>
-                    <span className={styles.rewardNum}>0{index + 1}</span>
+                  <div className={styles.valueHeader}>
+                    <span>0{index + 1}</span>
+                    <h3>{reward.title}</h3>
                   </div>
-                  <h3 className={styles.cardTitle}>{reward.title}</h3>
-                  <p className={styles.cardDesc}>{reward.text}</p>
+                  <p>{reward.text}</p>
                 </MotionGlareHover>
               ))}
             </motion.div>
@@ -631,49 +653,37 @@ export default function Landing() {
             </motion.div>
 
             <div className={styles.faqList}>
-              {faqItems.map((item, index) => {
-                const isOpen = openFaq === index;
-                return (
-                  <MotionGlareHover
-                    key={item.q}
-                    className={`${styles.faqItem} ${isOpen ? styles.open : ''}`}
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.07, duration: 0.5 }}
-                    glareColor="#ffffff"
-                    glareOpacity={0.15}
-                    glareSize={250}
-                    transitionDuration={600}
-                  >
-                    <button type="button" onClick={() => setOpenFaq(isOpen ? null : index)}>
-                      <span>{item.q}</span>
-                      <motion.span
-                        animate={{ rotate: isOpen ? 45 : 0 }}
-                        transition={{ duration: 0.25, ease: 'easeInOut' }}
-                        style={{ display: 'inline-flex', fontSize: '1.25rem', fontWeight: 600, color: isOpen ? '#71a7ff' : 'rgba(255,255,255,0.6)' }}
+              {faqItems.map((item, index) => (
+                <MotionGlareHover
+                  key={item.q}
+                  className={`${styles.faqItem} ${openFaq === index ? styles.open : ''}`}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.07, duration: 0.5 }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
+                >
+                  <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
+                    <span>{item.q}</span>
+                    <strong>{openFaq === index ? '−' : '+'}</strong>
+                  </button>
+                  <AnimatePresence>
+                    {openFaq === index && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className={styles.faqAnswer}
                       >
-                        +
-                      </motion.span>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                          style={{ overflow: 'hidden' }}
-                        >
-                          <div className={styles.faqAnswerInner}>
-                            <p>{item.a}</p>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </MotionGlareHover>
-                );
-              })}
+                        <p>{item.a}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </MotionGlareHover>
+              ))}
             </div>
           </div>
         </motion.section>
