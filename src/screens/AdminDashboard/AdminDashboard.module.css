@@ -4,13 +4,55 @@
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background: rgba(7, 11, 20, 0.45);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: transparent;
   color: #ffffff;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   position: relative;
   z-index: 1;
+}
+
+.sqBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid var(--line-color, rgba(113, 167, 255, 0.4));
+  background: var(--base-color, rgba(20, 32, 52, 0.85));
+  color: var(--text-color, #ffffff);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.sqBtn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(113, 167, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-color: #71a7ff;
+}
+
+.sqBtn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.sqBtnDanger {
+  border-color: rgba(255, 107, 117, 0.4);
+  background: rgba(42, 18, 21, 0.85);
+  color: #ff6b75;
+}
+
+.sqBtnDanger:hover {
+  border-color: #ff6b75;
+  box-shadow: 0 6px 20px rgba(255, 107, 117, 0.35);
+}
+
+.sqBtnFull {
+  width: 100%;
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */

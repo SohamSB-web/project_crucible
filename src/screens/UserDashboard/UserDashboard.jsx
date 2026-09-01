@@ -143,21 +143,19 @@ const Icons = {
   ),
 };
 
-const SqBtn = ({ children, onClick, type = 'button', lineColor = '#71a7ff', baseColor = '#142034', textColor = '#ffffff', danger = false, size = 'sm', fullWidth = false }) => (
-  <SpecularButton
-    size={size}
-    radius={8}
-    lineColor={danger ? '#ff6b75' : lineColor}
-    baseColor={danger ? '#2a1215' : baseColor}
-    textColor={danger ? '#ff6b75' : textColor}
-    intensity={1}
-    speed={0.35}
-    onClick={onClick}
+const SqBtn = ({ children, onClick, type = 'button', lineColor = '#71a7ff', baseColor = 'rgba(20,32,52,0.85)', textColor = '#ffffff', danger = false, fullWidth = false }) => (
+  <button
     type={type}
-    className={fullWidth ? 'full-width' : ''}
+    onClick={onClick}
+    className={`${styles.sqBtn} ${danger ? styles.sqBtnDanger : ''} ${fullWidth ? styles.sqBtnFull : ''}`}
+    style={{
+      borderColor: danger ? 'rgba(255,107,117,0.5)' : lineColor,
+      background: danger ? 'rgba(42,18,21,0.85)' : baseColor,
+      color: danger ? '#ff6b75' : textColor,
+    }}
   >
     {children}
-  </SpecularButton>
+  </button>
 );
 
 const NAV_TABS = [
