@@ -7,7 +7,8 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   teamName: z.string().min(2, 'Team name is required.'),
-  trackId: z.string().min(1, 'Please choose a track.'),
+  problemStatementId: z.string().min(1, 'Problem statement ID is required.'),
+  problemStatement: z.string().min(1, 'Problem statement is required.'),
   teamSize: z.coerce.number().min(2).max(5),
   leadName: z.string().min(2, 'Lead name is required.'),
   leadEmail: z.string().email('Enter a valid email address.'),

@@ -5,9 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import SpecularButton from './SpecularButton';
 
 const NAV_ITEMS = [
-  { id: 'tracks', label: 'Tracks' },
+  { id: 'problem-statements', label: 'Problem Statements' },
   { id: 'roadmap', label: 'Roadmap' },
-  { id: 'team', label: 'Team' },
   { id: 'rewards', label: 'Rewards' },
   { id: 'faq', label: 'FAQ' },
   { id: 'contact', label: 'Contact' },

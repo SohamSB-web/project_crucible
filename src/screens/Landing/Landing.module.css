@@ -34,50 +34,36 @@
   z-index: 2;
 }
 
-.statusBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(113, 167, 255, 0.4);
-  background: rgba(113, 167, 255, 0.06);
-  color: var(--blue-primary);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  margin-bottom: 24px;
-  box-shadow: 0 0 20px rgba(113, 167, 255, 0.2);
-}
-
-.statusDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--blue-primary);
-  box-shadow: 0 0 10px var(--blue-primary);
-}
-
 .heroTitle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+  line-height: 0.88;
+}
+
+.shuffleHeroProject {
   font-size: clamp(3.5rem, 10vw, 8.5rem);
   font-weight: 900;
-  line-height: 0.88;
+  line-height: 1.1;
   letter-spacing: -0.05em;
-  margin: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #a6c8ff 45%, #71a7ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
   text-transform: uppercase;
   font-family: 'Inter', system-ui, sans-serif;
+  color: #ffffff;
+  cursor: default;
 }
 
-.heroTitle span {
-  display: block;
-  background: linear-gradient(135deg, #71a7ff 0%, #8d7bff 50%, #e8eeff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.shuffleHeroCrucible {
+  font-size: clamp(3.5rem, 10vw, 8.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #ffffff;
+  cursor: default;
+  margin-top: -0.22em; /* Compensate for the increased line-height */
 }
 
 .heroSubtitle {
@@ -649,53 +635,27 @@
 .teamCard,
 .statCard {
   background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(173, 206, 255, 0.22);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08);
   position: relative;
   overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.trackCard::before,
-.valueCard::before,
-.rewardCard::before,
-.teamCard::before,
-.statCard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.04) 30%,
-    transparent 60%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  pointer-events: none;
+.valueCard:hover,
+.rewardCard:hover,
+.statCard:hover {
+  border-color: var(--blue-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 25px rgba(113, 167, 255, 0.25);
 }
 
-.trackCard::after,
-.valueCard::after,
-.rewardCard::after,
-.teamCard::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 100%;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.65),
-    transparent,
-    rgba(255, 255, 255, 0.2)
-  );
-}
+
 
 .trackCard,
 .valueCard,
@@ -816,19 +776,7 @@
   overflow: hidden;
 }
 
-.timelineContent::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.04) 30%,
-    transparent 60%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  pointer-events: none;
-}
+
 
 .timelineContent p {
   margin: 0 0 8px;
@@ -912,31 +860,25 @@
 
 .faqItem {
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(173, 206, 255, 0.22);
   background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;
   position: relative;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.faqItem::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.04) 30%,
-    transparent 60%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  pointer-events: none;
+.faqItem:hover {
+  border-color: var(--blue-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 25px rgba(113, 167, 255, 0.2);
 }
+
+
 
 .faqItem button {
   width: 100%;
@@ -957,96 +899,351 @@
   color: var(--ink-soft);
 }
 
-.contact-grid {
+/* ─────────────────────────────────────────────────────────────────────────
+   Contact — Redesigned
+   ───────────────────────────────────────────────────────────────────────── */
+.contactHeader {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.contactBadgePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(113, 167, 255, 0.35);
+  background: rgba(113, 167, 255, 0.08);
+  color: var(--blue-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.73rem;
+  letter-spacing: 0.18em;
+  margin-bottom: 20px;
+}
+
+.contactTitle {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 16px;
+  letter-spacing: -0.04em;
+}
+
+.contactTitle span {
+  background: linear-gradient(135deg, #71a7ff 0%, #9d7bff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.contactSubtitle {
+  max-width: 540px;
+  margin: 0 auto;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
+.contactLayout {
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 26px;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 28px;
   align-items: start;
 }
 
-.contactList {
-  display: grid;
-  gap: 12px;
-  margin-top: 18px;
-  color: var(--ink-soft);
+.contactChannels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.contactCard {
-  display: grid;
-  gap: 18px;
+/* Channel cards */
+.channelCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(173, 206, 255, 0.22);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+
+
+.channelCard:hover {
+  border-color: var(--blue-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 25px rgba(113, 167, 255, 0.22);
+}
+
+.channelIconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconGreen  { background: rgba(0, 200, 80, 0.15);    color: #00c850; border: 1px solid rgba(0, 200, 80, 0.3); }
+.iconPink   { background: rgba(225, 48, 108, 0.15);  color: #e1306c; border: 1px solid rgba(225, 48, 108, 0.3); }
+.iconWhite  { background: rgba(255, 255, 255, 0.1);  color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.2); }
+
+.channelInfo h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px;
+}
+
+.channelInfo p {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  margin: 0 0 10px;
+}
+
+.channelLink {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  word-break: break-all;
+}
+
+.channelLink:hover { opacity: 0.75; }
+
+.linkGreen { color: #00c850; }
+.linkPink  { color: #e1306c; }
+.linkWhite { color: rgba(255, 255, 255, 0.85); }
+
+/* Form card */
+.contactFormCard {
+  padding: 32px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(173, 206, 255, 0.22);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   position: relative;
   overflow: hidden;
 }
 
-.contactCard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.04) 30%,
-    transparent 60%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  pointer-events: none;
+.formTitle {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.03em;
 }
 
-.contactCard label {
-  display: grid;
-  gap: 8px;
-  font-size: 0.82rem;
-  color: var(--ink-soft);
-}
-
-.contactCard input,
-.contactCard textarea {
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(10,14,23,0.08);
-  background: rgba(255,255,255,0.65);
-  padding: 12px 14px;
-  font: inherit;
-  box-sizing: border-box;
-}
-
-.sponsor-wall {
+.formField {
   display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
 }
 
-.sponsorPill {
-  min-width: 120px;
-  text-align: center;
-  padding: 18px 22px;
-  border-radius: 999px;
-  border: 1px solid var(--border-light);
-  background: rgba(255,255,255,0.4);
+.formField label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
   color: var(--ink-soft);
-  font-weight: 600;
+  text-transform: uppercase;
+  font-weight: 700;
 }
+
+.formField input,
+.formField textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  outline: none;
+}
+
+.formField input::placeholder,
+.formField textarea::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.formField input:focus,
+.formField textarea:focus {
+  border-color: rgba(113, 167, 255, 0.5);
+  background: rgba(113, 167, 255, 0.06);
+}
+
+.formField textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.formSubmitBtn {
+  background: #22c55e;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 0.01em;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35);
+  position: relative;
+  z-index: 1;
+}
+
+.formSubmitBtn:hover {
+  background: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(34, 197, 94, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Sponsors — Redesigned
+   ───────────────────────────────────────────────────────────────────────── */
+.sponsorsHeader {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.sponsorsEyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.sponsorsTitle {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.04em;
+}
+
+.sponsorsTitle span {
+  color: #22c55e;
+}
+
+.sponsorCardsRow {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.sponsorCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 36px 28px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(173, 206, 255, 0.22);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  min-width: 190px;
+  max-width: 230px;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+
+
+.sponsorCard:hover {
+  border-color: var(--blue-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 25px rgba(113, 167, 255, 0.25);
+}
+
+.sponsorLogoBox {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  position: relative;
+  z-index: 1;
+}
+
+.sponsorName {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.03em;
+  position: relative;
+  z-index: 1;
+}
+
+.sponsorTier {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.67rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.tierGreen  { color: #22c55e; }
+.tierOrange { color: #f97316; }
+.tierBlue   { color: var(--blue-primary); }
 
 @media (max-width: 900px) {
   .hero-shell,
   .faq-wrap,
-  .contact-grid,
   .trackGrid,
   .valueGrid,
   .rewardsGrid,
   .teamGrid,
   .statsStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .contactLayout {
     grid-template-columns: 1fr;
   }
 
@@ -1058,5 +1255,14 @@
   .heroActions {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .sponsorCardsRow {
+    gap: 16px;
+  }
+
+  .sponsorCard {
+    min-width: 150px;
+    padding: 28px 20px;
   }
 }

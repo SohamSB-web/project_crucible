@@ -1,17 +1,20 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Footer from '../../components/ui/Footer';
 import Navbar from '../../components/ui/Navbar';
+import GradientText from '../../components/ui/GradientText';
 import CountdownTimer from '../../components/ui/CountdownTimer';
 import MagneticButton from '../../components/ui/MagneticButton';
 import SpecularButton from '../../components/ui/SpecularButton';
+import GlareHover from '../../components/ui/GlareHover';
 import TrackModal from '../../components/ui/TrackModal';
 import { mockTracks } from '../../data/mockTracks';
 import { mockAnnouncements } from '../../data/mockAnnouncements';
-import { mockTeams } from '../../data/mockTeams';
 import { useParallax } from '../../hooks/useParallax';
 import styles from './Landing.module.css';
+
+const MotionGlareHover = motion.create ? motion.create(GlareHover) : motion(GlareHover);
 
 const faqItems = [
   { q: 'Who can participate?', a: 'Any student or early career builder with a passion for shipping impactful ideas.' },
@@ -27,19 +30,16 @@ const rewards = [
   { title: 'Funding opportunities', text: 'Open doors to incubation programs and prototype grants.' },
 ];
 
-const organizers = [
-  { name: 'Aarav Mehta', role: 'Event Director', accent: 'AI systems' },
-  { name: 'Sana Nambiar', role: 'Design Lead', accent: 'UX strategy' },
-  { name: 'Kabir Iyer', role: 'Engineering Captain', accent: 'Platform ops' },
-  { name: 'Leah Rao', role: 'Partnerships', accent: 'Sponsors' },
+const sponsorData = [
+  { name: 'HackerRank',    tier: 'TITLE SPONSOR',    tierClass: 'tierGreen',  bg: '#1a5c35', letters: 'H≡' },
+  { name: 'CodeCrafters', tier: 'SPONSOR',           tierClass: 'tierOrange', bg: '#7a2d00', letters: '/\\' },
+  { name: 'Devfolio',     tier: 'PLATFORM PARTNER',  tierClass: 'tierBlue',   bg: '#1a237e', letters: 'D▶' },
 ];
-
-const sponsors = ['Airtel', 'Paytm', 'Microsoft', 'Google', 'Atlassian', 'NVIDIA', 'AWS', 'Notion'];
 
 const stats = [
   { label: 'Registrations', value: '1800+' },
   { label: 'Colleges', value: '96' },
-  { label: 'Tracks', value: '6' },
+  { label: 'Problem Statements', value: '6' },
   { label: 'Prize pool', value: '₹12L' },
 ];
 
@@ -70,7 +70,6 @@ export default function Landing() {
   const tracksHeading = useParallax(40);
   const statsSection  = useParallax(50);
   const rewardsHeading = useParallax(40);
-  const teamHeading   = useParallax(40);
   const faqHeading    = useParallax(30);
 
   useEffect(() => {
@@ -81,11 +80,6 @@ export default function Landing() {
     }
   }, [location]);
 
-  const countStats = useMemo(() => ({
-    teams: mockTeams.length,
-    tracks: mockTracks.length,
-    announcements: mockAnnouncements.length,
-  }), []);
 
   return (
     <div className={`${styles.page} landing-page`}>
@@ -103,16 +97,25 @@ export default function Landing() {
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className={styles.heroCentered}
             >
-              {/* System Online Badge */}
-              <div className={styles.statusBadge}>
-                <span className={styles.statusDot} />
-                <span>CRUCIBLE_01 • SYSTEM ONLINE</span>
-              </div>
 
-              {/* Massive Main Title */}
-              <h1 className={styles.heroTitle}>
-                PROJECT
-                <span>CRUCIBLE</span>
+              {/* Hero Title with Shuffle animation */}
+              <h1 className={styles.heroTitle} aria-label="PROJECT CRUCIBLE">
+                <GradientText
+                  colors={["#3794f8ff", "#8bbaff", "#ffffff"]}
+                  animationSpeed={6}
+                  showBorder={false}
+                  className={styles.shuffleHeroProject}
+                >
+                  PROJECT
+                </GradientText>
+                <GradientText
+                  colors={["#ffffff", "#8bbaff", "#3794f8ff"]}
+                  animationSpeed={6}
+                  showBorder={false}
+                  className={styles.shuffleHeroCrucible}
+                >
+                  CRUCIBLE
+                </GradientText>
               </h1>
 
               {/* Subtitle & Description */}
@@ -149,11 +152,11 @@ export default function Landing() {
                   intensity={1}
                   speed={0.35}
                   onClick={() => {
-                    const el = document.getElementById('tracks');
+                    const el = document.getElementById('problem-statements');
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                   }}
                 >
-                  Explore Tracks &rsaquo;
+                  Explore Problem Statements &rsaquo;
                 </SpecularButton>
               </div>
 
@@ -165,9 +168,9 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ── TRACKS ────────────────────────────────────────────────────────── */}
+        {/* ── PROBLEM STATEMENTS ────────────────────────────────────────────── */}
         <motion.section
-          id="tracks"
+          id="problem-statements"
           className="section"
           initial="hidden"
           whileInView="show"
@@ -180,7 +183,7 @@ export default function Landing() {
               className={styles.tracksHeaderCentered}
               style={{ y: tracksHeading.y }}
             >
-              <p className={styles.eyebrowBlue}>TRACKS</p>
+              <p className={styles.eyebrowBlue}>PROBLEM STATEMENTS</p>
               <h2 className={styles.tracksTitle}>
                 Build for <span>impact.</span>
               </h2>
@@ -197,11 +200,15 @@ export default function Landing() {
               viewport={{ once: true, amount: 0.1 }}
             >
               {mockTracks.map((track) => (
-                <motion.article
+                <MotionGlareHover
                   className={styles.trackCardRef}
                   key={track.id}
                   variants={cardReveal}
                   whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
                 >
                   <div className={styles.trackCircleNumber}>{track.id}</div>
                   <div className={styles.trackCardContent}>
@@ -220,7 +227,7 @@ export default function Landing() {
                       Explore &rarr;
                     </SpecularButton>
                   </div>
-                </motion.article>
+                </MotionGlareHover>
               ))}
             </motion.div>
           </div>
@@ -393,16 +400,20 @@ export default function Landing() {
                 ['Real-world constraints', 'Solve issues tied to measurable impact rather than abstract novelty.'],
                 ['Strong network', 'Meet investors, operators, and teams building serious products.'],
               ].map(([title, text]) => (
-                <motion.div
+                <MotionGlareHover
                   key={title}
                   className={styles.valueCard}
                   variants={cardReveal}
                   whileHover={{ y: -6, scale: 1.015, transition: { duration: 0.25 } }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
                 >
                   <div className={styles.valueBadge}>✦</div>
                   <h3>{title}</h3>
                   <p>{text}</p>
-                </motion.div>
+                </MotionGlareHover>
               ))}
             </motion.div>
           </div>
@@ -434,15 +445,19 @@ export default function Landing() {
               viewport={{ once: true, amount: 0.2 }}
             >
               {stats.map((stat) => (
-                <motion.div
+                <MotionGlareHover
                   key={stat.label}
                   className={styles.statCard}
                   variants={cardReveal}
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
                 >
                   <strong>{stat.value}</strong>
                   <span>{stat.label}</span>
-                </motion.div>
+                </MotionGlareHover>
               ))}
             </motion.div>
           </div>
@@ -475,65 +490,26 @@ export default function Landing() {
               viewport={{ once: true, amount: 0.1 }}
             >
               {rewards.map((reward, index) => (
-                <motion.div
+                <MotionGlareHover
                   key={reward.title}
                   className={styles.rewardCard}
                   variants={cardReveal}
                   whileHover={{ y: -6, scale: 1.015, transition: { duration: 0.25 } }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
                 >
                   <span>0{index + 1}</span>
                   <h3>{reward.title}</h3>
                   <p>{reward.text}</p>
-                </motion.div>
+                </MotionGlareHover>
               ))}
             </motion.div>
           </div>
         </motion.section>
 
-        {/* ── TEAM ──────────────────────────────────────────────────────────── */}
-        <motion.section
-          id="team"
-          className="section"
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={sectionVariants}
-        >
-          <div className="container">
-            <motion.div
-              ref={teamHeading.ref}
-              className="section-heading"
-              style={{ y: teamHeading.y }}
-            >
-              <p className="eyebrow">TEAM</p>
-              <h2>The people making the sprint feel alive.</h2>
-            </motion.div>
 
-            <motion.div
-              className={styles.teamGrid}
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.1 }}
-            >
-              {organizers.map((person) => (
-                <motion.div
-                  key={person.name}
-                  className={styles.teamCard}
-                  variants={cardReveal}
-                  whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
-                >
-                  <div className={styles.avatar}>
-                    {person.name.split(' ').map((part) => part[0]).slice(0, 2).join('')}
-                  </div>
-                  <h3>{person.name}</h3>
-                  <p>{person.role}</p>
-                  <small>{person.accent}</small>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </motion.section>
 
         {/* ── FAQ ───────────────────────────────────────────────────────────── */}
         <motion.section
@@ -556,13 +532,17 @@ export default function Landing() {
 
             <div className={styles.faqList}>
               {faqItems.map((item, index) => (
-                <motion.div
+                <MotionGlareHover
                   key={item.q}
                   className={`${styles.faqItem} ${openFaq === index ? styles.open : ''}`}
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.07, duration: 0.5 }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
                 >
                   <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
                     <span>{item.q}</span>
@@ -580,7 +560,7 @@ export default function Landing() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </MotionGlareHover>
               ))}
             </div>
           </div>
@@ -592,87 +572,145 @@ export default function Landing() {
           className="section"
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, amount: 0.15 }}
           variants={sectionVariants}
         >
-          <div className="container contact-grid">
-            <div>
-              <div className="section-heading left-align">
-                <p className="eyebrow">CONTACT</p>
-                <h2>Let's build the next big thing together.</h2>
+          <div className="container">
+            {/* Header */}
+            <div className={styles.contactHeader}>
+              <div className={styles.contactBadgePill}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="M22 7l-10 7L2 7" />
+                </svg>
+                GET IN TOUCH
               </div>
-              <div className={styles.contactList}>
-                <span>hello@crucible.dev</span>
-                <span>+91 98212 44233</span>
-                <span>Instagram / X / LinkedIn</span>
-              </div>
+              <h2 className={styles.contactTitle}>
+                Contact <span>Organising Team</span>
+              </h2>
+              <p className={styles.contactSubtitle}>
+                Have questions about the hackathon? Need help with registration or finding a team?
+                Reach out to us through any of the channels below.
+              </p>
             </div>
 
-            <motion.form
-              className={styles.contactCard}
-              onSubmit={(e) => { e.preventDefault(); alert('Message queued.'); }}
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <label>
-                Name
-                <input type="text" placeholder="Your name" />
-              </label>
-              <label>
-                Email
-                <input type="email" placeholder="you@example.com" />
-              </label>
-              <label>
-                Message
-                <textarea rows="4" placeholder="Tell us what kind of support or partnership you need." />
-              </label>
-              <SpecularButton
-                type="submit"
-                size="md"
-                radius={14}
-                lineColor="#71a7ff"
-                baseColor="#2d5bff"
-                textColor="#ffffff"
-                intensity={1.2}
-                speed={0.4}
+            <div className={styles.contactLayout}>
+              {/* Left – channel cards */}
+              <div className={styles.contactChannels}>
+                <MotionGlareHover className={styles.channelCard} whileHover={{ y: -4, transition: { duration: 0.2 } }} glareColor="#ffffff" glareOpacity={0.15}>
+                  <div className={`${styles.channelIconWrap} ${styles.iconGreen}`}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.555 4.12 1.526 5.849L0 24l6.335-1.509A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" />
+                    </svg>
+                  </div>
+                  <div className={styles.channelInfo}>
+                    <h3>WhatsApp Channel</h3>
+                    <p>Get instant updates, announcements, and important alerts directly on your phone.</p>
+                    <a href="#" className={`${styles.channelLink} ${styles.linkGreen}`}>Join Channel →</a>
+                  </div>
+                </MotionGlareHover>
+
+                <MotionGlareHover className={styles.channelCard} whileHover={{ y: -4, transition: { duration: 0.2 } }} glareColor="#ffffff" glareOpacity={0.15}>
+                  <div className={`${styles.channelIconWrap} ${styles.iconPink}`}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                    </svg>
+                  </div>
+                  <div className={styles.channelInfo}>
+                    <h3>Instagram</h3>
+                    <p>Get real-time updates, behind-the-scenes content, and announcements.</p>
+                    <a href="#" className={`${styles.channelLink} ${styles.linkPink}`}>Follow on Instagram →</a>
+                  </div>
+                </MotionGlareHover>
+
+                <MotionGlareHover className={styles.channelCard} whileHover={{ y: -4, transition: { duration: 0.2 } }} glareColor="#ffffff" glareOpacity={0.15}>
+                  <div className={`${styles.channelIconWrap} ${styles.iconWhite}`}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M22 7l-10 7L2 7" />
+                    </svg>
+                  </div>
+                  <div className={styles.channelInfo}>
+                    <h3>Email Us</h3>
+                    <p>For formal queries, sponsorships, and partnership opportunities.</p>
+                    <a href="mailto:hackerrankcampuscrew@gmail.com" className={`${styles.channelLink} ${styles.linkWhite}`}>
+                      hackerrankcampuscrew@gmail.com →
+                    </a>
+                  </div>
+                </MotionGlareHover>
+              </div>
+
+              {/* Right – send a message form */}
+              <MotionGlareHover
+                className={styles.contactFormCard}
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                glareColor="#ffffff"
+                glareOpacity={0.15}
               >
-                Send Message
-              </SpecularButton>
-            </motion.form>
+                <form onSubmit={(e) => { e.preventDefault(); alert('Message queued.'); }} style={{ display: 'contents' }}>
+                  <h3 className={styles.formTitle}>Send a Message</h3>
+                  <div className={styles.formField}>
+                    <label>NAME</label>
+                    <input type="text" placeholder="John Doe" />
+                  </div>
+                  <div className={styles.formField}>
+                    <label>EMAIL</label>
+                    <input type="email" placeholder="john@example.com" />
+                  </div>
+                  <div className={styles.formField}>
+                    <label>MESSAGE</label>
+                    <textarea rows="4" placeholder="How can we help you?" />
+                  </div>
+                  <button type="submit" className={styles.formSubmitBtn}>
+                    Send Message →
+                  </button>
+                </form>
+              </MotionGlareHover>
+            </div>
           </div>
         </motion.section>
 
         {/* ── SPONSORS ──────────────────────────────────────────────────────── */}
         <motion.section
-          className="section sponsor-section"
+          className="section"
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, amount: 0.2 }}
           variants={sectionVariants}
         >
           <div className="container">
-            <div className="section-heading">
-              <p className="eyebrow">SPONSORS</p>
-              <h2>Backed by teams building the next era.</h2>
+            <div className={styles.sponsorsHeader}>
+              <p className={styles.sponsorsEyebrow}>BACKED BY THE BEST</p>
+              <h2 className={styles.sponsorsTitle}>Our <span>Sponsors</span></h2>
             </div>
             <motion.div
-              className={styles.sponsorWall}
+              className={styles.sponsorCardsRow}
               variants={staggerContainer}
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.2 }}
             >
-              {sponsors.map((sponsor) => (
-                <motion.div
-                  key={sponsor}
-                  className={styles.sponsorPill}
+              {sponsorData.map((sponsor) => (
+                <MotionGlareHover
+                  key={sponsor.name}
+                  className={styles.sponsorCard}
                   variants={cardReveal}
-                  whileHover={{ scale: 1.06, transition: { duration: 0.2 } }}
+                  whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
                 >
-                  {sponsor}
-                </motion.div>
+                  <div className={styles.sponsorLogoBox} style={{ background: sponsor.bg }}>
+                    {sponsor.letters}
+                  </div>
+                  <h3 className={styles.sponsorName}>{sponsor.name}</h3>
+                  <p className={`${styles.sponsorTier} ${styles[sponsor.tierClass]}`}>{sponsor.tier}</p>
+                </MotionGlareHover>
               ))}
             </motion.div>
           </div>
