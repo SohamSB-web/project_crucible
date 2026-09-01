@@ -415,28 +415,79 @@
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .shell {
-    padding: 88px 16px 60px;
+    padding: 80px 14px 40px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .backRow {
-    top: 80px;
-    left: 16px;
+    position: relative;
+    top: auto;
+    left: auto;
+    align-self: flex-start;
+    margin-bottom: 8px;
   }
 
   .card {
-    padding: 24px 20px;
+    padding: 22px 14px;
+    border-radius: 20px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .cardTitle {
+    font-size: 1.65rem;
   }
 
   .splitFields {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .reviewGrid {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .reviewCell {
+    padding: 10px 12px;
+  }
+
+  .reviewCell strong {
+    word-break: break-word;
+    font-size: 0.9rem;
+  }
+
+  .reviewMembers {
+    padding: 12px 10px;
+  }
+
+  .memberCard {
+    padding: 16px 12px;
+    border-radius: 14px;
+  }
+
+  .teamIdBox {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 12px 14px;
+  }
+
+  .teamIdBox strong {
+    margin-left: 0;
+    word-break: break-all;
   }
 
   .stepper {
     gap: 0;
+    margin-bottom: 24px;
+  }
+
+  .stepDot {
+    width: 30px;
+    height: 30px;
+    font-size: 0.72rem;
   }
 
   .stepLabel {
@@ -445,9 +496,20 @@
 
   .actions {
     flex-direction: column;
+    width: 100%;
+  }
+
+  .actions > * {
+    width: 100% !important;
   }
 
   .formActions {
     flex-direction: column-reverse;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .formActions > * {
+    width: 100% !important;
   }
 }

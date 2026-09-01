@@ -120,6 +120,10 @@ export default function Landing() {
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className={styles.heroCentered}
             >
+              <div className={styles.xiecsilogos}>
+                <img src="/White-XIE.png" alt="XIE" />
+                <img src="/CSI-logo.png" alt="CSI" />
+              </div>
 
               {/* Hero Title with Shuffle animation */}
               <h1 className={styles.heroTitle} aria-label="MISSION CRUCIBLE">
@@ -176,7 +180,8 @@ export default function Landing() {
                   speed={0.35}
                   onClick={() => {
                     const el = document.getElementById('problem-statements');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    if (el) el.scrollIntoView({ behavior: 'smooth' })
+                    else alert("Not released yet! All PS will be released on 20th September 2026. Thank you");
                   }}
                 >
                   Explore Problem Statements &rsaquo;
@@ -668,7 +673,7 @@ export default function Landing() {
                 >
                   <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
                     <span>{item.q}</span>
-                    <strong>{openFaq === index ? '−' : '+'}</strong>
+                    <strong>{openFaq === index ? '-' : '+'}</strong>
                   </button>
                   <AnimatePresence>
                     {openFaq === index && (

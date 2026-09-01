@@ -36,6 +36,8 @@ const registerSchema = z.object({
   year: z.string().min(1, 'Year is required.'),
   dept: z.string().optional().default(''),
   members: z.array(memberSchema).min(0).max(MAX_TEAM_SIZE - 1),
+  password: z.string().min(4).optional(),
+  confirmPassword: z.string().optional(),
   // themeTrack is optional; falls back to problemStatementId
   themeTrack: z.string().optional(),
   cf_turnstile_response: z.string().optional(),
@@ -78,6 +80,7 @@ router.post('/register', publicWriteLimiter, verifyTurnstile, async (req, res) =
   const {
     teamName, problemStatementId, problemStatement,
     leadName, leadEmail, leadPhone, college, year, dept, members,
+    password,
     themeTrack,
   } = parsed.data;
 
@@ -103,8 +106,8 @@ router.post('/register', publicWriteLimiter, verifyTurnstile, async (req, res) =
 
   try {
     const joinCode = await generateJoinCode();
-    const tempPassword = generateTempPassword();
-    const passwordHash = await bcrypt.hash(tempPassword, 12);
+    const finalPassword = password || generateTempPassword();
+    const passwordHash = await bcrypt.hash(finalPassword, 12);
 
     const team = await prisma.$transaction(async (tx) => {
       const newTeam = await tx.team.create({
@@ -162,7 +165,7 @@ router.post('/register', publicWriteLimiter, verifyTurnstile, async (req, res) =
       teamName,
       teamId: team.id,
       joinCode,
-      tempPassword,
+      tempPassword: finalPassword,
     })
       .then(() => prisma.credential.update({
         where: { team_id: team.id },
@@ -175,6 +178,7 @@ router.post('/register', publicWriteLimiter, verifyTurnstile, async (req, res) =
       data: {
         teamId: team.id,
         joinCode,
+        email: leadEmail.toLowerCase(),
         message: 'Registration successful! Login credentials have been sent to your email.',
       },
     });

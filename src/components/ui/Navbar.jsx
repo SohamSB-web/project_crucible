@@ -5,12 +5,15 @@ import { useAuth } from '../../context/AuthContext';
 import SpecularButton from './SpecularButton';
 
 const NAV_ITEMS = [
-  { id: 'problem-statements', label: 'Problem Statements' },
+  /* { id: 'problem-statements', label: 'Problem Statements' }, */
   { id: 'roadmap', label: 'Roadmap' },
   { id: 'rewards', label: 'Rewards' },
   { id: 'faq', label: 'FAQ' },
   { id: 'contact', label: 'Contact' },
 ];
+
+const sponsorModules = import.meta.glob('/public/sponsors/*.{png,jpg,jpeg,svg,webp,PNG,JPG,JPEG,SVG,WEBP}', { eager: true });
+const sponsorLogos = Object.keys(sponsorModules).map((path) => path.replace('/public', ''));
 
 export default function Navbar() {
   const { auth, logout } = useAuth();
@@ -67,9 +70,26 @@ export default function Navbar() {
         <Link to="/" className="brand" aria-label="Crucible home">
           <span className="brand-mark">C</span>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-            <span style={{ fontWeight: 800, fontSize: '1.02rem', color: '#ffffff', letterSpacing: '-0.01em' }}>MISSION <br /> CRUCIBLE</span>
+            <span style={{ fontWeight: 800, fontSize: '1.02rem', color: '#ffffff', letterSpacing: '-0.01em' }}>
+              MISSION <br /> CRUCIBLE
+            </span>
           </div>
         </Link>
+
+        {sponsorLogos.length > 0 && (
+          <div className="nav-sponsors-container" aria-label="Sponsors Carousel">
+            <div className="nav-sponsors-track">
+              {[...sponsorLogos, ...sponsorLogos, ...sponsorLogos].map((src, idx) => (
+                <img
+                  key={`${src}-${idx}`}
+                  src={src}
+                  alt="Sponsor Logo"
+                  className="nav-sponsor-logo"
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <nav className="main-nav" aria-label="Main navigation">
           {NAV_ITEMS.map((item) => {
@@ -129,18 +149,20 @@ export default function Navbar() {
               >
                 Login
               </SpecularButton>
-              <SpecularButton
-                size="sm"
-                radius={12}
-                lineColor="#71a7ff"
-                baseColor="#3b74f6"
-                textColor="#ffffff"
-                intensity={1.2}
-                speed={0.4}
-                onClick={() => navigate('/register')}
-              >
-                Register Now
-              </SpecularButton>
+              <span className="nav-register-btn">
+                <SpecularButton
+                  size="sm"
+                  radius={12}
+                  lineColor="#71a7ff"
+                  baseColor="#3b74f6"
+                  textColor="#ffffff"
+                  intensity={1.2}
+                  speed={0.4}
+                  onClick={() => navigate('/register')}
+                >
+                  Register Now
+                </SpecularButton>
+              </span>
             </>
           )}
         </div>

@@ -56,9 +56,12 @@ export default function Register() {
       college: '',
       year: '1st Year',
       dept: '',
+      password: '',
+      confirmPassword: '',
       members: [
         { name: '', email: '', phone: '', role: 'Developer', year: '1st Year', dept: '' },
         { name: '', email: '', phone: '', role: 'Designer', year: '1st Year', dept: '' },
+        { name: '', email: '', phone: '', role: '', year: '1st Year', dept: '' },
       ],
     },
   });
@@ -77,7 +80,10 @@ export default function Register() {
     if (step === 0) valid = await form.trigger(['teamName', 'teamSize']);
     else if (step === 1) valid = await form.trigger(['leadName', 'leadEmail', 'leadPhone', 'college', 'year', 'dept']);
     else if (step === 2) valid = await form.trigger('members');
-    if (valid) { setDir(1); setStep((v) => Math.min(v + 1, steps.length - 1)); }
+    if (valid) {
+      setDir(1);
+      setStep((v) => Math.min(v + 1, steps.length - 1));
+    }
   };
 
   const goBack = () => { setDir(-1); setStep((v) => Math.max(v - 1, 0)); };
@@ -96,11 +102,7 @@ export default function Register() {
     form.setValue('members', members.filter((_, i) => i !== index));
   };
 
-  const onSubmit = form.handleSubmit(async (payload) => {
-    if (step !== steps.length - 1) {
-      goNext();
-      return;
-    }
+  const onFinalSubmit = async (payload) => {
     try {
       const response = await registerTeam({ ...payload, cf_turnstile_response: turnstileToken });
       setSuccessData(response.data);
@@ -108,7 +110,16 @@ export default function Register() {
     } catch (err) {
       form.setError('root', { message: err.message || 'Registration failed. Please try again.' });
     }
-  });
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (step < steps.length - 1) {
+      await goNext();
+    } else {
+      form.handleSubmit(onFinalSubmit)(e);
+    }
+  };
 
   if (submitted && successData) {
     return (
@@ -122,7 +133,11 @@ export default function Register() {
             <p className={styles.successDesc}>{successData.message}</p>
             <div className={styles.teamIdBox}>
               <span>Team ID</span>
-              <strong>{successData.teamId}</strong>
+              <strong>{successData.teamId || '—'}</strong>
+            </div>
+            <div className={styles.teamIdBox}>
+              <span>Team login mail</span>
+              <strong>{successData.email || form.getValues('leadEmail') || '—'}</strong>
             </div>
             <div className={styles.actions}>
               <SqBtn onClick={() => navigate('/login')} lineColor="#71a7ff" baseColor="#142034" intensity={1.2}>Go to Login</SqBtn>
@@ -182,7 +197,7 @@ export default function Register() {
           </div>
 
           {/* Form Steps */}
-          <form onSubmit={onSubmit} className={styles.form}>
+          <form onSubmit={handleFormSubmit} className={styles.form}>
             <div className={styles.stepWrap}>
               <AnimatePresence custom={dir} mode="wait" initial={false}>
                 <motion.div
@@ -355,6 +370,40 @@ export default function Register() {
                             </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Password setup for team login */}
+                      <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        <h3 className={styles.reviewHeading} style={{ marginBottom: '6px' }}>Set Team Password</h3>
+                        <p style={{ fontSize: '0.8rem', color: '#8f9bba', margin: '0 0 14px' }}>
+                          Create a password to access your team dashboard after registration.
+                        </p>
+                        <div className={styles.splitFields}>
+                          <div className={styles.field}>
+                            <label>Password</label>
+                            <input
+                              type="password"
+                              {...form.register('password')}
+                              placeholder="Min. 6 characters"
+                              autoComplete="new-password"
+                            />
+                            {form.formState.errors.password && (
+                              <small>{form.formState.errors.password.message}</small>
+                            )}
+                          </div>
+                          <div className={styles.field}>
+                            <label>Confirm Password</label>
+                            <input
+                              type="password"
+                              {...form.register('confirmPassword')}
+                              placeholder="Confirm password"
+                              autoComplete="new-password"
+                            />
+                            {form.formState.errors.confirmPassword && (
+                              <small>{form.formState.errors.confirmPassword.message}</small>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </>
                   )}

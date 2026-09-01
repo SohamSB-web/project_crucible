@@ -156,6 +156,64 @@ button {
   box-shadow: 0 0 18px rgba(113, 167, 255, 0.4);
 }
 
+/* ── Navbar Sponsor Carousel ──────────────────────────────────────────────── */
+.nav-sponsors-container {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: 200px;
+  height: 38px;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  margin: 0 10px;
+}
+
+.nav-sponsors-track {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  animation: navSponsorMarquee 12s linear infinite;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nav-sponsors-container:hover .nav-sponsors-track {
+  animation-play-state: paused;
+}
+
+@keyframes navSponsorMarquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+.nav-sponsor-logo {
+  height: 28px;
+  width: auto;
+  max-width: 80px;
+  object-fit: contain;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.nav-sponsor-logo:hover {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+@media (max-width: 1000px) {
+  .nav-sponsors-container {
+    display: none;
+  }
+}
+
 .main-nav {
   display: flex;
   align-items: center;
@@ -298,21 +356,140 @@ button {
 
 .site-footer {
   position: relative;
-  z-index: 1;
-  background: rgba(10, 14, 23, 0.82);
+  z-index: 10;
+  background: rgba(8, 12, 20, 0.92);
   color: rgba(255, 255, 255, 0.86);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .footer-shell {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr 0.8fr;
-  gap: 24px;
-  padding: 32px 0;
+  grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+  gap: 36px;
+  padding: 56px 0 36px;
+}
+
+.footer-brand-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .brand-footer {
-  margin-bottom: 14px;
+  margin-bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-desc {
+  color: #8f9bba;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 320px;
+}
+
+.footer-org-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #71a7ff;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(113, 167, 255, 0.08);
+  border: 1px solid rgba(113, 167, 255, 0.2);
+  padding: 6px 12px;
+  border-radius: 8px;
+  width: fit-content;
+  transition: transform 0.25s ease;
+}
+
+.footer-org-badge:hover {
+  transform: translateY(-2px);
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footer-col-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  margin: 0;
+}
+
+.footer-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-links-list a {
+  color: #8f9bba;
+  font-size: 0.9rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.footer-links-list a:hover {
+  color: #71a7ff;
+  transform: translateX(3px);
+}
+
+.footer-bottom-bar {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 20px 0;
+  background: rgba(5, 8, 14, 0.6);
+}
+
+.footer-bottom-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #6a7b9e;
+  gap: 12px;
+}
+
+.footer-bottom-inner p {
+  margin: 0;
+}
+
+.footer-credit {
+  color: #8f9bba;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 960px) {
+  .footer-shell {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    padding: 40px 0 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer-shell {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 36px 0 24px;
+  }
+
+  .footer-bottom-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 
 .muted {
@@ -321,13 +498,6 @@ button {
 
 .small {
   font-size: 0.8rem;
-}
-
-.footer-links,
-.footer-meta {
-  display: grid;
-  gap: 10px;
-  align-content: start;
 }
 
 .magnetic-button {
@@ -354,8 +524,8 @@ button {
     display: none;
   }
 
-  .footer-shell {
-    grid-template-columns: 1fr;
+  .nav-register-btn {
+    display: none;
   }
 }
 
@@ -428,4 +598,29 @@ button {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   margin-top: 10px;
+}
+
+@media (max-width: 540px) {
+  .countdown-grid {
+    gap: 8px;
+    width: 100%;
+    padding: 0 4px;
+    box-sizing: border-box;
+  }
+
+  .countdown-card {
+    min-width: 0;
+    height: 76px;
+    border-radius: 14px;
+    padding: 6px 2px;
+  }
+
+  .countdown-number {
+    font-size: 1.65rem;
+  }
+
+  .countdown-label {
+    font-size: 0.58rem;
+    margin-top: 4px;
+  }
 }

@@ -23,46 +23,36 @@
 
 @media (max-width: 640px) {
   .shell {
-    padding: 88px 16px 60px;
+    padding: 80px 14px 40px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .backRow {
-    top: 80px;
-    left: 16px;
+    top: 76px;
+    left: 14px;
+    position: relative;
+    align-self: flex-start;
+    margin-bottom: 12px;
   }
-}
 
-.loginCard {
-  width: 100%;
-  max-width: 520px;
-  background: rgba(255, 255, 255, 0.055);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 28px;
-  box-shadow:
-    0 8px 48px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
-  padding: 36px;
-  position: relative;
-  overflow: hidden;
-  margin: auto;
-}
+  .loginCard {
+    padding: 26px 18px;
+    border-radius: 22px;
+    width: 100%;
+    box-sizing: border-box;
+  }
 
-.loginCard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(160deg, rgba(113, 167, 255, 0.06) 0%, transparent 50%);
-  pointer-events: none;
-}
+  .loginCard h1 {
+    font-size: 1.85rem;
+    margin-bottom: 20px;
+  }
 
-.loginCard h1 {
-  margin: 0 0 28px;
-  font-size: clamp(2.2rem, 4vw, 3.5rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  .helperRow {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 .form {
