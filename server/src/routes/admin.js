@@ -1,0 +1,367 @@
+const { Router } = require('express');
+const { z } = require('zod');
+const prisma = require('../lib/prisma');
+const { requireAuth, requireRole } = require('../middleware/auth');
+
+const router = Router();
+
+// ─── Validation schemas ───────────────────────────────────────────────────────
+
+const evaluateSchema = z.object({
+  submissionId: z.string().min(1),
+  score: z.number().int().min(0).max(100),
+  remarks: z.string().max(2000).default(''),
+});
+
+const publishSchema = z.object({
+  teamIds: z.array(z.string()).min(1),
+});
+
+const announcementSchema = z.object({
+  title: z.string().min(1, 'Title required.').max(200),
+  detail: z.string().min(1, 'Detail required.'),
+});
+
+const trackSchema = z.object({
+  title: z.string().min(1),
+  category: z.string().default('General'),
+  short_description: z.string().default(''),
+  description: z.string().default(''),
+  difficulty: z.string().default('Intermediate'),
+  reward: z.string().default(''),
+});
+
+// ─── Registration window ──────────────────────────────────────────────────────
+
+router.get('/registration-status', async (_req, res) => {
+  const window = await prisma.registrationWindow.findFirst();
+  return res.json({ success: true, data: { open: window?.open ?? true } });
+});
+
+router.post('/registration-toggle', requireAuth, requireRole('admin'), async (_req, res) => {
+  try {
+    const existing = await prisma.registrationWindow.findFirst();
+    if (existing) {
+      const updated = await prisma.registrationWindow.update({
+        where: { id: existing.id },
+        data: { open: !existing.open },
+      });
+      return res.json({ success: true, data: { open: updated.open } });
+    } else {
+      const created = await prisma.registrationWindow.create({ data: { open: false } });
+      return res.json({ success: true, data: { open: created.open } });
+    }
+  } catch (err) {
+    console.error('[Admin/ToggleReg]', err);
+    return res.status(500).json({ success: false, error: 'Failed to toggle registration.' });
+  }
+});
+
+// ─── Teams (admin view) ───────────────────────────────────────────────────────
+
+router.get('/teams', requireAuth, requireRole('admin', 'judge'), async (_req, res) => {
+  try {
+    const teams = await prisma.team.findMany({
+      include: {
+        members: true,
+        submission: { select: { id: true, original_name: true, submitted_at: true, locked: true, version: true } },
+        result: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    const shaped = teams.map((t) => ({
+      id: t.id,
+      name: t.name,
+      joinCode: t.join_code,
+      trackName: t.theme_track,
+      problemStatementId: t.problem_statement_id,
+      college: t.college,
+      year: t.year,
+      status: 'registered',
+      submissionStatus: t.submission ? 'submitted' : 'pending',
+      shortlisted: t.result?.shortlisted ?? false,
+      members: t.members,
+      submission: t.submission,
+      result: t.result,
+    }));
+
+    return res.json({ success: true, data: shaped });
+  } catch (err) {
+    console.error('[Admin/Teams]', err);
+    return res.status(500).json({ success: false, error: 'Failed to fetch teams.' });
+  }
+});
+
+// ─── Submissions (admin/judge list) ──────────────────────────────────────────
+
+router.get('/submissions', requireAuth, requireRole('admin', 'judge'), async (req, res) => {
+  try {
+    const submissions = await prisma.submission.findMany({
+      include: {
+        team: { select: { id: true, name: true, theme_track: true, college: true } },
+        evaluations: {
+          include: { judge: { select: { id: true, name: true, role: true } } },
+        },
+      },
+      orderBy: { submitted_at: 'desc' },
+    });
+
+    // For judges: only show their own evaluations attached
+    const judgeId = req.user.role === 'judge' ? req.user.id : null;
+
+    const shaped = submissions.map((s) => ({
+      id: s.id,
+      teamId: s.team_id,
+      teamName: s.team.name,
+      trackName: s.team.theme_track,
+      college: s.team.college,
+      filename: s.original_name,
+      version: s.version,
+      submittedAt: s.submitted_at,
+      locked: s.locked,
+      evaluations: judgeId
+        ? s.evaluations.filter((e) => e.judge_id === judgeId)
+        : s.evaluations,
+      averageScore: s.evaluations.length
+        ? Math.round(s.evaluations.reduce((sum, e) => sum + e.score, 0) / s.evaluations.length)
+        : null,
+    }));
+
+    return res.json({ success: true, data: shaped });
+  } catch (err) {
+    console.error('[Admin/Submissions]', err);
+    return res.status(500).json({ success: false, error: 'Failed to fetch submissions.' });
+  }
+});
+
+// ─── Evaluate (judge scores) ──────────────────────────────────────────────────
+
+router.post('/evaluate', requireAuth, requireRole('admin', 'judge'), async (req, res) => {
+  const parsed = evaluateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed.',
+      details: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const { submissionId, score, remarks } = parsed.data;
+
+  try {
+    const submission = await prisma.submission.findUnique({ where: { id: submissionId } });
+    if (!submission) {
+      return res.status(404).json({ success: false, error: 'Submission not found.' });
+    }
+
+    const evaluation = await prisma.evaluation.upsert({
+      where: {
+        submission_id_judge_id: { submission_id: submissionId, judge_id: req.user.id },
+      },
+      create: {
+        submission_id: submissionId,
+        judge_id: req.user.id,
+        score,
+        remarks,
+      },
+      update: { score, remarks },
+    });
+
+    return res.json({ success: true, data: evaluation });
+  } catch (err) {
+    console.error('[Admin/Evaluate]', err);
+    return res.status(500).json({ success: false, error: 'Failed to save evaluation.' });
+  }
+});
+
+// ─── Leaderboard / aggregate scores ──────────────────────────────────────────
+
+router.get('/results', requireAuth, requireRole('admin', 'judge'), async (_req, res) => {
+  try {
+    const results = await prisma.result.findMany({
+      include: {
+        team: {
+          include: {
+            submission: {
+              include: {
+                evaluations: { select: { score: true, judge_id: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { rank: 'asc' },
+    });
+
+    const shaped = results.map((r) => {
+      const evals = r.team.submission?.evaluations ?? [];
+      const avg = evals.length
+        ? Math.round(evals.reduce((s, e) => s + e.score, 0) / evals.length)
+        : null;
+
+      return {
+        teamId: r.team_id,
+        teamName: r.team.name,
+        rank: r.rank,
+        shortlisted: r.shortlisted,
+        published: r.published,
+        averageScore: avg,
+        judgeCount: evals.length,
+      };
+    });
+
+    // Sort by avg score desc for leaderboard view
+    shaped.sort((a, b) => (b.averageScore ?? -1) - (a.averageScore ?? -1));
+
+    return res.json({ success: true, data: shaped });
+  } catch (err) {
+    console.error('[Admin/Results]', err);
+    return res.status(500).json({ success: false, error: 'Failed to fetch results.' });
+  }
+});
+
+// ─── Shortlist teams ──────────────────────────────────────────────────────────
+
+router.post('/teams/shortlist', requireAuth, requireRole('admin'), async (req, res) => {
+  const { teamIds } = req.body;
+  if (!Array.isArray(teamIds)) {
+    return res.status(400).json({ success: false, error: 'teamIds must be an array.' });
+  }
+
+  try {
+    // Reset all shortlists, then set the selected ones
+    await prisma.$transaction([
+      prisma.result.updateMany({ data: { shortlisted: false } }),
+      ...teamIds.map((id) =>
+        prisma.result.upsert({
+          where: { team_id: id },
+          create: { team_id: id, shortlisted: true },
+          update: { shortlisted: true },
+        })
+      ),
+    ]);
+
+    return res.json({ success: true, data: { shortlisted: teamIds } });
+  } catch (err) {
+    console.error('[Admin/Shortlist]', err);
+    return res.status(500).json({ success: false, error: 'Failed to update shortlist.' });
+  }
+});
+
+// ─── Publish results ──────────────────────────────────────────────────────────
+
+router.post('/results/publish', requireAuth, requireRole('admin'), async (req, res) => {
+  const parsed = publishSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'Provide an array of teamIds to publish.' });
+  }
+
+  const { teamIds } = parsed.data;
+
+  try {
+    await prisma.$transaction(
+      teamIds.map((id, idx) =>
+        prisma.result.upsert({
+          where: { team_id: id },
+          create: { team_id: id, shortlisted: true, published: true, rank: idx + 1 },
+          update: { published: true, rank: idx + 1 },
+        })
+      )
+    );
+
+    return res.json({ success: true, data: { published: teamIds } });
+  } catch (err) {
+    console.error('[Admin/Publish]', err);
+    return res.status(500).json({ success: false, error: 'Failed to publish results.' });
+  }
+});
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+
+router.get('/announcements', async (_req, res) => {
+  try {
+    const announcements = await prisma.announcement.findMany({
+      orderBy: { created_at: 'desc' },
+    });
+    return res.json({ success: true, data: announcements });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to fetch announcements.' });
+  }
+});
+
+router.post('/announcements', requireAuth, requireRole('admin'), async (req, res) => {
+  const parsed = announcementSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'Validation failed.', details: parsed.error.flatten().fieldErrors });
+  }
+
+  try {
+    const announcement = await prisma.announcement.create({ data: parsed.data });
+    return res.status(201).json({ success: true, data: announcement });
+  } catch (err) {
+    console.error('[Admin/Announcements]', err);
+    return res.status(500).json({ success: false, error: 'Failed to post announcement.' });
+  }
+});
+
+// ─── Tracks (Problem statements) ─────────────────────────────────────────────
+
+router.get('/tracks', async (_req, res) => {
+  try {
+    const tracks = await prisma.track.findMany({ orderBy: { title: 'asc' } });
+    return res.json({ success: true, data: tracks });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to fetch tracks.' });
+  }
+});
+
+router.post('/tracks', requireAuth, requireRole('admin'), async (req, res) => {
+  const parsed = trackSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'Validation failed.' });
+  }
+
+  try {
+    const track = await prisma.track.create({ data: parsed.data });
+    return res.status(201).json({ success: true, data: track });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to create track.' });
+  }
+});
+
+router.patch('/tracks/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const track = await prisma.track.update({
+      where: { id: req.params.id },
+      data: req.body,
+    });
+    return res.json({ success: true, data: track });
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ success: false, error: 'Track not found.' });
+    return res.status(500).json({ success: false, error: 'Failed to update track.' });
+  }
+});
+
+router.delete('/tracks/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    await prisma.track.delete({ where: { id: req.params.id } });
+    return res.json({ success: true, data: { deletedId: req.params.id } });
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ success: false, error: 'Track not found.' });
+    return res.status(500).json({ success: false, error: 'Failed to delete track.' });
+  }
+});
+
+// ─── Lock all submissions (admin, run before judging) ─────────────────────────
+
+router.post('/submissions/lock-all', requireAuth, requireRole('admin'), async (_req, res) => {
+  try {
+    const { count } = await prisma.submission.updateMany({ data: { locked: true } });
+    return res.json({ success: true, data: { lockedCount: count } });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to lock submissions.' });
+  }
+});
+
+module.exports = router;

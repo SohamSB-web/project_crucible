@@ -3,8 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/ui/Navbar';
 import { useAuth } from '../../context/AuthContext';
-import { getAnnouncements, getShortlistStatus, getMySubmission, changePassword, uploadSubmission } from '../../lib/mockApi';
-import { mockTeams } from '../../data/mockTeams';
+import { getAnnouncements, getShortlistStatus, getMySubmission, changePassword, uploadSubmission, getMyTeam } from '../../lib/api';
 import styles from './UserDashboard.module.css';
 
 const allowedExtensions = ['.pdf', '.ppt', '.pptx'];
@@ -15,10 +14,11 @@ export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState([]);
   const [shortlist, setShortlist] = useState({ released: false });
   const [submission, setSubmission] = useState(null);
+  const [team, setTeam] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadState, setUploadState] = useState({ progress: 0, status: 'idle' });
   const [passwordForm, setPasswordForm] = useState({ current: '', next: '' });
-  const team = mockTeams.find((entry) => entry.id === auth?.user?.teamId) || mockTeams[0];
+  const [pwError, setPwError] = useState('');
 
   useEffect(() => {
     if (!auth || auth.role !== 'user') {
@@ -27,14 +27,16 @@ export default function UserDashboard() {
     }
 
     async function load() {
-      const [annRes, shortlistRes, submissionRes] = await Promise.all([
+      const [annRes, shortlistRes, submissionRes, teamRes] = await Promise.all([
         getAnnouncements(),
         getShortlistStatus(),
         getMySubmission(),
+        getMyTeam(),
       ]);
       setAnnouncements(annRes.data || []);
       setShortlist(shortlistRes.data || { released: false });
       setSubmission(submissionRes.data || null);
+      setTeam(teamRes.data || null);
     }
 
     load();
@@ -80,8 +82,15 @@ export default function UserDashboard() {
 
   const submitPassword = async (event) => {
     event.preventDefault();
-    await changePassword(passwordForm.next);
-    setPasswordForm({ current: '', next: '' });
+    setPwError('');
+    if (!passwordForm.current) { setPwError('Enter your current password.'); return; }
+    if (!passwordForm.next || passwordForm.next.length < 8) { setPwError('New password must be at least 8 characters.'); return; }
+    try {
+      await changePassword(passwordForm.next, passwordForm.current);
+      setPasswordForm({ current: '', next: '' });
+    } catch (err) {
+      setPwError(err.message || 'Password update failed.');
+    }
   };
 
   return (
@@ -105,7 +114,7 @@ export default function UserDashboard() {
                 <div>
                   <strong>{item.title}</strong>
                   <p>{item.detail}</p>
-                  <small>{new Date(item.createdAt).toLocaleDateString()}</small>
+                  <small>{new Date(item.created_at || item.createdAt).toLocaleDateString()}</small>
                 </div>
               </div>
             ))}
@@ -126,13 +135,18 @@ export default function UserDashboard() {
 
           <section className={styles.panel}>
             <h2>Team panel</h2>
-            <div className={styles.teamList}>
-              <div><span>Team</span><strong>{team.name}</strong></div>
-              <div><span>Track</span><strong>{team.trackName}</strong></div>
-              {team.members.map((member) => (
-                <div key={member.email} className={styles.memberRow}><strong>{member.name}</strong><span>{member.role}</span></div>
-              ))}
-            </div>
+            {team ? (
+              <div className={styles.teamList}>
+                <div><span>Team</span><strong>{team.name}</strong></div>
+                <div><span>Track</span><strong>{team.theme_track || team.trackName}</strong></div>
+                <div><span>Join Code</span><strong style={{ fontFamily: 'monospace', letterSpacing: '2px' }}>{team.join_code}</strong></div>
+                {(team.members || []).map((member) => (
+                  <div key={member.email} className={styles.memberRow}><strong>{member.name}</strong><span>{member.role}</span></div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ color: '#506080', fontSize: '14px' }}>Loading team info...</div>
+            )}
           </section>
 
           <section className={styles.panelWide}>
@@ -167,7 +181,8 @@ export default function UserDashboard() {
             <h2>Profile / security</h2>
             <form onSubmit={submitPassword} className={styles.passwordForm}>
               <input type="password" value={passwordForm.current} onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })} placeholder="Current password" />
-              <input type="password" value={passwordForm.next} onChange={(e) => setPasswordForm({ ...passwordForm, next: e.target.value })} placeholder="New password" />
+              <input type="password" value={passwordForm.next} onChange={(e) => setPasswordForm({ ...passwordForm, next: e.target.value })} placeholder="New password (min 8 chars)" />
+              {pwError && <small style={{ color: '#ff6b75' }}>{pwError}</small>}
               <button type="submit" className="primary-button">Update</button>
             </form>
           </section>

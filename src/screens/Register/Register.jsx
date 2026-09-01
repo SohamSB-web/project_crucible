@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
-import { getRegistrationStatus, getTracks, register as registerTeam } from '../../lib/mockApi';
+import { getRegistrationStatus, getTracks, register as registerTeam } from '../../lib/api';
 import { registerSchema } from '../../lib/validators';
 import Navbar from '../../components/ui/Navbar';
 import SpecularButton from '../../components/ui/SpecularButton';
@@ -43,6 +43,7 @@ export default function Register() {
   const [status, setStatus] = useState({ open: true });
   const [submitted, setSubmitted] = useState(false);
   const [successData, setSuccessData] = useState(null);
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   const form = useForm({
     resolver: zodResolver(registerSchema),
@@ -99,9 +100,13 @@ export default function Register() {
       goNext();
       return;
     }
-    const response = await registerTeam(payload);
-    setSuccessData(response.data);
-    setSubmitted(true);
+    try {
+      const response = await registerTeam({ ...payload, cf_turnstile_response: turnstileToken });
+      setSuccessData(response.data);
+      setSubmitted(true);
+    } catch (err) {
+      form.setError('root', { message: err.message || 'Registration failed. Please try again.' });
+    }
   });
 
   if (submitted && successData) {
@@ -209,6 +214,16 @@ export default function Register() {
                         <label>Team Size <span className={styles.hint}>(2–4 members)</span></label>
                         <input type="number" min="2" max="4" {...form.register('teamSize')} />
                         {form.formState.errors.teamSize && <small>{form.formState.errors.teamSize.message}</small>}
+                      </div>
+                      {/* Cloudflare Turnstile CAPTCHA */}
+                      <div className={styles.field}>
+                        <div
+                          className="cf-turnstile"
+                          data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                          data-callback={(token) => setTurnstileToken(token)}
+                          data-theme="dark"
+                        />
+                        <small style={{ color: '#506080' }}>Human verification required before submission.</small>
                       </div>
                     </>
                   )}
@@ -322,6 +337,11 @@ export default function Register() {
             </div>
 
             {/* Form Actions */}
+            {form.formState.errors.root && (
+              <div style={{ color: '#ff6b75', fontSize: '13px', marginBottom: '8px', padding: '10px 14px', background: 'rgba(255,107,117,0.08)', borderRadius: '8px', border: '1px solid rgba(255,107,117,0.2)' }}>
+                {form.formState.errors.root.message}
+              </div>
+            )}
             <div className={styles.formActions}>
               {step > 0 ? (
                 <SqBtn type="button" onClick={goBack} lineColor="#71a7ff" baseColor="#0d1625" textColor="#71a7ff">← Back</SqBtn>

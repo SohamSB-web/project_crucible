@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import SpecularButton from '../../components/ui/SpecularButton';
 import Navbar from '../../components/ui/Navbar';
 import { useAuth } from '../../context/AuthContext';
-import { login as loginUser } from '../../lib/mockApi';
+import { login as loginUser } from '../../lib/api';
 import { loginSchema } from '../../lib/validators';
 import styles from './Login.module.css';
 
@@ -45,7 +45,8 @@ export default function Login() {
         user: response.data.user,
       };
       login(auth);
-      navigate(`/dashboard/${response.data.role}`);
+      const dashPath = ['admin', 'judge'].includes(response.data.role) ? 'admin' : 'user';
+      navigate(`/dashboard/${dashPath}`);
     } catch (error) {
       form.setError('root', { message: error.message || 'Login failed.' });
     }

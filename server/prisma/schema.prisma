@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Team registration ───────────────────────────────────────────────────────
+
+model Team {
+  id                   String   @id @default(cuid())
+  name                 String
+  join_code            String   @unique
+  theme_track          String
+  problem_statement_id String
+  problem_statement    String   @db.Text
+  lead_email           String   @unique
+  phone                String
+  college              String
+  year                 String
+  created_at           DateTime @default(now())
+
+  members     TeamMember[]
+  credential  Credential?
+  submission  Submission?
+  result      Result?
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  team_id   String
+  name      String
+  email     String
+  phone     String   @default("")
+  role      TeamRole @default(member)
+  joined_at DateTime @default(now())
+
+  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
+}
+
+enum TeamRole {
+  lead
+  member
+}
+
+// ─── Credentials (auto-generated, hashed) ────────────────────────────────────
+
+model Credential {
+  id            String    @id @default(cuid())
+  team_id       String    @unique
+  password_hash String
+  email_sent_at DateTime?
+  created_at    DateTime  @default(now())
+
+  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+
+  @@map("credentials")
+}
+
+// ─── File submission ──────────────────────────────────────────────────────────
+
+model Submission {
+  id           String   @id @default(cuid())
+  team_id      String   @unique
+  file_path    String   // path inside Supabase bucket
+  original_name String
+  mime_type    String
+  size_bytes   Int
+  version      Int      @default(1)
+  submitted_at DateTime @default(now())
+  locked       Boolean  @default(false)
+
+  team        Team         @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  evaluations Evaluation[]
+
+  @@map("submissions")
+}
+
+// ─── Judge / Admin users ──────────────────────────────────────────────────────
+
+model JudgeUser {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password_hash String
+  role          JudgeRole @default(judge)
+  created_at    DateTime  @default(now())
+
+  evaluations Evaluation[]
+
+  @@map("judge_users")
+}
+
+enum JudgeRole {
+  admin
+  judge
+}
+
+// ─── Evaluations (judge scores) ───────────────────────────────────────────────
+
+model Evaluation {
+  id            String   @id @default(cuid())
+  submission_id String
+  judge_id      String
+  score         Int      // 0–100
+  remarks       String   @db.Text @default("")
+  submitted_at  DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  submission Submission @relation(fields: [submission_id], references: [id], onDelete: Cascade)
+  judge      JudgeUser  @relation(fields: [judge_id], references: [id], onDelete: Cascade)
+
+  @@unique([submission_id, judge_id]) // one score per judge per submission
+  @@map("evaluations")
+}
+
+// ─── Results (shortlist + rankings) ──────────────────────────────────────────
+
+model Result {
+  id          String   @id @default(cuid())
+  team_id     String   @unique
+  rank        Int?
+  shortlisted Boolean  @default(false)
+  published   Boolean  @default(false)
+  updated_at  DateTime @updatedAt
+
+  team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+
+  @@map("results")
+}
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  detail     String   @db.Text
+  created_at DateTime @default(now())
+
+  @@map("announcements")
+}
+
+// ─── Problem statement tracks ─────────────────────────────────────────────────
+
+model Track {
+  id                String @id @default(cuid())
+  title             String
+  category          String @default("General")
+  short_description String @default("")
+  description       String @db.Text @default("")
+  difficulty        String @default("Intermediate")
+  reward            String @default("")
+  teams             Int    @default(0)
+
+  @@map("tracks")
+}
+
+// ─── Registration window flag ─────────────────────────────────────────────────
+
+model RegistrationWindow {
+  id   Int     @id @default(autoincrement())
+  open Boolean @default(true)
+
+  @@map("registration_window")
+}
