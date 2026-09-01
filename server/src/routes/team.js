@@ -19,18 +19,22 @@ const memberSchema = z.object({
   name: z.string().min(2, 'Member name is required.'),
   email: z.string().email('Valid email required.'),
   phone: z.string().min(8, 'Phone required.').default(''),
-  role: z.string().min(1, 'Role required.'),
+  role: z.string().optional().default(''),
+  year: z.string().optional().default(''),
+  dept: z.string().optional().default(''),
 });
 
 const registerSchema = z.object({
   teamName: z.string().min(2, 'Team name is required.'),
-  problemStatementId: z.string().min(1, 'Problem statement ID is required.'),
-  problemStatement: z.string().min(10, 'Problem statement is required.'),
+  problemStatementId: z.string().optional().default(''),
+  problemStatement: z.string().optional().default(''),
+  teamSize: z.coerce.number().optional().default(3),
   leadName: z.string().min(2, 'Lead name is required.'),
   leadEmail: z.string().email('Valid email required for lead.'),
   leadPhone: z.string().min(8, 'Phone required.'),
   college: z.string().min(2, 'College is required.'),
   year: z.string().min(1, 'Year is required.'),
+  dept: z.string().optional().default(''),
   members: z.array(memberSchema).min(0).max(MAX_TEAM_SIZE - 1),
   // themeTrack is optional; falls back to problemStatementId
   themeTrack: z.string().optional(),
@@ -42,7 +46,9 @@ const joinSchema = z.object({
   name: z.string().min(2, 'Your name is required.'),
   email: z.string().email('Valid email required.'),
   phone: z.string().min(8, 'Phone required.').default(''),
-  role: z.string().min(1, 'Role required.'),
+  role: z.string().optional().default(''),
+  year: z.string().optional().default(''),
+  dept: z.string().optional().default(''),
   cf_turnstile_response: z.string().optional(),
 });
 
@@ -71,7 +77,7 @@ router.post('/register', publicWriteLimiter, verifyTurnstile, async (req, res) =
 
   const {
     teamName, problemStatementId, problemStatement,
-    leadName, leadEmail, leadPhone, college, year, members,
+    leadName, leadEmail, leadPhone, college, year, dept, members,
     themeTrack,
   } = parsed.data;
 
@@ -105,21 +111,33 @@ router.post('/register', publicWriteLimiter, verifyTurnstile, async (req, res) =
         data: {
           name: teamName,
           join_code: joinCode,
-          theme_track: themeTrack || problemStatementId,
-          problem_statement_id: problemStatementId,
-          problem_statement: problemStatement,
+          theme_track: themeTrack || problemStatementId || '',
+          problem_statement_id: problemStatementId || '',
+          problem_statement: problemStatement || '',
           lead_email: leadEmail.toLowerCase(),
           phone: leadPhone,
           college,
           year,
+          dept: dept || '',
           members: {
             create: [
-              { name: leadName, email: leadEmail.toLowerCase(), phone: leadPhone, role: 'lead' },
+              {
+                name: leadName,
+                email: leadEmail.toLowerCase(),
+                phone: leadPhone,
+                role: 'lead',
+                custom_role: 'Team Lead',
+                year,
+                dept: dept || '',
+              },
               ...members.map((m) => ({
                 name: m.name,
                 email: m.email.toLowerCase(),
                 phone: m.phone,
                 role: 'member',
+                custom_role: m.role || 'Member',
+                year: m.year || '',
+                dept: m.dept || '',
               })),
             ],
           },

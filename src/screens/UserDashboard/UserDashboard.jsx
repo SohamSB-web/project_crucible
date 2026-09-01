@@ -340,7 +340,7 @@ export default function UserDashboard() {
         <div className={styles.brandGroup}>
           <div className={styles.brandLogo}>C</div>
           <div className={styles.brandInfo}>
-            <span className={styles.brandTitle}>Project Crucible</span>
+            <span className={styles.brandTitle}>Mission Crucible</span>
             <span className={styles.brandSub}>{settings.name}</span>
           </div>
         </div>

@@ -66,7 +66,7 @@ export default function Navbar() {
       <div className="container nav-shell">
         <Link to="/" className="brand" aria-label="Crucible home">
           <span className="brand-mark">C</span>
-          <span>CRUCIBLE</span>
+          <span>MISSION<br />CRUCIBLE</span>
         </Link>
 
         <nav className="main-nav" aria-label="Main navigation">

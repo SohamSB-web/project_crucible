@@ -78,6 +78,7 @@ router.get('/teams', requireAuth, requireRole('admin', 'judge'), async (_req, re
       problemStatementId: t.problem_statement_id,
       college: t.college,
       year: t.year,
+      dept: t.dept,
       status: 'registered',
       submissionStatus: t.submission ? 'submitted' : 'pending',
       shortlisted: t.result?.shortlisted ?? false,

@@ -47,7 +47,7 @@
   padding: 36px;
   position: relative;
   overflow: hidden;
-  margin: 0 auto;
+  margin: auto;
 }
 
 .loginCard::before {

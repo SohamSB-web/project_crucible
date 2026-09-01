@@ -319,8 +319,9 @@
 
 .milestoneLineHeader {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   position: relative;
+  gap: 16px;
   margin-bottom: 8px;
 }
 
@@ -495,7 +496,7 @@
 
 .dateLabelDark {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: var(--blue-primary);
   letter-spacing: 0.05em;
@@ -543,10 +544,16 @@
 
 .dividerText {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   letter-spacing: 0.25em;
   color: #8f9bba;
   text-transform: uppercase;
+}
+
+.valueHeader {
+  display: flex;
+  align-items: left;
+  justify-content: space-between;
 }
 
 @media (max-width: 1100px) {
@@ -629,7 +636,7 @@
 .rewardsGrid,
 .teamGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
 }
 
@@ -672,8 +679,8 @@
 .valueBadge,
 .rewardCard span {
   display: inline-flex;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   align-items: center;
   justify-content: center;
   border-radius: 50%;

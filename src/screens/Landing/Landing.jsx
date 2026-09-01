@@ -24,7 +24,7 @@ const faqItems = [
 ];
 
 const rewards = [
-  { title: '₹12 Lakh payouts', text: 'For the top teams across tracks and the grand prize.' },
+  { title: '₹15k+ payouts', text: 'For the top teams across tracks and the grand prize.' },
   { title: 'Mentor access', text: 'Direct sessions with founders, operators, and product leaders.' },
   { title: 'Career network', text: 'Introductions to hiring partners and startup communities.' },
   { title: 'Funding opportunities', text: 'Open doors to incubation programs and prototype grants.' },
@@ -37,10 +37,10 @@ const sponsorData = [
 ];
 
 const stats = [
-  { label: 'Registrations', value: '1800+' },
-  { label: 'Colleges', value: '96' },
-  { label: 'Problem Statements', value: '6' },
-  { label: 'Prize pool', value: '₹12L' },
+  { label: 'Members', value: '200+' },
+  { label: 'Location', value: 'Mahim' },
+  { label: 'Problem Statements', value: '5' },
+  { label: 'Prize pool', value: '₹15k' },
 ];
 
 const sectionVariants = {
@@ -99,14 +99,14 @@ export default function Landing() {
             >
 
               {/* Hero Title with Shuffle animation */}
-              <h1 className={styles.heroTitle} aria-label="PROJECT CRUCIBLE">
+              <h1 className={styles.heroTitle} aria-label="MISSION CRUCIBLE">
                 <GradientText
                   colors={["#3794f8ff", "#8bbaff", "#ffffff"]}
                   animationSpeed={6}
                   showBorder={false}
                   className={styles.shuffleHeroProject}
                 >
-                  PROJECT
+                  MISSION
                 </GradientText>
                 <GradientText
                   colors={["#ffffff", "#8bbaff", "#3794f8ff"]}
@@ -121,12 +121,12 @@ export default function Landing() {
               {/* Subtitle & Description */}
               <h2 className={styles.heroSubtitle}>Forge what's next. Ship live.</h2>
               <p className={styles.heroDesc}>
-                The premier high-intensity hackathon where software architects, AI engineers, and product builders collaborate to solve real-world industry challenges.
+                The premier high-intensity hackathon where software architects, engineers, and product builders collaborate to solve real-world industry challenges. Win Exciting Prizes!
               </p>
 
               {/* Meta Line */}
               <div className={styles.heroMetaLine}>
-                SEPTEMBER 3rd, 2026 &nbsp;•&nbsp; HYBRID &nbsp;
+                AUGUST 20th to SEPTEMBER 3rd, 2026 &nbsp;•&nbsp; HYBRID &nbsp;•&nbsp; 3 ROUNDS
               </div>
 
               {/* Action Buttons */}
@@ -211,7 +211,7 @@ export default function Landing() {
           </div>
         </motion.section>
 
-        {/* 
+
         {/* ── PROBLEM STATEMENTS ────────────────────────────────────────────── *
         <motion.section
           id="problem-statements"
@@ -275,7 +275,7 @@ export default function Landing() {
               ))}
             </motion.div>
           </div>
-        </motion.section> */}
+        </motion.section>*/}
 
         {/* ── ROADMAP / EVENT FLOW ───────────────────────────────────────────── */}
         <motion.section
@@ -289,9 +289,9 @@ export default function Landing() {
           <div className="container">
             {/* Centered Heading */}
             <div className={styles.tracksHeaderCentered}>
-              <p className={styles.eyebrowBlue}>ROAD TO PROJECT CRUCIBLE</p>
+              <p className={styles.eyebrowBlue}>ROAD TO MISSION CRUCIBLE</p>
               <h2 className={styles.tracksTitle}>
-                One challenge. <span>Nine milestones.</span>
+                One challenge. <span>Many milestones.</span>
               </h2>
             </div>
 
@@ -299,7 +299,6 @@ export default function Landing() {
             <div className={styles.milestoneRowTop}>
               {/* Connected Line and Badges */}
               <div className={styles.milestoneLineHeader}>
-                <div className={styles.horizontalLine} />
                 {[
                   { num: '01', active: true },
                   { num: '02', active: false },
@@ -325,8 +324,8 @@ export default function Landing() {
                     <span className={styles.statusMuted}>ONGOING</span>
                     <span className={styles.statusPillActive}>ACTIVE</span>
                   </div>
-                  <h3>Registrations Ongoing</h3>
-                  <p>Register via Devfolio to secure your spot in Infinity Hacks 2026.</p>
+                  <h3>Registrations OPEN</h3>
+                  <p>Register via this website to secure your spot in Mission Crucible Hackathon 2026.</p>
                 </div>
 
                 {/* 02: Problem Statement Release */}
@@ -395,14 +394,14 @@ export default function Landing() {
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>8:00 AM</div>
                   <h3>Registration Begins</h3>
-                  <p>Entry for offline hackathon begins</p>
+                  <p>Entry for offline hackathon begins. Please be on time.</p>
                 </div>
 
                 {/* 08: Inauguration */}
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>8:30 AM</div>
                   <h3>Inuguration Ceremony</h3>
-                  <p>A short inauguration ceremony.</p>
+                  <p>A short ceremony to declare the hackathon open.</p>
                 </div>
 
                 {/* 09: Coding Begins */}
@@ -443,7 +442,7 @@ export default function Landing() {
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>1:00 PM</div>
                   <h3>Lunch</h3>
-                  <p></p>
+                  <p>Lunch will be served to all participants</p>
                 </div>
 
                 {/* 12: Result of Judging 1 */}
@@ -457,14 +456,14 @@ export default function Landing() {
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>3:00 PM</div>
                   <h3>Judging Round 2</h3>
-                  <p>In hall on-stage in front of full judging panel.</p>
+                  <p>Present the final product on-stage in front of the full judging panel and audience.</p>
                 </div>
 
                 {/* 14 : Valedictory Ceremony */}
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
                   <div className={styles.dateLabelGreen}>5:00 PM</div>
                   <h3>Valedictory Ceremony</h3>
-                  <p>Winners' Felicitation.</p>
+                  <p>Felicitation of the winners and closing of the event.</p>
                 </div>
               </div>
             </div>
@@ -507,8 +506,10 @@ export default function Landing() {
                   glareSize={250}
                   transitionDuration={600}
                 >
-                  <div className={styles.valueBadge}>✦</div>
-                  <h3>{title}</h3>
+                  <div className={styles.valueHeader}>
+                    <div className={styles.valueBadge}>✦</div>
+                    <h3>{title}</h3>
+                  </div>
                   <p>{text}</p>
                 </MotionGlareHover>
               ))}
@@ -597,8 +598,10 @@ export default function Landing() {
                   glareSize={250}
                   transitionDuration={600}
                 >
-                  <span>0{index + 1}</span>
-                  <h3>{reward.title}</h3>
+                  <div className={styles.valueHeader}>
+                    <span>0{index + 1}</span>
+                    <h3>{reward.title}</h3>
+                  </div>
                   <p>{reward.text}</p>
                 </MotionGlareHover>
               ))}

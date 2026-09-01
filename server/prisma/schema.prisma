@@ -17,13 +17,14 @@ model Team {
   id                   String   @id @default(cuid())
   name                 String
   join_code            String   @unique
-  theme_track          String
-  problem_statement_id String
-  problem_statement    String   @db.Text
+  theme_track          String   @default("")
+  problem_statement_id String   @default("")
+  problem_statement    String   @default("") @db.Text
   lead_email           String   @unique
   phone                String
   college              String
   year                 String
+  dept                 String   @default("")
   created_at           DateTime @default(now())
 
   members     TeamMember[]
@@ -41,6 +42,9 @@ model TeamMember {
   email     String
   phone     String   @default("")
   role      TeamRole @default(member)
+  custom_role String @default("")
+  year      String   @default("")
+  dept      String   @default("")
   joined_at DateTime @default(now())
 
   team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)

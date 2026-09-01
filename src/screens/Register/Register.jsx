@@ -49,17 +49,16 @@ export default function Register() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       teamName: '',
-      problemStatementId: '',
-      problemStatement: '',
-      teamSize: 2,
+      teamSize: 3,
       leadName: '',
       leadEmail: '',
       leadPhone: '',
       college: '',
       year: '1st Year',
+      dept: '',
       members: [
-        { name: '', email: '', phone: '', role: 'Developer' },
-        { name: '', email: '', phone: '', role: 'Designer' },
+        { name: '', email: '', phone: '', role: 'Developer', year: '1st Year', dept: '' },
+        { name: '', email: '', phone: '', role: 'Designer', year: '1st Year', dept: '' },
       ],
     },
   });
@@ -75,8 +74,8 @@ export default function Register() {
 
   const goNext = async () => {
     let valid = false;
-    if (step === 0) valid = await form.trigger(['teamName', 'problemStatementId', 'problemStatement', 'teamSize']);
-    else if (step === 1) valid = await form.trigger(['leadName', 'leadEmail', 'leadPhone', 'college', 'year']);
+    if (step === 0) valid = await form.trigger(['teamName', 'teamSize']);
+    else if (step === 1) valid = await form.trigger(['leadName', 'leadEmail', 'leadPhone', 'college', 'year', 'dept']);
     else if (step === 2) valid = await form.trigger('members');
     if (valid) { setDir(1); setStep((v) => Math.min(v + 1, steps.length - 1)); }
   };
@@ -85,8 +84,10 @@ export default function Register() {
 
   const addMember = () => {
     const members = form.getValues('members') || [];
-    if (members.length >= 4) return;
-    form.setValue('members', [...members, { name: '', email: '', phone: '', role: '' }]);
+    const teamSize = Number(form.getValues('teamSize')) || 4;
+    // max additional members = teamSize - 1 (since lead is member 1), capped at 3 additional members
+    if (members.length >= Math.min(teamSize - 1, 3)) return;
+    form.setValue('members', [...members, { name: '', email: '', phone: '', role: '', year: '1st Year', dept: '' }]);
   };
 
   const removeMember = (index) => {
@@ -163,7 +164,7 @@ export default function Register() {
         <motion.div className={styles.card} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
           {/* Header */}
           <div className={styles.cardHeader}>
-            <p className={styles.eyebrow}>JOIN PROJECT CRUCIBLE</p>
+            <p className={styles.eyebrow}>JOIN MISSION CRUCIBLE</p>
             <h2 className={styles.cardTitle}>{steps[step]}</h2>
           </div>
 
@@ -201,18 +202,8 @@ export default function Register() {
                         {form.formState.errors.teamName && <small>{form.formState.errors.teamName.message}</small>}
                       </div>
                       <div className={styles.field}>
-                        <label>Problem Statement ID</label>
-                        <input {...form.register('problemStatementId')} placeholder="e.g. PS-01" />
-                        {form.formState.errors.problemStatementId && <small>{form.formState.errors.problemStatementId.message}</small>}
-                      </div>
-                      <div className={styles.field}>
-                        <label>Problem Statement</label>
-                        <textarea {...form.register('problemStatement')} placeholder="Enter your problem statement here..." rows={3} />
-                        {form.formState.errors.problemStatement && <small>{form.formState.errors.problemStatement.message}</small>}
-                      </div>
-                      <div className={styles.field}>
-                        <label>Team Size <span className={styles.hint}>(2–4 members)</span></label>
-                        <input type="number" min="2" max="4" {...form.register('teamSize')} />
+                        <label>Team Size <span className={styles.hint}>(3-4 members)</span></label>
+                        <input type="number" min="3" max="4" {...form.register('teamSize')} />
                         {form.formState.errors.teamSize && <small>{form.formState.errors.teamSize.message}</small>}
                       </div>
                       {/* Cloudflare Turnstile CAPTCHA */}
@@ -223,7 +214,7 @@ export default function Register() {
                           data-callback={(token) => setTurnstileToken(token)}
                           data-theme="dark"
                         />
-                        <small style={{ color: '#506080' }}>Human verification required before submission.</small>
+                        <small style={{ color: '#506080' }}>Verification your details before submission.</small>
                       </div>
                     </>
                   )}
@@ -243,14 +234,14 @@ export default function Register() {
                         </div>
                         <div className={styles.field}>
                           <label>Phone</label>
-                          <input {...form.register('leadPhone')} placeholder="+91 98765 43210" />
+                          <input {...form.register('leadPhone')} placeholder="9876543210" />
                           {form.formState.errors.leadPhone && <small>{form.formState.errors.leadPhone.message}</small>}
                         </div>
                       </div>
                       <div className={styles.splitFields}>
                         <div className={styles.field}>
                           <label>College</label>
-                          <input {...form.register('college')} placeholder="MIT WPU" />
+                          <input {...form.register('college')} placeholder="Xavier Institute of Engineering" />
                           {form.formState.errors.college && <small>{form.formState.errors.college.message}</small>}
                         </div>
                         <div className={styles.field}>
@@ -258,6 +249,11 @@ export default function Register() {
                           <select {...form.register('year')}>
                             {['1st Year', '2nd Year', '3rd Year', '4th Year'].map((y) => <option key={y}>{y}</option>)}
                           </select>
+                        </div>
+                        <div className={styles.field}>
+                          <label>Dept</label>
+                          <input {...form.register('dept')} placeholder="IT" />
+                          {form.formState.errors.dept && <small>{form.formState.errors.dept.message}</small>}
                         </div>
                       </div>
                     </>
@@ -281,6 +277,9 @@ export default function Register() {
                             <div className={styles.field}>
                               <label>Name</label>
                               <input {...form.register(`members.${index}.name`)} placeholder="Full name" />
+                              {form.formState.errors.members?.[index]?.name && (
+                                <small>{form.formState.errors.members[index].name.message}</small>
+                              )}
                             </div>
                             <div className={styles.field}>
                               <label>Role</label>
@@ -291,10 +290,31 @@ export default function Register() {
                             <div className={styles.field}>
                               <label>Email</label>
                               <input {...form.register(`members.${index}.email`)} placeholder="email@example.com" />
+                              {form.formState.errors.members?.[index]?.email && (
+                                <small>{form.formState.errors.members[index].email.message}</small>
+                              )}
                             </div>
                             <div className={styles.field}>
                               <label>Phone</label>
-                              <input {...form.register(`members.${index}.phone`)} placeholder="+91 ..." />
+                              <input {...form.register(`members.${index}.phone`)} placeholder="1234567890" />
+                              {form.formState.errors.members?.[index]?.phone && (
+                                <small>{form.formState.errors.members[index].phone.message}</small>
+                              )}
+                            </div>
+                          </div>
+                          <div className={styles.splitFields}>
+                            <div className={styles.field}>
+                              <label>Year</label>
+                              <select {...form.register(`members.${index}.year`)}>
+                                {['1st Year', '2nd Year', '3rd Year', '4th Year'].map((y) => <option key={y}>{y}</option>)}
+                              </select>
+                            </div>
+                            <div className={styles.field}>
+                              <label>Dept</label>
+                              <input {...form.register(`members.${index}.dept`)} placeholder="IT" />
+                              {form.formState.errors.members?.[index]?.dept && (
+                                <small>{form.formState.errors.members[index].dept.message}</small>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -308,12 +328,13 @@ export default function Register() {
                       <div className={styles.reviewGrid}>
                         {[
                           { label: 'Team Name', value: form.watch('teamName') },
-                          { label: 'PS ID', value: form.watch('problemStatementId') },
-                          { label: 'Problem Statement', value: form.watch('problemStatement') },
-                          { label: 'Lead', value: form.watch('leadName') },
+                          { label: 'Team Size', value: form.watch('teamSize') },
+                          { label: 'Lead Name', value: form.watch('leadName') },
                           { label: 'College', value: form.watch('college') },
                           { label: 'Email', value: form.watch('leadEmail') },
+                          { label: 'Phone', value: form.watch('leadPhone') },
                           { label: 'Year', value: form.watch('year') },
+                          { label: 'Dept', value: form.watch('dept') }
                         ].map(({ label, value }) => (
                           <div key={label} className={styles.reviewCell}>
                             <span>{label}</span>
@@ -325,8 +346,13 @@ export default function Register() {
                         <p className={styles.reviewMembersLabel}>MEMBERS</p>
                         {(form.watch('members') || []).map((m, i) => (
                           <div key={i} className={styles.reviewMemberRow}>
-                            <span>{m.name || `Member ${i + 1}`}</span>
-                            <span>{m.role}</span>
+                            <div>
+                              <strong>{m.name || `Member ${i + 1}`}</strong>
+                              {m.role && <span style={{ marginLeft: 8, opacity: 0.7 }}>({m.role})</span>}
+                              <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '2px' }}>
+                                {m.email || 'No email'} · {m.phone || 'No phone'} · {m.dept || 'No dept'} · {m.year || '1st Year'}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>

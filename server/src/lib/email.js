@@ -84,7 +84,7 @@ async function sendCredentialEmail({ to, teamName, teamId, joinCode, tempPasswor
     </div>
     <div class="footer">
       CSI Student Chapter · Xavier Institute of Engineering · Hackathon 2026<br/>
-      You're receiving this because you registered at Project Crucible.
+      You're receiving this because you registered at Mission Crucible.
     </div>
   </div>
 </body>
