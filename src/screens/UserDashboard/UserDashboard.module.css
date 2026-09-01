@@ -478,8 +478,8 @@
 }
 
 .modalScrollBody::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 999px;
+  background: transparent;
+  margin: 12px 0;
 }
 
 .modalScrollBody::-webkit-scrollbar-thumb {
