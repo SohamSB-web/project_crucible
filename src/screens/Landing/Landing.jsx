@@ -31,9 +31,9 @@ const rewards = [
 ];
 
 const sponsorData = [
-  { name: 'HackerRank',    tier: 'TITLE SPONSOR',    tierClass: 'tierGreen',  bg: '#1a5c35', letters: 'H≡' },
-  { name: 'CodeCrafters', tier: 'SPONSOR',           tierClass: 'tierOrange', bg: '#7a2d00', letters: '/\\' },
-  { name: 'Devfolio',     tier: 'PLATFORM PARTNER',  tierClass: 'tierBlue',   bg: '#1a237e', letters: 'D▶' },
+  { name: 'HackerRank', tier: 'TITLE SPONSOR', tierClass: 'tierGreen', bg: '#1a5c35', letters: 'H≡' },
+  { name: 'CodeCrafters', tier: 'SPONSOR', tierClass: 'tierOrange', bg: '#7a2d00', letters: '/\\' },
+  { name: 'Devfolio', tier: 'PLATFORM PARTNER', tierClass: 'tierBlue', bg: '#1a237e', letters: 'D▶' },
 ];
 
 const stats = [
@@ -65,12 +65,12 @@ export default function Landing() {
   const [selectedTrack, setSelectedTrack] = useState(null);
 
   // ── Parallax refs ────────────────────────────────────────────────────────
-  const hero          = useParallax(80);   // hero visual drifts up
-  const orbit         = useParallax(50);   // decorative orbit ring – slower
+  const hero = useParallax(80);   // hero visual drifts up
+  const orbit = useParallax(50);   // decorative orbit ring – slower
   const tracksHeading = useParallax(40);
-  const statsSection  = useParallax(50);
+  const statsSection = useParallax(50);
   const rewardsHeading = useParallax(40);
-  const faqHeading    = useParallax(30);
+  const faqHeading = useParallax(30);
 
   useEffect(() => {
     const id = location.hash.replace('#', '');
@@ -126,7 +126,7 @@ export default function Landing() {
 
               {/* Meta Line */}
               <div className={styles.heroMetaLine}>
-                SEPTEMBER 18-20, 2026 &nbsp;•&nbsp; HYBRID &nbsp;•&nbsp; 2,000+ BUILDERS
+                SEPTEMBER 3rd, 2026 &nbsp;•&nbsp; HYBRID &nbsp;
               </div>
 
               {/* Action Buttons */}
@@ -162,13 +162,57 @@ export default function Landing() {
 
               {/* Digital Countdown Timer */}
               <div className={styles.countdownContainer}>
-                <CountdownTimer targetDate="2026-09-18T18:00:00Z" />
+                <CountdownTimer targetDate="2026-10-03T18:00:00Z" />
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* ── PROBLEM STATEMENTS ────────────────────────────────────────────── */}
+
+        {/* ── SPONSORS ──────────────────────────────────────────────────────── */}
+        <motion.section
+          className="section"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={sectionVariants}
+        >
+          <div className="container">
+            <div className={styles.sponsorsHeader}>
+              <p className={styles.sponsorsEyebrow}>BACKED BY THE BEST</p>
+              <h2 className={styles.sponsorsTitle}>Our <span>Sponsors</span></h2>
+            </div>
+            <motion.div
+              className={styles.sponsorCardsRow}
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+            >
+              {sponsorData.map((sponsor) => (
+                <MotionGlareHover
+                  key={sponsor.name}
+                  className={styles.sponsorCard}
+                  variants={cardReveal}
+                  whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
+                  glareColor="#ffffff"
+                  glareOpacity={0.15}
+                  glareSize={250}
+                  transitionDuration={600}
+                >
+                  <div className={styles.sponsorLogoBox} style={{ background: sponsor.bg }}>
+                    {sponsor.letters}
+                  </div>
+                  <h3 className={styles.sponsorName}>{sponsor.name}</h3>
+                  <p className={`${styles.sponsorTier} ${styles[sponsor.tierClass]}`}>{sponsor.tier}</p>
+                </MotionGlareHover>
+              ))}
+            </motion.div>
+          </div>
+        </motion.section>
+
+        {/* 
+        {/* ── PROBLEM STATEMENTS ────────────────────────────────────────────── *
         <motion.section
           id="problem-statements"
           className="section"
@@ -231,7 +275,7 @@ export default function Landing() {
               ))}
             </motion.div>
           </div>
-        </motion.section>
+        </motion.section> */}
 
         {/* ── ROADMAP / EVENT FLOW ───────────────────────────────────────────── */}
         <motion.section
@@ -251,17 +295,18 @@ export default function Landing() {
               </h2>
             </div>
 
-            {/* Top Row: Milestones 01 to 05 */}
+            {/* Top Row: Milestones 01 to 06 */}
             <div className={styles.milestoneRowTop}>
               {/* Connected Line and Badges */}
               <div className={styles.milestoneLineHeader}>
                 <div className={styles.horizontalLine} />
                 {[
                   { num: '01', active: true },
-                  { num: '02', active: true },
-                  { num: '03', active: true },
-                  { num: '04', active: true },
+                  { num: '02', active: false },
+                  { num: '03', active: false },
+                  { num: '04', active: false },
                   { num: '05', active: false },
+                  { num: '06', active: false },
                 ].map((b) => (
                   <div
                     key={b.num}
@@ -284,36 +329,44 @@ export default function Landing() {
                   <p>Register via Devfolio to secure your spot in Infinity Hacks 2026.</p>
                 </div>
 
-                {/* 02: Registration Deadline */}
+                {/* 02: Problem Statement Release */}
                 <div className={`${styles.milestoneCard} ${styles.cardLightGreen}`}>
-                  <div className={styles.dateLabelDark}>5 AUG</div>
-                  <div className={styles.dateSubtextDark}>5 August (Wednesday)</div>
+                  <div className={styles.dateLabelDark}>20 SEPT</div>
+                  <div className={styles.dateSubtextDark}></div>
+                  <h3>Problem Statement Release</h3>
+                  <p>The PS for PPT round are released and PPT submissions are live.</p>
+                </div>
+
+                {/* 03: Registration Deadline */}
+                <div className={`${styles.milestoneCard} ${styles.cardLightGreen}`}>
+                  <div className={styles.dateLabelDark}>26 SEPT</div>
+                  <div className={styles.dateSubtextDark}></div>
                   <h3>Registration Deadline</h3>
-                  <p>Last date to register for Infinity Hacks 2026.</p>
+                  <p>Last date to register for Mission Crucible hackathon 2026.</p>
                 </div>
 
-                {/* 03: Team Formation Deadline */}
+                {/* 04: PPT & SOP Submission Deadline */}
                 <div className={`${styles.milestoneCard} ${styles.cardLightGreen}`}>
-                  <div className={styles.dateLabelDark}>6 AUG</div>
-                  <div className={styles.dateSubtextDark}>6 August (Thursday)</div>
-                  <h3>Team Formation Deadline</h3>
-                  <p>Finalize your team of 3–5 members before this date.</p>
-                </div>
-
-                {/* 04: PPT & SOP Submission */}
-                <div className={`${styles.milestoneCard} ${styles.cardLightGreen}`}>
-                  <div className={styles.dateLabelDark}>11 AUG</div>
-                  <div className={styles.dateSubtextDark}>11 August 2026 (11:59 PM)</div>
+                  <div className={styles.dateLabelDark}>27 SEPT</div>
+                  <div className={styles.dateSubtextDark}></div>
                   <h3>PPT & SOP Submission Deadline</h3>
-                  <p>Submit your Project Presentation (PPT) and SOP for the qualifier round.</p>
+                  <p>Last date to Submit your Project Presentation (PPT) and SOP for the qualifier round.</p>
                 </div>
 
                 {/* 05: Shortlisting */}
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>14 AUG</div>
-                  <div className={styles.dateSubtextGreen}>By 14 August</div>
+                  <div className={styles.dateLabelGreen}>30 SEPT</div>
+                  <div className={styles.dateSubtextGreen}></div>
                   <h3>Shortlisting</h3>
-                  <p>Shortlisted teams based on pitch deck will be released max by 14th.</p>
+                  <p>Shortlisted teams based on pitch deck will be released.</p>
+                </div>
+
+                {/* 06: Final Registration */}
+                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                  <div className={styles.dateLabelGreen}>2 OCT</div>
+                  <div className={styles.dateSubtextGreen}></div>
+                  <h3>Final Registration</h3>
+                  <p>Shortlisted teams based have to pay and complete register for final round.</p>
                 </div>
               </div>
             </div>
@@ -321,7 +374,7 @@ export default function Landing() {
             {/* Divider Label */}
             <div className={styles.dividerLabelContainer}>
               <div className={styles.dividerLine} />
-              <span className={styles.dividerText}>HACKATHON DAY</span>
+              <span className={styles.dividerText}>HACKATHON DAY <b>(SATURDAY,  03 OCTOBER 2026)</b></span>
               <div className={styles.dividerLine} />
             </div>
 
@@ -329,7 +382,7 @@ export default function Landing() {
             <div className={styles.milestoneRowBottom}>
               {/* Badges Header */}
               <div className={styles.milestoneLineHeaderBottom}>
-                {['06', '07', '08', '09'].map((num) => (
+                {['07', '08', '09', '10'].map((num) => (
                   <div key={num} className={styles.milestoneBadgeCircle}>
                     {num}
                   </div>
@@ -338,36 +391,80 @@ export default function Landing() {
 
               {/* Cards Grid Bottom */}
               <div className={styles.milestoneGridBottom}>
-                {/* 06: Hackathon Begins */}
+                {/* 07: Hackathon Begins */}
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>15 AUG</div>
-                  <div className={styles.dateSubtextGreen}>15 August (Saturday)<br />10:00 AM IST</div>
-                  <h3>Hackathon Begins 🚀</h3>
-                  <p>Mentoring round in evening. 24 hours of building, innovation and collaboration.</p>
+                  <div className={styles.dateLabelGreen}>8:00 AM</div>
+                  <h3>Registration Begins</h3>
+                  <p>Entry for offline hackathon begins</p>
                 </div>
 
-                {/* 07: Project Judging */}
+                {/* 08: Inauguration */}
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>16 AUG</div>
-                  <div className={styles.dateSubtextGreen}>16 August (Sunday)<br />10:00 AM - 12:00 PM</div>
-                  <h3>Project Judging</h3>
-                  <p>Top shortlisted teams will be reviewed before the final decision.</p>
+                  <div className={styles.dateLabelGreen}>8:30 AM</div>
+                  <h3>Inuguration Ceremony</h3>
+                  <p>A short inauguration ceremony.</p>
                 </div>
 
-                {/* 08: Final Jury Deliberation */}
+                {/* 09: Coding Begins */}
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>16 AUG</div>
-                  <div className={styles.dateSubtextGreen}>16 August (Sunday)<br />1:00 PM</div>
-                  <h3>Final Jury Deliberation</h3>
-                  <p>Final discussion round between judges of top 5/8 shortlisted teams.</p>
+                  <div className={styles.dateLabelGreen}>9:00 AM</div>
+                  <h3>Coding Begins</h3>
+                  <p>Labs will be allotted and participants can work on their projects.</p>
                 </div>
 
-                {/* 09: Results Announcement */}
+                {/* 10: Judging Round 1 */}
                 <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>16 AUG</div>
-                  <div className={styles.dateSubtextGreen}>16 August (Sunday)<br />EVENING</div>
-                  <h3>Results Announcement</h3>
-                  <p>One journey ends. Hundreds of impactful ideas begin.</p>
+                  <div className={styles.dateLabelGreen}>11:00 AM</div>
+                  <h3>Judging Round 1</h3>
+                  <p>Panel of judges will judge the product and shortlist teams for final round</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Divider Label */}
+            <div className={styles.dividerLabelContainer}>
+              <div className={styles.dividerLine} />
+            </div>
+
+            {/* Bottom Row: Milestones 11 to 14*/}
+            <div className={styles.milestoneRowBottom}>
+              {/* Badges Header */}
+              <div className={styles.milestoneLineHeaderBottom}>
+                {['11', '12', '13', '14'].map((num) => (
+                  <div key={num} className={styles.milestoneBadgeCircle}>
+                    {num}
+                  </div>
+                ))}
+              </div>
+
+              {/* Cards Grid Bottom */}
+              <div className={styles.milestoneGridBottom}>
+                {/* 11: Lunch */}
+                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                  <div className={styles.dateLabelGreen}>1:00 PM</div>
+                  <h3>Lunch</h3>
+                  <p></p>
+                </div>
+
+                {/* 12: Result of Judging 1 */}
+                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                  <div className={styles.dateLabelGreen}>2:00 PM</div>
+                  <h3>Results of Judging Round 1</h3>
+                  <p>The final Shortlisted teams will be announced</p>
+                </div>
+
+                {/* 13: Judging Round 2 */}
+                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                  <div className={styles.dateLabelGreen}>3:00 PM</div>
+                  <h3>Judging Round 2</h3>
+                  <p>In hall on-stage in front of full judging panel.</p>
+                </div>
+
+                {/* 14 : Valedictory Ceremony */}
+                <div className={`${styles.milestoneCard} ${styles.cardDark}`}>
+                  <div className={styles.dateLabelGreen}>5:00 PM</div>
+                  <h3>Valedictory Ceremony</h3>
+                  <p>Winners' Felicitation.</p>
                 </div>
               </div>
             </div>
@@ -596,21 +693,22 @@ export default function Landing() {
 
             <div className={styles.contactLayout}>
               {/* Left – channel cards */}
-              <div className={styles.contactChannels}>
+              <a href="https://www.linkedin.com/company/xie-csi/" className={`${styles.channelLink} ${styles.linkBlue}`}>
                 <MotionGlareHover className={styles.channelCard} whileHover={{ y: -4, transition: { duration: 0.2 } }} glareColor="#ffffff" glareOpacity={0.15}>
-                  <div className={`${styles.channelIconWrap} ${styles.iconGreen}`}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.555 4.12 1.526 5.849L0 24l6.335-1.509A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" />
+                  <div className={`${styles.channelIconWrap} ${styles.iconBlue}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-linkedin" viewBox="0 0 16 16">
+                      <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z" />
                     </svg>
                   </div>
                   <div className={styles.channelInfo}>
-                    <h3>WhatsApp Channel</h3>
-                    <p>Get instant updates, announcements, and important alerts directly on your phone.</p>
-                    <a href="#" className={`${styles.channelLink} ${styles.linkGreen}`}>Join Channel →</a>
+                    <h3>LinkedIn</h3>
+                    <p>Get activity details, connections, and announcements.</p>
+                    <p>Follow on LinkedIn →</p>
                   </div>
                 </MotionGlareHover>
+              </a>
 
+              <a href="https://www.instagram.com/xie.csi" className={`${styles.channelLink} ${styles.linkPink}`}>
                 <MotionGlareHover className={styles.channelCard} whileHover={{ y: -4, transition: { duration: 0.2 } }} glareColor="#ffffff" glareOpacity={0.15}>
                   <div className={`${styles.channelIconWrap} ${styles.iconPink}`}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -620,10 +718,12 @@ export default function Landing() {
                   <div className={styles.channelInfo}>
                     <h3>Instagram</h3>
                     <p>Get real-time updates, behind-the-scenes content, and announcements.</p>
-                    <a href="#" className={`${styles.channelLink} ${styles.linkPink}`}>Follow on Instagram →</a>
+                    <p className={`${styles.linkPink}`}>Follow on Instagram →</p>
                   </div>
                 </MotionGlareHover>
+              </a>
 
+              <a href="mailto:admincsi26@gmail.com" className={`${styles.channelLink} ${styles.linkWhite}`}>
                 <MotionGlareHover className={styles.channelCard} whileHover={{ y: -4, transition: { duration: 0.2 } }} glareColor="#ffffff" glareOpacity={0.15}>
                   <div className={`${styles.channelIconWrap} ${styles.iconWhite}`}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -634,85 +734,11 @@ export default function Landing() {
                   <div className={styles.channelInfo}>
                     <h3>Email Us</h3>
                     <p>For formal queries, sponsorships, and partnership opportunities.</p>
-                    <a href="mailto:hackerrankcampuscrew@gmail.com" className={`${styles.channelLink} ${styles.linkWhite}`}>
-                      hackerrankcampuscrew@gmail.com →
-                    </a>
+                    <p>admincsi26@gmail.com →</p>
                   </div>
                 </MotionGlareHover>
-              </div>
-
-              {/* Right – send a message form */}
-              <MotionGlareHover
-                className={styles.contactFormCard}
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                glareColor="#ffffff"
-                glareOpacity={0.15}
-              >
-                <form onSubmit={(e) => { e.preventDefault(); alert('Message queued.'); }} style={{ display: 'contents' }}>
-                  <h3 className={styles.formTitle}>Send a Message</h3>
-                  <div className={styles.formField}>
-                    <label>NAME</label>
-                    <input type="text" placeholder="John Doe" />
-                  </div>
-                  <div className={styles.formField}>
-                    <label>EMAIL</label>
-                    <input type="email" placeholder="john@example.com" />
-                  </div>
-                  <div className={styles.formField}>
-                    <label>MESSAGE</label>
-                    <textarea rows="4" placeholder="How can we help you?" />
-                  </div>
-                  <button type="submit" className={styles.formSubmitBtn}>
-                    Send Message →
-                  </button>
-                </form>
-              </MotionGlareHover>
+              </a>
             </div>
-          </div>
-        </motion.section>
-
-        {/* ── SPONSORS ──────────────────────────────────────────────────────── */}
-        <motion.section
-          className="section"
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={sectionVariants}
-        >
-          <div className="container">
-            <div className={styles.sponsorsHeader}>
-              <p className={styles.sponsorsEyebrow}>BACKED BY THE BEST</p>
-              <h2 className={styles.sponsorsTitle}>Our <span>Sponsors</span></h2>
-            </div>
-            <motion.div
-              className={styles.sponsorCardsRow}
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              {sponsorData.map((sponsor) => (
-                <MotionGlareHover
-                  key={sponsor.name}
-                  className={styles.sponsorCard}
-                  variants={cardReveal}
-                  whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
-                  glareColor="#ffffff"
-                  glareOpacity={0.15}
-                  glareSize={250}
-                  transitionDuration={600}
-                >
-                  <div className={styles.sponsorLogoBox} style={{ background: sponsor.bg }}>
-                    {sponsor.letters}
-                  </div>
-                  <h3 className={styles.sponsorName}>{sponsor.name}</h3>
-                  <p className={`${styles.sponsorTier} ${styles[sponsor.tierClass]}`}>{sponsor.tier}</p>
-                </MotionGlareHover>
-              ))}
-            </motion.div>
           </div>
         </motion.section>
 
