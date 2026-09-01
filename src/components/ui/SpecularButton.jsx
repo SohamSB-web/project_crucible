@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { motion, useSpring } from 'framer-motion';
 import { Renderer, Program, Mesh, Triangle, Color } from 'ogl';
 import './SpecularButton.css';
 
@@ -221,14 +222,39 @@ const SpecularButton = ({
     };
   }, []);
 
+  const springX = useSpring(0, { stiffness: 140, damping: 14 });
+  const springY = useSpring(0, { stiffness: 140, damping: 14 });
+
+  const handleMouseMove = (e) => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const offsetX = e.clientX - (rect.left + rect.width / 2);
+    const offsetY = e.clientY - (rect.top + rect.height / 2);
+    const maxOffset = 12;
+    const x = Math.max(Math.min(offsetX / (rect.width * 1.2), 1), -1) * maxOffset;
+    const y = Math.max(Math.min(offsetY / (rect.height * 1.2), 1), -1) * maxOffset;
+    springX.set(x);
+    springY.set(y);
+  };
+
+  const handleMouseLeave = () => {
+    springX.set(0);
+    springY.set(0);
+  };
+
   return (
-    <button
+    <motion.button
       ref={btnRef}
       type={type}
       disabled={disabled}
       onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       className={`specular-button specular-button--${size}${className ? ` ${className}` : ''}`}
       style={{
+        x: springX,
+        y: springY,
         '--sb-radius': `${radius}px`,
         '--sb-tint': tint,
         '--sb-tint-opacity': tintOpacity,
@@ -236,10 +262,12 @@ const SpecularButton = ({
         '--sb-text-color': textColor,
         color: textColor,
       }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
     >
       <span ref={fxRef} className="specular-button__fx" aria-hidden="true" />
       <span className="specular-button__label" style={{ color: textColor }}>{children}</span>
-    </button>
+    </motion.button>
   );
 };
 

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SpecularButton from '../../components/ui/SpecularButton';
 import { useAuth } from '../../context/AuthContext';
+import { useLenis } from '../../context/LenisContext.jsx';
 import {
   getHackathonSettings,
   getProblemStatements,
@@ -143,19 +144,21 @@ const Icons = {
   ),
 };
 
-const SqBtn = ({ children, onClick, type = 'button', lineColor = '#71a7ff', baseColor = 'rgba(20,32,52,0.85)', textColor = '#ffffff', danger = false, fullWidth = false }) => (
-  <button
-    type={type}
+const SqBtn = ({ children, onClick, type = 'button', lineColor = '#71a7ff', baseColor = '#142034', textColor = '#ffffff', danger = false, size = 'sm', fullWidth = false }) => (
+  <SpecularButton
+    size={size}
+    radius={10}
+    lineColor={danger ? '#ff6b75' : lineColor}
+    baseColor={danger ? '#2a1215' : baseColor}
+    textColor={danger ? '#ff6b75' : textColor}
+    intensity={1}
+    speed={0.35}
     onClick={onClick}
-    className={`${styles.sqBtn} ${danger ? styles.sqBtnDanger : ''} ${fullWidth ? styles.sqBtnFull : ''}`}
-    style={{
-      borderColor: danger ? 'rgba(255,107,117,0.5)' : lineColor,
-      background: danger ? 'rgba(42,18,21,0.85)' : baseColor,
-      color: danger ? '#ff6b75' : textColor,
-    }}
+    type={type}
+    className={fullWidth ? 'full-width' : ''}
   >
     {children}
-  </button>
+  </SpecularButton>
 );
 
 const NAV_TABS = [
@@ -205,6 +208,24 @@ export default function UserDashboard() {
     window.addEventListener('crucible_storage_update', handleSync);
     return () => window.removeEventListener('crucible_storage_update', handleSync);
   }, [teamId]);
+
+  const lenis = useLenis();
+
+  // Lock background body scroll & pause Lenis smooth scroll when any modal is open
+  const isAnyModalOpen = Boolean(showNotifModal || viewProblemModal || confirmSelectModal);
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      lenis?.stop();
+    } else {
+      document.body.style.overflow = '';
+      lenis?.start();
+    }
+    return () => {
+      document.body.style.overflow = '';
+      lenis?.start();
+    };
+  }, [isAnyModalOpen, lenis]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -690,8 +711,17 @@ export default function UserDashboard() {
 
       {/* Confirmation Modal for Problem Selection */}
       {confirmSelectModal && (
-        <div className={styles.modalBackdrop} onClick={() => setConfirmSelectModal(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setConfirmSelectModal(null)}
+          data-lenis-prevent="true"
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            data-lenis-prevent="true"
+          >
             <h2>Confirm Problem Selection</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
               Are you sure you want to select <strong>{confirmSelectModal.id} — {confirmSelectModal.title}</strong> as your official hackathon problem statement?
@@ -710,8 +740,17 @@ export default function UserDashboard() {
 
       {/* Problem View Modal */}
       {viewProblemModal && (
-        <div className={styles.modalBackdrop} onClick={() => setViewProblemModal(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setViewProblemModal(null)}
+          data-lenis-prevent="true"
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            data-lenis-prevent="true"
+          >
             <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontWeight: 700 }}>{viewProblemModal.id}</span>
             <h2>{viewProblemModal.title}</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{viewProblemModal.description}</p>
@@ -724,12 +763,35 @@ export default function UserDashboard() {
 
       {/* Notifications Modal */}
       {showNotifModal && (
-        <div className={styles.modalBackdrop} onClick={() => setShowNotifModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {Icons.bell} Notifications
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setShowNotifModal(false)}
+          data-lenis-prevent="true"
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            data-lenis-prevent="true"
+          >
+            <div className={styles.modalHeader}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, margin: 0, fontSize: '1.4rem' }}>
+                {Icons.bell} Notifications
+              </h2>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setShowNotifModal(false)}
+                aria-label="Close notifications"
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              className={styles.modalScrollBody}
+              data-lenis-prevent="true"
+              onWheel={(e) => e.stopPropagation()}
+            >
               {notifications.map((n) => (
                 <div
                   key={n.id}
@@ -749,7 +811,7 @@ export default function UserDashboard() {
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
               <SqBtn onClick={() => setShowNotifModal(false)}>Close</SqBtn>
             </div>
           </div>

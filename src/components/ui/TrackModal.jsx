@@ -1,27 +1,40 @@
 import { motion } from 'framer-motion';
 import { useEffect } from 'react';
+import { useLenis } from '../../context/LenisContext.jsx';
 import styles from './TrackModal.module.css';
 
 export default function TrackModal({ track, onClose }) {
+  const lenis = useLenis();
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     document.body.style.overflow = 'hidden';
+    lenis?.stop();
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      lenis?.start();
     };
-  }, [onClose]);
+  }, [onClose, lenis]);
 
   if (!track) return null;
 
   return (
-    <div className={styles.backdrop} onClick={onClose}>
+    <div
+      className={styles.backdrop}
+      onClick={onClose}
+      data-lenis-prevent="true"
+      onWheel={(e) => e.stopPropagation()}
+    >
       <motion.div
         className={styles.modal}
         onClick={(e) => e.stopPropagation()}
+        data-lenis-prevent="true"
+        onWheel={(e) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}

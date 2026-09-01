@@ -27,6 +27,24 @@
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+.modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
+}
+
+.modal::-webkit-scrollbar-thumb {
+  background: rgba(113, 167, 255, 0.4);
+  border-radius: 999px;
+}
+
+.modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 167, 255, 0.7);
+}
+
 .closeBtn {
   position: absolute;
   top: 24px;
