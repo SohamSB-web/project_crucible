@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   WINNERS: 'crucible_winners',
   USER_SELECTION: 'crucible_user_problem_selection',
   USER_SUBMISSION: 'crucible_user_submission_file',
+  USER_PAYMENT: 'crucible_user_payment_record',
   NOTIFICATIONS: 'crucible_notifications',
 };
 
@@ -109,10 +110,10 @@ export const DEFAULT_TEAMS = [
     leaderEmail: 'rahul.sharma@crucible.dev',
     problemId: 'PS002',
     problemTitle: 'Healthcare Innovation: AI Diagnostic Companion',
-    submitted: true,
-    submissionFile: 'Phoenix_AI_Diagnostic_Presentation.pdf',
-    submissionDate: '2026-08-15 14:30',
-    shortlisted: true,
+    submitted: false,
+    submissionFile: null,
+    submissionDate: null,
+    paymentStatus: 'Unpaid',
     members: [
       { name: 'Rahul Sharma', role: 'Team Leader', avatar: 'RS' },
       { name: 'Priya Verma', role: 'AI Researcher', avatar: 'PV' },
@@ -127,10 +128,11 @@ export const DEFAULT_TEAMS = [
     leaderEmail: 'ananya.patel@crucible.dev',
     problemId: 'PS001',
     problemTitle: 'Smart Campus: IoT & Energy Optimization',
-    submitted: true,
-    submissionFile: 'Nova_SmartCampus_Pitch.pdf',
-    submissionDate: '2026-08-15 16:10',
+    submitted: false,
+    submissionFile: null,
+    submissionDate: null,
     shortlisted: true,
+    paymentStatus: 'Unpaid',
     members: [
       { name: 'Ananya Patel', role: 'Team Leader', avatar: 'AP' },
       { name: 'Rohan Mehta', role: 'Embedded Systems Engineer', avatar: 'RM' },
@@ -148,6 +150,9 @@ export const DEFAULT_TEAMS = [
     submissionFile: null,
     submissionDate: null,
     shortlisted: false,
+    paymentStatus: 'Unpaid',
+    paymentTxnId: null,
+    paymentDate: null,
     members: [
       { name: 'Vikram Shah', role: 'Team Leader', avatar: 'VS' },
       { name: 'Devika Nair', role: 'Computer Vision Dev', avatar: 'DN' },
@@ -250,6 +255,13 @@ export function saveTeamsData(teams) {
   return teams;
 }
 
+export function updateTeamMembers(teamId, members) {
+  const teams = getTeamsData();
+  const updated = teams.map((t) => (t.id === teamId ? { ...t, members } : t));
+  saveTeamsData(updated);
+  return updated;
+}
+
 export function toggleTeamShortlist(teamId) {
   const teams = getTeamsData();
   const updated = teams.map((t) => (t.id === teamId ? { ...t, shortlisted: !t.shortlisted } : t));
@@ -334,4 +346,45 @@ export function markNotificationsRead() {
   const notifs = getNotifications().map((n) => ({ ...n, unread: false }));
   setItem(STORAGE_KEYS.NOTIFICATIONS, notifs);
   return notifs;
+}
+
+export function getUserPayment(teamId) {
+  const key = `${STORAGE_KEYS.USER_PAYMENT}_${teamId || 'default'}`;
+  return getItem(key, null);
+}
+
+export function saveUserPayment(teamId, paymentInfo) {
+  const key = `${STORAGE_KEYS.USER_PAYMENT}_${teamId || 'default'}`;
+  const paymentRecord = {
+    fileName: paymentInfo.fileName || 'Payment_Screenshot.png',
+    date: new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    status: 'Pending',
+  };
+  setItem(key, paymentRecord);
+
+  if (teamId) {
+    const teams = getTeamsData();
+    const updated = teams.map((t) =>
+      t.id === teamId
+        ? {
+            ...t,
+            paymentStatus: 'Pending',
+          }
+        : t,
+    );
+    saveTeamsData(updated);
+  }
+  return paymentRecord;
+}
+
+export function updateTeamPaymentStatus(teamId, status) {
+  const key = `${STORAGE_KEYS.USER_PAYMENT}_${teamId || 'default'}`;
+  const record = getUserPayment(teamId) || {};
+  record.status = status;
+  setItem(key, record);
+
+  const teams = getTeamsData();
+  const updated = teams.map((t) => (t.id === teamId ? { ...t, paymentStatus: status } : t));
+  saveTeamsData(updated);
+  return updated;
 }

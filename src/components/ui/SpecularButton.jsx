@@ -1,9 +1,11 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { motion, useSpring } from 'framer-motion';
 import { Renderer, Program, Mesh, Triangle, Color } from 'ogl';
 import './SpecularButton.css';
 
 const PAD = 20;
+let activeWebglCount = 0;
+const MAX_WEBGL_CONTEXTS = 12;
 
 const VERT = `#version 300 es
 in vec2 position;
@@ -89,6 +91,7 @@ const SpecularButton = ({
   const btnRef = useRef(null);
   const fxRef = useRef(null);
   const propsRef = useRef({});
+  const [webglActive, setWebglActive] = useState(false);
 
   propsRef.current = {
     radius, lineColor, baseColor, intensity, shineSize, shineFade,
@@ -96,17 +99,41 @@ const SpecularButton = ({
   };
 
   useEffect(() => {
+    if (activeWebglCount >= MAX_WEBGL_CONTEXTS) {
+      return;
+    }
+
     const btn = btnRef.current;
     const fx = fxRef.current;
     if (!btn || !fx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const renderer = new Renderer({ alpha: true, premultipliedAlpha: true, antialias: true, dpr });
-    const gl = renderer.gl;
-    if (!gl) return;
+    let renderer = null;
+    let gl = null;
+
+    try {
+      renderer = new Renderer({ alpha: true, premultipliedAlpha: true, antialias: true, dpr });
+      gl = renderer.gl;
+      if (!gl) return;
+    } catch (err) {
+      return;
+    }
+
+    activeWebglCount++;
+    setWebglActive(true);
+
     gl.clearColor(0, 0, 0, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+    const handleContextLost = (e) => {
+      e.preventDefault();
+      setWebglActive(false);
+      if (gl?.canvas && gl.canvas.parentNode === fx) {
+        try { fx.removeChild(gl.canvas); } catch (err) {}
+      }
+    };
+    gl.canvas.addEventListener('webglcontextlost', handleContextLost);
 
     const geometry = new Triangle(gl);
     if (geometry.attributes.uv) delete geometry.attributes.uv;
@@ -137,7 +164,7 @@ const SpecularButton = ({
     const resize = () => {
       const w = btn.offsetWidth;
       const h = btn.offsetHeight;
-      if (w === 0 || h === 0) return; // Skip if not laid out yet
+      if (w === 0 || h === 0) return;
       sizeRef.w = w;
       sizeRef.h = h;
       renderer.setSize(w + PAD * 2, h + PAD * 2);
@@ -146,7 +173,6 @@ const SpecularButton = ({
     };
     const ro = new ResizeObserver(resize);
     ro.observe(btn);
-    // Also re-trigger sizing when the button becomes visible in the viewport
     const io = new IntersectionObserver((entries) => {
       if (entries[0]?.isIntersecting) resize();
     }, { threshold: 0.1 });
@@ -217,8 +243,17 @@ const SpecularButton = ({
       ro.disconnect();
       io.disconnect();
       window.removeEventListener('pointermove', onPointerMove);
-      if (gl.canvas.parentNode === fx) fx.removeChild(gl.canvas);
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      if (gl?.canvas) {
+        gl.canvas.removeEventListener('webglcontextlost', handleContextLost);
+        if (gl.canvas.parentNode === fx) {
+          try { fx.removeChild(gl.canvas); } catch (err) {}
+        }
+        try {
+          gl.getExtension('WEBGL_lose_context')?.loseContext();
+        } catch (err) {}
+      }
+      activeWebglCount = Math.max(0, activeWebglCount - 1);
+      setWebglActive(false);
     };
   }, []);
 
@@ -243,6 +278,8 @@ const SpecularButton = ({
     springY.set(0);
   };
 
+  const isFallback = !webglActive;
+
   return (
     <motion.button
       ref={btnRef}
@@ -251,7 +288,7 @@ const SpecularButton = ({
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`specular-button specular-button--${size}${className ? ` ${className}` : ''}`}
+      className={`specular-button specular-button--${size}${isFallback ? ' specular-button--css-fallback' : ''}${className ? ` ${className}` : ''}`}
       style={{
         x: springX,
         y: springY,
@@ -260,6 +297,8 @@ const SpecularButton = ({
         '--sb-tint-opacity': tintOpacity,
         '--sb-blur': `${blur}px`,
         '--sb-text-color': textColor,
+        '--sb-line-color': lineColor,
+        '--sb-base-color': baseColor,
         color: textColor,
       }}
       whileHover={{ scale: 1.02 }}
@@ -272,3 +311,4 @@ const SpecularButton = ({
 };
 
 export default SpecularButton;
+

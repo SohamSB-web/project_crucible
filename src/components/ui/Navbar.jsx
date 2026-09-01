@@ -17,8 +17,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { scrollY } = useScroll();
-  const headerHeight = useTransform(scrollY, [0, 160], [88, 68]);
-  const blurValue = useTransform(scrollY, [0, 120], [18, 24]);
+  const headerHeight = useTransform(scrollY, [0, 160], [76, 68]);
+  const blurValue = useTransform(scrollY, [0, 120], [20, 28]);
 
   const [activeSection, setActiveSection] = useState('');
 
@@ -61,12 +61,15 @@ export default function Navbar() {
   return (
     <motion.header
       className="site-header"
-      style={{ height: headerHeight, backdropFilter: `blur(${blurValue})` }}
+      style={{ height: headerHeight, backdropFilter: `blur(${blurValue})`, WebkitBackdropFilter: `blur(${blurValue})` }}
     >
       <div className="container nav-shell">
         <Link to="/" className="brand" aria-label="Crucible home">
           <span className="brand-mark">C</span>
-          <span>MISSION<br />CRUCIBLE</span>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+            <span style={{ fontWeight: 800, fontSize: '1.02rem', color: '#ffffff', letterSpacing: '-0.01em' }}>MISSION CRUCIBLE</span>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.62rem', color: '#71a7ff', letterSpacing: '0.12em' }}>INNOVATEX 2026</span>
+          </div>
         </Link>
 
         <nav className="main-nav" aria-label="Main navigation">
@@ -90,7 +93,7 @@ export default function Navbar() {
             <>
               <SpecularButton
                 size="sm"
-                radius={14}
+                radius={12}
                 lineColor="#71a7ff"
                 baseColor="#142034"
                 textColor="#ffffff"
@@ -102,7 +105,7 @@ export default function Navbar() {
               </SpecularButton>
               <SpecularButton
                 size="sm"
-                radius={14}
+                radius={12}
                 lineColor="#ff6b75"
                 baseColor="#2a1215"
                 textColor="#ff6b75"
@@ -117,7 +120,7 @@ export default function Navbar() {
             <>
               <SpecularButton
                 size="sm"
-                radius={14}
+                radius={12}
                 lineColor="#71a7ff"
                 baseColor="#142034"
                 textColor="#ffffff"
@@ -129,9 +132,9 @@ export default function Navbar() {
               </SpecularButton>
               <SpecularButton
                 size="sm"
-                radius={14}
+                radius={12}
                 lineColor="#71a7ff"
-                baseColor="#2d5bff"
+                baseColor="#3b74f6"
                 textColor="#ffffff"
                 intensity={1.2}
                 speed={0.4}

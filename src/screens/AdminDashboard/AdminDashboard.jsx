@@ -441,7 +441,7 @@ export default function AdminDashboard() {
                   <div>
                     <div className={styles.probHeader}>
                       <span className={styles.probId}>{prob.id}</span>
-                      <span className={`${styles.badge} styles.badgeBlue`}>{prob.domain}</span>
+                      <span className={`${styles.badge} ${styles.badgeBlue}`}>{prob.domain}</span>
                     </div>
                     <h3 className={styles.probTitle} style={{ marginTop: 12 }}>
                       {prob.title}
@@ -795,7 +795,7 @@ export default function AdminDashboard() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.probHeader}>
               <span className={styles.probId}>{viewProblem.id}</span>
-              <span className={`${styles.badge} styles.badgeBlue`}>{viewProblem.domain}</span>
+              <span className={`${styles.badge} ${styles.badgeBlue}`}>{viewProblem.domain}</span>
             </div>
             <h2>{viewProblem.title}</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{viewProblem.description}</p>

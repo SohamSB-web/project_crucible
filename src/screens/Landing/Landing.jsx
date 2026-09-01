@@ -61,7 +61,7 @@ const cardReveal = {
 
 export default function Landing() {
   const location = useLocation();
-  const [openFaq, setOpenFaq] = useState(0);
+  const [openFaq, setOpenFaq] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
 
   // ── Parallax refs ────────────────────────────────────────────────────────
@@ -365,7 +365,7 @@ export default function Landing() {
                   <div className={styles.dateLabelGreen}>2 OCT</div>
                   <div className={styles.dateSubtextGreen}></div>
                   <h3>Final Registration</h3>
-                  <p>Shortlisted teams based have to pay and complete register for final round.</p>
+                  <p>Shortlisted teams have to pay and complete registration for final round.</p>
                 </div>
               </div>
             </div>
@@ -506,11 +506,11 @@ export default function Landing() {
                   glareSize={250}
                   transitionDuration={600}
                 >
-                  <div className={styles.valueHeader}>
+                  <div className={styles.cardHeaderTop}>
                     <div className={styles.valueBadge}>✦</div>
-                    <h3>{title}</h3>
                   </div>
-                  <p>{text}</p>
+                  <h3 className={styles.cardTitle}>{title}</h3>
+                  <p className={styles.cardDesc}>{text}</p>
                 </MotionGlareHover>
               ))}
             </motion.div>
@@ -598,11 +598,11 @@ export default function Landing() {
                   glareSize={250}
                   transitionDuration={600}
                 >
-                  <div className={styles.valueHeader}>
-                    <span>0{index + 1}</span>
-                    <h3>{reward.title}</h3>
+                  <div className={styles.cardHeaderTop}>
+                    <span className={styles.rewardNum}>0{index + 1}</span>
                   </div>
-                  <p>{reward.text}</p>
+                  <h3 className={styles.cardTitle}>{reward.title}</h3>
+                  <p className={styles.cardDesc}>{reward.text}</p>
                 </MotionGlareHover>
               ))}
             </motion.div>
@@ -631,37 +631,49 @@ export default function Landing() {
             </motion.div>
 
             <div className={styles.faqList}>
-              {faqItems.map((item, index) => (
-                <MotionGlareHover
-                  key={item.q}
-                  className={`${styles.faqItem} ${openFaq === index ? styles.open : ''}`}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.07, duration: 0.5 }}
-                  glareColor="#ffffff"
-                  glareOpacity={0.15}
-                  glareSize={250}
-                  transitionDuration={600}
-                >
-                  <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
-                    <span>{item.q}</span>
-                    <strong>{openFaq === index ? '−' : '+'}</strong>
-                  </button>
-                  <AnimatePresence>
-                    {openFaq === index && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className={styles.faqAnswer}
+              {faqItems.map((item, index) => {
+                const isOpen = openFaq === index;
+                return (
+                  <MotionGlareHover
+                    key={item.q}
+                    className={`${styles.faqItem} ${isOpen ? styles.open : ''}`}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.07, duration: 0.5 }}
+                    glareColor="#ffffff"
+                    glareOpacity={0.15}
+                    glareSize={250}
+                    transitionDuration={600}
+                  >
+                    <button type="button" onClick={() => setOpenFaq(isOpen ? null : index)}>
+                      <span>{item.q}</span>
+                      <motion.span
+                        animate={{ rotate: isOpen ? 45 : 0 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        style={{ display: 'inline-flex', fontSize: '1.25rem', fontWeight: 600, color: isOpen ? '#71a7ff' : 'rgba(255,255,255,0.6)' }}
                       >
-                        <p>{item.a}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </MotionGlareHover>
-              ))}
+                        +
+                      </motion.span>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div className={styles.faqAnswerInner}>
+                            <p>{item.a}</p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </MotionGlareHover>
+                );
+              })}
             </div>
           </div>
         </motion.section>

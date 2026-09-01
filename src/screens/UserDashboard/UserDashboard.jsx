@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SpecularButton from '../../components/ui/SpecularButton';
+import StarBorder from '../../components/ui/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useLenis } from '../../context/LenisContext.jsx';
 import {
@@ -12,9 +13,13 @@ import {
   setSelectedProblem,
   getUserSubmission,
   saveUserSubmission,
+  getUserPayment,
+  saveUserPayment,
   getNotifications,
   markNotificationsRead,
+  updateTeamMembers,
 } from '../../lib/portalStorage';
+import qrCodeImg from '../../assets/upi_qr_code.jpg';
 import styles from './UserDashboard.module.css';
 
 /* ── SVG Icons ── */
@@ -48,6 +53,12 @@ const Icons = {
       <polyline points="13 2 13 9 20 9" />
       <line x1="12" y1="18" x2="12" y2="13" />
       <polyline points="9 15 12 12 15 15" />
+    </svg>
+  ),
+  creditCard: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
     </svg>
   ),
   bell: (
@@ -137,6 +148,52 @@ const Icons = {
       <circle cx="4" cy="4" r="3.5" fill="#22c55e" />
     </svg>
   ),
+  alertTriangle: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  ),
+  camera: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  ),
+  fileText: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  ),
+  refresh: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  ),
+  award: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="7" />
+      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+    </svg>
+  ),
+  edit: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  ),
+  arrowRight: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  ),
   check: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
@@ -166,6 +223,7 @@ const NAV_TABS = [
   { id: 'problems', label: 'Problem Statements', icon: Icons.problems },
   { id: 'team', label: 'My Team', icon: Icons.team },
   { id: 'submission', label: 'Submission', icon: Icons.submission },
+  { id: 'payment', label: 'Offline Payment', icon: Icons.creditCard },
 ];
 
 export default function UserDashboard() {
@@ -183,15 +241,20 @@ export default function UserDashboard() {
   const currentTeam = useMemo(() => teams.find((t) => t.id === teamId) || teams[0], [teams, teamId]);
   const isLeader = auth?.role === 'user' || auth?.role === 'leader' || true; // Leader access for demo
 
-  // User selection & submission state
+  // User selection & submission & payment state
   const [selectedProb, setSelectedProbState] = useState(getSelectedProblem(teamId) || (currentTeam ? { id: currentTeam.problemId, title: currentTeam.problemTitle } : null));
-  const [submission, setSubmissionState] = useState(getUserSubmission(teamId) || (currentTeam?.submitted ? { fileName: currentTeam.submissionFile, date: currentTeam.submissionDate, status: 'Submitted' } : null));
+  const [submission, setSubmissionState] = useState(getUserSubmission(teamId) || null);
+  const [paymentRecord, setPaymentRecord] = useState(getUserPayment(teamId) || null);
 
   // UI state
   const [searchQuery, setSearchQuery] = useState('');
   const [viewProblemModal, setViewProblemModal] = useState(null);
   const [confirmSelectModal, setConfirmSelectModal] = useState(null);
   const [showNotifModal, setShowNotifModal] = useState(false);
+  const [showEditTeamModal, setShowEditTeamModal] = useState(false);
+  const [membersForm, setMembersForm] = useState([]);
+  const [txnIdInput, setTxnIdInput] = useState('');
+  const [paymentFile, setPaymentFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [toast, setToast] = useState('');
 
@@ -204,6 +267,7 @@ export default function UserDashboard() {
       setNotifications(getNotifications());
       setSelectedProbState(getSelectedProblem(teamId));
       setSubmissionState(getUserSubmission(teamId));
+      setPaymentRecord(getUserPayment(teamId));
     };
     window.addEventListener('crucible_storage_update', handleSync);
     return () => window.removeEventListener('crucible_storage_update', handleSync);
@@ -212,7 +276,7 @@ export default function UserDashboard() {
   const lenis = useLenis();
 
   // Lock background body scroll & pause Lenis smooth scroll when any modal is open
-  const isAnyModalOpen = Boolean(showNotifModal || viewProblemModal || confirmSelectModal);
+  const isAnyModalOpen = Boolean(showNotifModal || viewProblemModal || confirmSelectModal || showEditTeamModal);
   useEffect(() => {
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
@@ -240,6 +304,58 @@ export default function UserDashboard() {
   }, [settings.deadline]);
 
   // Handlers
+  const handlePaymentScreenshotUpload = (file) => {
+    if (!file) return;
+    const rec = saveUserPayment(teamId, { fileName: file.name });
+    setPaymentRecord(rec);
+    showToast('Payment screenshot uploaded! Pending verification by organizers.');
+  };
+
+  const openEditTeamModal = () => {
+    const list = currentTeam?.members ? JSON.parse(JSON.stringify(currentTeam.members)) : [];
+    setMembersForm(list);
+    setShowEditTeamModal(true);
+  };
+
+  const handleSaveTeamMembers = (e) => {
+    e.preventDefault();
+    if (!membersForm.length) {
+      alert('Team must have at least one member.');
+      return;
+    }
+    updateTeamMembers(currentTeam?.id || teamId, membersForm);
+    setTeams(getTeamsData());
+    setShowEditTeamModal(false);
+    showToast('Team member details updated successfully!');
+  };
+
+  const handleAddMemberForm = () => {
+    if (membersForm.length >= 4) {
+      alert('Maximum 4 members allowed per team.');
+      return;
+    }
+    setMembersForm([...membersForm, { name: '', role: 'Developer', avatar: 'TM' }]);
+  };
+
+  const handleRemoveMemberForm = (index) => {
+    if (membersForm.length <= 1) {
+      alert('Team must have at least 1 member.');
+      return;
+    }
+    setMembersForm(membersForm.filter((_, i) => i !== index));
+  };
+
+  const handleMemberChange = (index, field, value) => {
+    const updated = [...membersForm];
+    updated[index][field] = value;
+    if (field === 'name') {
+      const parts = value.trim().split(' ');
+      const initials = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : (value.slice(0, 2) || 'TM').toUpperCase();
+      updated[index].avatar = initials;
+    }
+    setMembersForm(updated);
+  };
+
   const handleSelectProblem = (prob) => {
     if (!isLeader) {
       alert('Access Restricted - Only the Team Leader can select a Problem Statement.');
@@ -308,25 +424,27 @@ export default function UserDashboard() {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.dashboardContainer}>
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
           <motion.div
+            className={styles.toast}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             style={{
               position: 'fixed',
-              top: 20,
-              right: 20,
+              top: 24,
+              right: 24,
               zIndex: 2000,
-              background: '#142034',
-              border: '1px solid #71a7ff',
+              background: 'rgba(14, 20, 34, 0.95)',
+              border: '1px solid rgba(113, 167, 255, 0.4)',
               color: '#ffffff',
               padding: '12px 20px',
-              borderRadius: '12px',
-              fontWeight: 600,
+              borderRadius: 12,
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '0.85rem',
               boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
             }}
           >
@@ -335,8 +453,8 @@ export default function UserDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Top Navbar */}
-      <header className={styles.topNav}>
+      {/* Left Side Navbar */}
+      <aside className={styles.sidebar}>
         <div className={styles.brandGroup}>
           <div className={styles.brandLogo}>C</div>
           <div className={styles.brandInfo}>
@@ -352,45 +470,56 @@ export default function UserDashboard() {
               className={`${styles.tabItem} ${activeTab === tab.id ? styles.active : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
+              <span className={styles.tabIcon}>{tab.icon}</span>
+              <span className={styles.tabLabel}>{tab.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className={styles.userActions}>
-          <button
-            className={styles.notifBtn}
-            onClick={() => {
-              setShowNotifModal(true);
-              setNotifications(markNotificationsRead());
-            }}
-            aria-label="Notifications"
-          >
-            {Icons.bell}
-            {hasUnreadNotifs && <span className={styles.notifDot} />}
-          </button>
-
+        <div className={styles.sidebarFooter}>
           <div className={styles.userProfile}>
             <div className={styles.userAvatar}>
               {Icons.user}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <strong style={{ fontSize: '0.88rem' }}>{currentTeam?.teamName || 'Participant'}</strong>
-              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'JetBrains Mono' }}>
-                {teamId}
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+              <strong className={styles.userTeamName}>{currentTeam?.teamName || 'Participant'}</strong>
+              <span className={styles.userTeamId}>{teamId}</span>
             </div>
           </div>
 
-          <SqBtn onClick={handleLogout} danger size="sm">
-            Logout
-          </SqBtn>
-        </div>
-      </header>
+          <div style={{ display: 'flex', marginTop: 8, width: '100%' }}>
+            <SpecularButton
+              size="sm"
+              radius={12}
+              lineColor="#71a7ff"
+              baseColor="#142034"
+              textColor="#ffffff"
+              intensity={1}
+              speed={0.35}
+              onClick={() => {
+                setShowNotifModal(true);
+                setNotifications(markNotificationsRead());
+              }}
+              className="full-width"
+              style={{ width: '100%' }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, position: 'relative', width: '100%' }}>
+                {Icons.bell} Notifications
+                {hasUnreadNotifs && <span className={styles.notifDot} />}
+              </span>
+            </SpecularButton>
+          </div>
 
-      {/* Main Body */}
-      <main className={styles.shell}>
+          <div style={{ marginTop: 8, width: '100%' }}>
+            <SqBtn onClick={handleLogout} danger size="sm" fullWidth style={{ width: '100%' }}>
+              Logout
+            </SqBtn>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className={styles.mainContent}>
         {/* ── 1. DASHBOARD TAB ── */}
         {activeTab === 'dashboard' && (
           <div>
@@ -405,13 +534,41 @@ export default function UserDashboard() {
             </div>
 
             <div className={styles.statusGrid}>
-              <div className={styles.statusCard}>
-                <span className={styles.cardIcon}>{Icons.target}</span>
-                <span className={styles.cardLabel}>Your Selected Problem</span>
-                <span className={styles.cardValue}>
-                  {selectedProb ? `${selectedProb.id || 'PS002'} — ${selectedProb.title || 'Selected'}` : 'None Selected Yet'}
-                </span>
+              {/* Featured 2x2 Problem Card */}
+              <div className={styles.featuredProblemCard}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span className={styles.cardIcon}>{Icons.target}</span>
+                      <span className={styles.cardLabel}>Your Selected Problem</span>
+                    </div>
+                  </div>
+
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', margin: '0 0 12px', lineHeight: 1.35, letterSpacing: '-0.02em' }}>
+                    {selectedProb ? selectedProb.title : 'No Problem Statement Selected Yet'}
+                  </h3>
+
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>
+                    {selectedProb
+                      ? selectedProb.description || 'Focus on building an automated, scalable solution with high real-world impact for jury evaluation.'
+                      : 'Explore available hackathon problem statements (PS001–PS010) and select your official track to get started.'}
+                  </p>
+                </div>
+
+                <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-start' }}>
+                  <StarBorder
+                    as="button"
+                    color="#71a7ff"
+                    backgroundColor="#142034"
+                    borderColor="rgba(113, 167, 255, 0.4)"
+                    onClick={() => setActiveTab('problems')}
+                  >
+                    {selectedProb ? 'Change / Explore Problems →' : 'Select a Problem Statement →'}
+                  </StarBorder>
+                </div>
               </div>
+
+              {/* Col 3, Row 1 */}
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.star}</span>
                 <span className={styles.cardLabel}>Shortlist Status</span>
@@ -419,6 +576,8 @@ export default function UserDashboard() {
                   {currentTeam?.shortlisted ? 'Shortlisted' : 'Under Review'}
                 </span>
               </div>
+
+              {/* Col 4, Row 1 */}
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.folder}</span>
                 <span className={styles.cardLabel}>Submission Status</span>
@@ -426,11 +585,43 @@ export default function UserDashboard() {
                   {submission ? 'Submitted' : 'Pending Upload'}
                 </span>
               </div>
+
+              {/* Col 3, Row 2 */}
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.clock}</span>
                 <span className={styles.cardLabel}>Submission Deadline</span>
                 <span className={styles.cardValue}>
                   {daysRemaining > 0 ? `${daysRemaining} Days Remaining` : 'Deadline Passed'}
+                </span>
+              </div>
+
+              {/* Col 4, Row 2 */}
+              <div className={styles.statusCard}>
+                <span className={styles.cardIcon}>{Icons.creditCard}</span>
+                <span className={styles.cardLabel}>Offline Round Eligibility</span>
+                <span className={styles.cardValue} style={{ fontSize: '0.88rem' }}>
+                  {paymentRecord?.status === 'Verified' || currentTeam?.paymentStatus === 'Verified' ? (
+                    <span style={{ color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                      {Icons.checkCircle} Verified & Eligible
+                    </span>
+                  ) : paymentRecord?.status === 'Pending' || currentTeam?.paymentStatus === 'Pending' ? (
+                    <span style={{ color: '#eab308', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                      {Icons.clock} Pending Verification
+                    </span>
+                  ) : (
+                    <StarBorder
+                      as="button"
+                      color="#ff6b75"
+                      backgroundColor="#2a1215"
+                      borderColor="rgba(255, 107, 117, 0.4)"
+                      textColor="#ff6b75"
+                      onClick={() => setActiveTab('payment')}
+                    >
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        {Icons.alertTriangle} Pay Fee Now {Icons.arrowRight}
+                      </span>
+                    </StarBorder>
+                  )}
                 </span>
               </div>
             </div>
@@ -584,17 +775,32 @@ export default function UserDashboard() {
                       </div>
 
                       <div style={{ display: 'flex', gap: 10 }}>
-                        <SqBtn onClick={() => setViewProblemModal(prob)} size="sm">
-                          View Details
-                        </SqBtn>
-                        <SqBtn
-                          onClick={() => handleSelectProblem(prob)}
-                          size="sm"
-                          lineColor={isSelected ? '#22c55e' : '#71a7ff'}
-                          baseColor={isSelected ? '#0a2a16' : '#142034'}
+                        <StarBorder
+                          onClick={() => setViewProblemModal(prob)}
+                          color="#71a7ff"
+                          backgroundColor="#142034"
+                          borderColor="rgba(113, 167, 255, 0.4)"
+                          textColor="#ffffff"
+                          speed="5s"
                         >
-                          {isSelected ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>{Icons.check} Selected</span> : 'Select Problem'}
-                        </SqBtn>
+                          View Details
+                        </StarBorder>
+                        <StarBorder
+                          onClick={() => handleSelectProblem(prob)}
+                          color={isSelected ? '#22c55e' : '#71a7ff'}
+                          backgroundColor={isSelected ? '#0a2a16' : '#142034'}
+                          borderColor={isSelected ? 'rgba(34, 197, 94, 0.5)' : 'rgba(113, 167, 255, 0.4)'}
+                          textColor={isSelected ? '#22c55e' : '#ffffff'}
+                          speed="4s"
+                        >
+                          {isSelected ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              {Icons.check} Selected
+                            </span>
+                          ) : (
+                            'Select Problem'
+                          )}
+                        </StarBorder>
                       </div>
                     </div>
                   </div>
@@ -612,7 +818,16 @@ export default function UserDashboard() {
                 <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{currentTeam?.teamName}</h2>
                 <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.85rem' }}>Team ID: {currentTeam?.id}</span>
               </div>
-              <span className={styles.statusPill}>{Icons.statusDot} Registered & Active</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span className={styles.statusPill}>{Icons.statusDot} Registered & Active</span>
+                {isLeader && (
+                  <SqBtn onClick={openEditTeamModal} size="sm">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      {Icons.edit} Edit Team Members
+                    </span>
+                  </SqBtn>
+                )}
+              </div>
             </div>
 
             <h3 style={{ marginTop: 24, fontSize: '1.1rem' }}>Team Members ({currentTeam?.members?.length})</h3>
@@ -666,17 +881,8 @@ export default function UserDashboard() {
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.82rem', marginTop: 4, fontFamily: 'JetBrains Mono' }}>
                   Submitted on: {submission.date}
                 </p>
-                <div style={{ marginTop: 20 }}>
-                  <SqBtn onClick={() => document.getElementById('resubmit-input').click()} size="sm">
-                    Re-upload File
-                  </SqBtn>
-                  <input
-                    id="resubmit-input"
-                    type="file"
-                    accept=".pdf,.ppt,.pptx"
-                    style={{ display: 'none' }}
-                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-                  />
+                <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, color: '#22c55e', fontSize: '0.82rem', fontFamily: 'JetBrains Mono', fontWeight: 600 }}>
+                  ✓ Final Submission Locked
                 </div>
               </div>
             ) : (
@@ -707,6 +913,271 @@ export default function UserDashboard() {
             )}
           </div>
         )}
+
+        {/* ── 5. OFFLINE ROUND PAYMENT TAB ── */}
+        {activeTab === 'payment' && (
+          <div className={styles.panel} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', marginBottom: 0, padding: 24, boxSizing: 'border-box' }}>
+            <div className={styles.panelHeader} style={{ marginBottom: 16 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800 }}>Offline Round Registration & Payment</h2>
+                <p style={{ color: 'rgba(255,255,255,0.6)', margin: '4px 0 0', fontSize: '0.88rem' }}>
+                  Scan the QR code below, complete your team fee, and upload the payment receipt screenshot for verification.
+                </p>
+              </div>
+              <span
+                style={{
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: '0.82rem',
+                  padding: '5px 14px',
+                  borderRadius: 999,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background:
+                    paymentRecord?.status === 'Verified'
+                      ? 'rgba(34, 197, 94, 0.15)'
+                      : paymentRecord?.status === 'Pending'
+                        ? 'rgba(234, 179, 8, 0.15)'
+                        : 'rgba(255, 107, 117, 0.15)',
+                  color:
+                    paymentRecord?.status === 'Verified'
+                      ? '#22c55e'
+                      : paymentRecord?.status === 'Pending'
+                        ? '#eab308'
+                        : '#ff6b75',
+                  border: `1px solid ${paymentRecord?.status === 'Verified'
+                      ? 'rgba(34, 197, 94, 0.3)'
+                      : paymentRecord?.status === 'Pending'
+                        ? 'rgba(234, 179, 8, 0.3)'
+                        : 'rgba(255, 107, 117, 0.3)'
+                    }`,
+                }}
+              >
+                {paymentRecord?.status === 'Verified' ? (
+                  <>{Icons.checkCircle} Payment Verified</>
+                ) : paymentRecord?.status === 'Pending' ? (
+                  <>{Icons.clock} Pending Verification</>
+                ) : (
+                  <>{Icons.alertTriangle} Registration Unpaid</>
+                )}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: 24, flex: 1 }}>
+              {/* Left Column: QR Code & Payment Details */}
+              <div
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 20,
+                  padding: 24,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justify: 'space-between',
+                  textAlign: 'center',
+                  boxSizing: 'border-box',
+                  height: '100%',
+                }}
+              >
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ width: '100%', marginBottom: 12 }}>
+                    <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                      Official Registration Fee
+                    </span>
+                    <h3 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>₹500 / Team</h3>
+                  </div>
+
+                  {/* QR Code Container */}
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      padding: 14,
+                      borderRadius: 18,
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                      margin: '14px auto',
+                      display: 'inline-block',
+                    }}
+                  >
+                    <img
+                      src={qrCodeImg}
+                      alt="UPI QR Code for Hackathon Registration Payment"
+                      style={{ width: 240, height: 240, borderRadius: 14, objectFit: 'contain', display: 'block' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ width: '100%' }}>
+                  <div
+                    style={{
+                      background: 'rgba(113,167,255,0.08)',
+                      border: '1px solid rgba(113,167,255,0.2)',
+                      borderRadius: 12,
+                      padding: '10px 16px',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'JetBrains Mono' }}>UPI ID</span>
+                    <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#71a7ff', fontFamily: 'JetBrains Mono' }}>crucible.hackathon@upi</div>
+                  </div>
+
+                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.5 }}>
+                    Scan using GPay, PhonePe, Paytm, or BHIM to pay ₹500. Upload your payment screenshot for verification.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Screenshot Upload Dropzone & Status Card */}
+              <div
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 20,
+                  padding: 24,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justify: 'space-between',
+                  boxSizing: 'border-box',
+                  height: '100%',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <h3 style={{ margin: '0 0 14px', fontSize: '1.15rem', color: '#ffffff' }}>Payment Screenshot Submission</h3>
+
+                  {paymentRecord ? (
+                    <div style={{ padding: 20, background: 'rgba(255,255,255,0.04)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'JetBrains Mono' }}>UPLOADED SCREENSHOT</span>
+                      <div style={{ fontSize: '1rem', fontWeight: 600, color: '#71a7ff', marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {Icons.fileText} {paymentRecord.fileName}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('reupload-payment-input').click()}
+                        style={{
+                          marginTop: 14,
+                          background: 'rgba(113, 167, 255, 0.1)',
+                          border: '1px solid rgba(113, 167, 255, 0.25)',
+                          borderRadius: 8,
+                          padding: '8px 16px',
+                          color: '#71a7ff',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        {Icons.refresh} Re-upload Screenshot
+                      </button>
+                      <input
+                        id="reupload-payment-input"
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => e.target.files?.[0] && handlePaymentScreenshotUpload(e.target.files[0])}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={`${styles.dropzone} ${isDragging ? styles.dragging : ''}`}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragging(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handlePaymentScreenshotUpload(file);
+                      }}
+                      onClick={() => document.getElementById('payment-screenshot-input').click()}
+                      style={{ padding: '36px 20px', cursor: 'pointer', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <span className={styles.dropIcon} style={{ display: 'inline-flex', justifyContent: 'center', color: '#71a7ff', marginBottom: 8 }}>
+                        {Icons.camera}
+                      </span>
+                      <strong style={{ fontSize: '1.02rem', color: '#ffffff' }}>Click or Drag & Drop Payment Screenshot</strong>
+                      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginTop: 4 }}>
+                        Supports PNG, JPG, JPEG (Max 5MB)
+                      </span>
+                      <input
+                        id="payment-screenshot-input"
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => e.target.files?.[0] && handlePaymentScreenshotUpload(e.target.files[0])}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Status Box */}
+                <div style={{ marginTop: 16 }}>
+                  {paymentRecord?.status === 'Verified' ? (
+                    <div
+                      style={{
+                        padding: 18,
+                        background: 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.08))',
+                        border: '1px solid rgba(34,197,94,0.4)',
+                        borderRadius: 16,
+                        textAlign: 'center',
+                        boxShadow: '0 0 25px rgba(34, 197, 94, 0.15)',
+                      }}
+                    >
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', marginBottom: 6 }}>
+                        {Icons.award}
+                      </div>
+                      <strong style={{ color: '#22c55e', fontSize: '1.05rem', display: 'block' }}>Payment Verified & Approved!</strong>
+                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', margin: '4px 0 0', lineHeight: 1.5 }}>
+                        Congratulations! Your team <strong>{currentTeam?.teamName}</strong> is officially verified and eligible to compete in the Offline Hackathon Round at the Main Campus Auditorium!
+                      </p>
+                    </div>
+                  ) : paymentRecord?.status === 'Pending' ? (
+                    <div
+                      style={{
+                        padding: 16,
+                        background: 'rgba(234, 179, 8, 0.1)',
+                        border: '1px solid rgba(234, 179, 8, 0.3)',
+                        borderRadius: 16,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#eab308', marginBottom: 4 }}>
+                        {Icons.clock}
+                      </div>
+                      <strong style={{ color: '#eab308', fontSize: '0.95rem', display: 'block' }}>Payment Pending Verification</strong>
+                      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', margin: '4px 0 0', lineHeight: 1.4 }}>
+                        The organizing team is reviewing your uploaded payment screenshot. Verification usually takes 2–4 hours. Once verified, your status will update automatically!
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: 16,
+                        background: 'rgba(255, 107, 117, 0.08)',
+                        border: '1px solid rgba(255, 107, 117, 0.25)',
+                        borderRadius: 16,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b75', marginBottom: 4 }}>
+                        {Icons.alertTriangle}
+                      </div>
+                      <strong style={{ color: '#ff6b75', fontSize: '0.92rem', display: 'block' }}>Registration Fee Unpaid</strong>
+                      <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.8rem', margin: '4px 0 0' }}>
+                        Please upload your payment screenshot above to submit for offline round verification.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Confirmation Modal for Problem Selection */}
@@ -727,12 +1198,24 @@ export default function UserDashboard() {
               Are you sure you want to select <strong>{confirmSelectModal.id} — {confirmSelectModal.title}</strong> as your official hackathon problem statement?
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
-              <SqBtn onClick={() => setConfirmSelectModal(null)} danger>
+              <StarBorder
+                onClick={() => setConfirmSelectModal(null)}
+                color="#ff6b75"
+                backgroundColor="#2a1215"
+                borderColor="rgba(255, 107, 117, 0.4)"
+                textColor="#ff6b75"
+              >
                 Cancel
-              </SqBtn>
-              <SqBtn onClick={confirmProblemSelection} lineColor="#22c55e">
+              </StarBorder>
+              <StarBorder
+                onClick={confirmProblemSelection}
+                color="#22c55e"
+                backgroundColor="#0a2a16"
+                borderColor="rgba(34, 197, 94, 0.5)"
+                textColor="#22c55e"
+              >
                 Confirm Selection
-              </SqBtn>
+              </StarBorder>
             </div>
           </div>
         </div>
@@ -755,7 +1238,15 @@ export default function UserDashboard() {
             <h2>{viewProblemModal.title}</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{viewProblemModal.description}</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-              <SqBtn onClick={() => setViewProblemModal(null)}>Close</SqBtn>
+              <StarBorder
+                onClick={() => setViewProblemModal(null)}
+                color="#71a7ff"
+                backgroundColor="#142034"
+                borderColor="rgba(113, 167, 255, 0.4)"
+                textColor="#ffffff"
+              >
+                Close
+              </StarBorder>
             </div>
           </div>
         </div>
@@ -811,9 +1302,105 @@ export default function UserDashboard() {
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-              <SqBtn onClick={() => setShowNotifModal(false)}>Close</SqBtn>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Team Members Modal */}
+      {showEditTeamModal && (
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setShowEditTeamModal(false)}
+          data-lenis-prevent="true"
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div
+            className={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 'min(100%, 620px)', maxHeight: '85vh', overflowY: 'auto' }}
+            data-lenis-prevent="true"
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Edit Team Members</h2>
+              <SqBtn onClick={handleAddMemberForm} size="sm">+ Add Member</SqBtn>
             </div>
+
+            <form onSubmit={handleSaveTeamMembers} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {membersForm.map((m, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: 16,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 14,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.85rem', fontWeight: 700 }}>
+                      Member {idx + 1} {idx === 0 ? '(Team Leader)' : ''}
+                    </span>
+                    {idx > 0 && (
+                      <SqBtn onClick={() => handleRemoveMemberForm(idx)} danger size="sm">
+                        Remove
+                      </SqBtn>
+                    )}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <label style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Full Name</label>
+                      <input
+                        type="text"
+                        value={m.name}
+                        onChange={(e) => handleMemberChange(idx, 'name', e.target.value)}
+                        placeholder="Member Name"
+                        required
+                        style={{
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          borderRadius: 8,
+                          padding: '8px 12px',
+                          color: '#fff',
+                          fontSize: '0.9rem',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <label style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Role</label>
+                      <input
+                        type="text"
+                        value={m.role}
+                        onChange={(e) => handleMemberChange(idx, 'role', e.target.value)}
+                        placeholder="e.g. Developer, Designer, AI Lead"
+                        required
+                        style={{
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          borderRadius: 8,
+                          padding: '8px 12px',
+                          color: '#fff',
+                          fontSize: '0.9rem',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+                <SqBtn onClick={() => setShowEditTeamModal(false)} danger>
+                  Cancel
+                </SqBtn>
+                <SqBtn type="submit" lineColor="#22c55e" baseColor="#0a2a16" textColor="#22c55e">
+                  Save Changes
+                </SqBtn>
+              </div>
+            </form>
           </div>
         </div>
       )}
