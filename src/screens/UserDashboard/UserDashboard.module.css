@@ -1,236 +1,384 @@
-.page {
+/* UserDashboard.module.css */
+
+.container {
   min-height: 100vh;
+  background: rgba(10, 14, 23, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
   position: relative;
   z-index: 1;
 }
 
-.dashboard-shell {
-  padding-top: 120px;
-  padding-bottom: 80px;
-}
-
-.headerRow {
+/* ── Top Header / Navbar ─────────────────────────────────────────────────── */
+.topNav {
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0 32px;
+  height: 72px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 20px;
-  margin-bottom: 24px;
 }
 
-.headerRow h1 {
-  margin: 0;
-  font-size: clamp(2.3rem, 4vw, 3.3rem);
+.brandGroup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.unreadBadge {
-  background: rgba(45,91,255,0.1);
-  border: 1px solid rgba(45,91,255,0.12);
-  border-radius: 999px;
-  padding: 10px 16px;
-  color: var(--blue-primary);
-  font-weight: 600;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px;
-}
-
-.panel,
-.panelWide {
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 22px;
-  position: relative;
-  overflow: hidden;
-}
-
-.panel::before,
-.panelWide::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.04) 30%,
-    transparent 60%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  pointer-events: none;
-}
-
-.panelWide {
-  grid-column: span 2;
-}
-
-.panel h2,
-.panelWide h2 {
-  margin-top: 0;
-  margin-bottom: 18px;
-  font-size: 1.4rem;
-}
-
-.announcementItem {
-  display: grid;
-  grid-template-columns: 14px 1fr;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(10,14,23,0.06);
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: rgba(10,14,23,0.14);
-  margin-top: 8px;
-}
-
-.dot[data-unread='true'] {
-  background: var(--blue-primary);
-}
-
-.announcementItem strong {
-  display: block;
-  margin-bottom: 6px;
-}
-
-.announcementItem p,
-.announcementItem small,
-.muted {
-  margin: 0;
-  color: var(--ink-soft);
-  line-height: 1.6;
-}
-
-.countdownBox {
-  display: inline-flex;
-  padding: 14px 18px;
-  border-radius: 14px;
-  background: rgba(45,91,255,0.08);
-  font-weight: 700;
-}
-
-.statusPill {
-  display: inline-flex;
-  min-width: 140px;
+.brandLogo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #71a7ff, #3b82f6);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: rgba(220,74,74,0.1);
-  color: var(--error);
-  font-weight: 700;
+  box-shadow: 0 0 16px rgba(113, 167, 255, 0.4);
 }
 
-.statusPill.success {
-  background: rgba(44,166,108,0.08);
-  color: var(--success);
-}
-
-.teamList {
-  display: grid;
-  gap: 12px;
-}
-
-.teamList div {
+.brandInfo {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid rgba(10,14,23,0.06);
-  padding-bottom: 10px;
+  flex-direction: column;
 }
 
-.teamList span {
-  color: var(--ink-soft);
+.brandTitle {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #ffffff;
 }
 
-.memberRow {
+.brandSub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: #71a7ff;
+  letter-spacing: 0.12em;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tabItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabItem:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabItem.active {
+  color: #ffffff;
+  background: rgba(113, 167, 255, 0.18);
+  border: 1px solid rgba(113, 167, 255, 0.35);
+  box-shadow: 0 4px 16px rgba(113, 167, 255, 0.2);
+}
+
+.userActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.notifBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  position: relative;
+}
+
+.notifDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b75;
+  box-shadow: 0 0 8px #ff6b75;
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(113, 167, 255, 0.2);
+  border: 1.5px solid #71a7ff;
+  color: #71a7ff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Main Body Shell ─────────────────────────────────────────────────────── */
+.shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ── Welcome Banner ──────────────────────────────────────────────────────── */
+.welcomeCard {
+  background: rgba(14, 19, 30, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
-.uploadDrop {
-  border: 1px dashed rgba(45,91,255,0.36);
-  border-radius: 20px;
-  padding: 26px 18px;
-  text-align: center;
-  background: rgba(232,238,255,0.5);
-  position: relative;
-  overflow: hidden;
+.welcomeText h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.04em;
 }
 
-.uploadDrop input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
+.welcomeText p {
+  color: rgba(255, 255, 255, 0.65);
+  margin: 8px 0 0;
+  font-size: 0.95rem;
 }
 
-.uploadDrop.dragging {
-  background: rgba(45,91,255,0.08);
-}
-
-.progressBar {
-  margin-top: 18px;
-  width: 100%;
-  height: 10px;
-  background: rgba(10,14,23,0.06);
+.statusPill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  padding: 6px 14px;
   border-radius: 999px;
-  overflow: hidden;
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.progressFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--blue-primary), #7aa1ff);
-  border-radius: inherit;
-}
-
-.successMessage {
-  margin-top: 18px;
-  color: var(--success);
-  font-weight: 600;
-}
-
-.error {
-  color: var(--error);
-  margin-top: 18px;
-}
-
-.passwordForm {
+/* ── Status Cards Grid ───────────────────────────────────────────────────── */
+.statusGrid {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.statusCard {
+  background: rgba(14, 19, 30, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.cardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(113, 167, 255, 0.12);
+  color: #71a7ff;
+}
+
+.cardLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cardValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* ── Panels Layout ───────────────────────────────────────────────────────── */
+.panelsLayout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+}
+
+.panel {
+  background: rgba(14, 19, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  margin-bottom: 28px;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.panelTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* ── Member Roster ───────────────────────────────────────────────────────── */
+.memberList {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.passwordForm input {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(10,14,23,0.08);
-  box-sizing: border-box;
+.memberItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
 }
 
-@media (max-width: 760px) {
-  .grid {
+.memberAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(113, 167, 255, 0.2);
+  border: 1px solid rgba(113, 167, 255, 0.35);
+  color: #71a7ff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.memberName {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.memberRole {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── File Dropzone ───────────────────────────────────────────────────────── */
+.dropzone {
+  border: 2px dashed rgba(113, 167, 255, 0.35);
+  background: rgba(113, 167, 255, 0.04);
+  border-radius: 20px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.dropzone:hover,
+.dropzone.dragging {
+  border-color: #71a7ff;
+  background: rgba(113, 167, 255, 0.08);
+}
+
+.dropIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(113, 167, 255, 0.12);
+  color: #71a7ff;
+  margin-bottom: 4px;
+}
+
+/* ── Modal Backdrop ──────────────────────────────────────────────────────── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.modal {
+  background: rgba(14, 19, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 28px;
+  padding: 32px;
+  width: min(100%, 540px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .topNav {
+    padding: 0 16px;
+  }
+  .tabs {
+    display: none;
+  }
+  .panelsLayout {
     grid-template-columns: 1fr;
-  }
-
-  .panelWide {
-    grid-column: span 1;
-  }
-
-  .headerRow {
-    align-items: flex-start;
-    flex-direction: column;
   }
 }

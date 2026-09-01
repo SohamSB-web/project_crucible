@@ -113,11 +113,11 @@ const SpecularButton = ({
       vertex: VERT,
       fragment: FRAG,
       uniforms: {
-        uCenter:    { value: [0, 0] },
-        uHalfSize:  { value: [1, 1] },
-        uRadius:    { value: 0 },
-        uAngle:     { value: 2.4 },
-        uPx:        { value: dpr },
+        uCenter: { value: [0, 0] },
+        uHalfSize: { value: [1, 1] },
+        uRadius: { value: 0 },
+        uAngle: { value: 2.4 },
+        uPx: { value: dpr },
         uLineColor: { value: [1, 1, 1] },
         uBaseColor: { value: [0.32, 0.32, 0.32] },
         uIntensity: { value: 1 },
@@ -135,29 +135,35 @@ const SpecularButton = ({
     const resize = () => {
       const w = btn.offsetWidth;
       const h = btn.offsetHeight;
+      if (w === 0 || h === 0) return; // Skip if not laid out yet
       sizeRef.w = w;
       sizeRef.h = h;
       renderer.setSize(w + PAD * 2, h + PAD * 2);
-      program.uniforms.uCenter.value  = [(PAD + w / 2) * dpr, (PAD + h / 2) * dpr];
-      program.uniforms.uHalfSize.value = [(w / 2) * dpr,       (h / 2) * dpr];
+      program.uniforms.uCenter.value = [(PAD + w / 2) * dpr, (PAD + h / 2) * dpr];
+      program.uniforms.uHalfSize.value = [(w / 2) * dpr, (h / 2) * dpr];
     };
     const ro = new ResizeObserver(resize);
     ro.observe(btn);
+    // Also re-trigger sizing when the button becomes visible in the viewport
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) resize();
+    }, { threshold: 0.1 });
+    io.observe(btn);
     resize();
 
     let pointerAngle = null;
-    let proximityT   = 0;
+    let proximityT = 0;
     const onPointerMove = (e) => {
       const rect = btn.getBoundingClientRect();
-      const cx   = rect.left + rect.width  / 2;
-      const cy   = rect.top  + rect.height / 2;
-      const dx   = Math.max(rect.left - e.clientX, 0, e.clientX - rect.right);
-      const dy   = Math.max(rect.top  - e.clientY, 0, e.clientY - rect.bottom);
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = Math.max(rect.left - e.clientX, 0, e.clientX - rect.right);
+      const dy = Math.max(rect.top - e.clientY, 0, e.clientY - rect.bottom);
       const dist = Math.hypot(dx, dy);
 
       if (dist === 0) {
-        const nx = (e.clientX - cx) / (rect.width  / 2);
-        const ny = (cy - e.clientY)  / (rect.height / 2);
+        const nx = (e.clientX - cx) / (rect.width / 2);
+        const ny = (cy - e.clientY) / (rect.height / 2);
         pointerAngle = Math.atan2(2 / rect.height, -2 / rect.width) + nx * 0.3 + ny * 0.15;
       } else {
         pointerAngle = Math.atan2(cy - e.clientY, e.clientX - cx);
@@ -167,13 +173,13 @@ const SpecularButton = ({
     };
     window.addEventListener('pointermove', onPointerMove);
 
-    let angle     = 2.4;
+    let angle = 2.4;
     let idleAngle = 2.4;
-    let bright    = 0;
-    let last      = performance.now();
-    let raf       = 0;
-    const lineC   = new Color();
-    const baseC   = new Color();
+    let bright = 0;
+    let last = performance.now();
+    let raf = 0;
+    const lineC = new Color();
+    const baseC = new Color();
 
     const update = (now) => {
       raf = requestAnimationFrame(update);
@@ -182,9 +188,9 @@ const SpecularButton = ({
       const p = propsRef.current;
 
       idleAngle += p.speed * dt;
-      const steer  = p.followMouse && pointerAngle != null && (!p.autoAnimate || proximityT > 0);
+      const steer = p.followMouse && pointerAngle != null && (!p.autoAnimate || proximityT > 0);
       const target = steer ? pointerAngle : idleAngle;
-      const diff   = ((target - angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      const diff = ((target - angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
       angle += diff * (1 - Math.exp(-dt * 7));
 
       const brightTarget = p.autoAnimate ? 1 : proximityT;
@@ -192,8 +198,8 @@ const SpecularButton = ({
 
       lineC.set(p.lineColor);
       baseC.set(p.baseColor);
-      program.uniforms.uAngle.value     = angle;
-      program.uniforms.uRadius.value    = Math.min(p.radius, Math.min(sizeRef.w, sizeRef.h) / 2) * dpr;
+      program.uniforms.uAngle.value = angle;
+      program.uniforms.uRadius.value = Math.min(p.radius, Math.min(sizeRef.w, sizeRef.h) / 2) * dpr;
       program.uniforms.uLineColor.value = [lineC.r, lineC.g, lineC.b];
       program.uniforms.uBaseColor.value = [baseC.r, baseC.g, baseC.b];
       program.uniforms.uIntensity.value = p.intensity * bright;
@@ -207,6 +213,7 @@ const SpecularButton = ({
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      io.disconnect();
       window.removeEventListener('pointermove', onPointerMove);
       if (gl.canvas.parentNode === fx) fx.removeChild(gl.canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
@@ -221,12 +228,12 @@ const SpecularButton = ({
       onClick={onClick}
       className={`specular-button specular-button--${size}${className ? ` ${className}` : ''}`}
       style={{
-        '--sb-radius':       `${radius}px`,
-        '--sb-tint':          tint,
-        '--sb-tint-opacity':  tintOpacity,
-        '--sb-blur':         `${blur}px`,
-        '--sb-text-color':    textColor,
-        color:                textColor,
+        '--sb-radius': `${radius}px`,
+        '--sb-tint': tint,
+        '--sb-tint-opacity': tintOpacity,
+        '--sb-blur': `${blur}px`,
+        '--sb-text-color': textColor,
+        color: textColor,
       }}
     >
       <span ref={fxRef} className="specular-button__fx" aria-hidden="true" />
