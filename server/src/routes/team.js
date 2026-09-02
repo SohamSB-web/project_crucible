@@ -338,4 +338,114 @@ router.post('/change-password', requireAuth, requireRole('team'), async (req, re
   }
 });
 
+router.get('/participant_tracks', async (req, res) => {
+
+try {
+    const tracks = await prisma.track.findMany({
+      where: {
+        published: true
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: tracks
+    });
+  } catch (error) {
+    console.error('Error fetching participant tracks[cite: 9]:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve participant tracks'
+    });
+  }
+});
+
+router.post('/select-track', requireAuth, requireRole('team'), async (req, res) => {
+  try {
+    const { trackId } = req.body;
+    const teamId = req.user.teamId;
+
+    // 1. Find the selected track to pull its details
+    const track = await prisma.track.findUnique({
+      where: { id: trackId }
+    });
+
+    if (!track) {
+      return res.status(404).json({ success: false, error: 'Track not found.' });
+    }
+
+    // 2. Update the Team record with the problem statement details
+    const updatedTeam = await prisma.team.update({
+      where: { id: teamId },
+      data: {
+        problem_statement_id: track.id,
+        problem_statement: track.title,
+        theme_track: track.category
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Problem statement linked to team successfully.',
+      data: updatedTeam
+    });
+  } catch (err) {
+    console.error('[Team/SelectTrack]', err);
+    return res.status(500).json({ success: false, error: 'Failed to select problem statement.' });
+  }
+});
+
+
+// Add to team.js
+
+// ─── PUT /api/team/members ────────────────────────────────────────────────────
+
+router.put('/members', requireAuth, requireRole('team'), async (req, res) => {
+  const { members } = req.body;
+  const teamId = req.user.teamId;
+
+  if (!Array.isArray(members) || members.length === 0) {
+    return res.status(400).json({ success: false, error: 'At least one team member is required.' });
+  }
+
+  if (members.length > MAX_TEAM_SIZE) {
+    return res.status(400).json({ success: false, error: `Team size cannot exceed ${MAX_TEAM_SIZE} members.` });
+  }
+
+  try {
+    const updatedTeam = await prisma.$transaction(async (tx) => {
+      const existingMembers = await tx.teamMember.findMany({ where: { team_id: teamId } });
+      const leadMember = existingMembers.find((m) => m.role === 'lead');
+
+      await tx.teamMember.deleteMany({ where: { team_id: teamId } });
+
+      const newMembersData = members.map((m, idx) => {
+        const isLead = idx === 0 || m.role?.toLowerCase() === 'lead' || m.role?.toLowerCase() === 'team leader';
+        return {
+          team_id: teamId,
+          name: m.name,
+          email: m.email || leadMember?.email || `${teamId.toLowerCase()}_m${idx + 1}@placeholder.com`,
+          phone: m.phone || leadMember?.phone || '',
+          role: isLead ? 'lead' : 'member',
+          custom_role: m.role || (isLead ? 'Team Lead' : 'Member'),
+          year: m.year || leadMember?.year || '',
+          dept: m.dept || leadMember?.dept || '',
+        };
+      });
+
+      await tx.teamMember.createMany({ data: newMembersData });
+
+      return await tx.team.findUnique({
+        where: { id: teamId },
+        include: { members: { orderBy: { joined_at: 'asc' } }, submission: true, payment: true, result: true },
+      });
+    });
+
+    return res.json({ success: true, data: updatedTeam });
+  } catch (err) {
+    console.error('[Team/UpdateMembers]', err);
+    return res.status(500).json({ success: false, error: 'Failed to update team members.' });
+  }
+});
+
 module.exports = router;

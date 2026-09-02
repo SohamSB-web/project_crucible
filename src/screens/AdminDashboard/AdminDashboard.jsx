@@ -1,20 +1,20 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import SpecularButton from '../../components/ui/SpecularButton';
 import { useAuth } from '../../context/AuthContext';
 import {
-  getHackathonSettings,
-  saveHackathonSettings,
-  getProblemStatements,
-  addProblemStatement,
-  updateProblemStatement,
-  deleteProblemStatement,
-  getTeamsData,
-  toggleTeamShortlist,
-  getWinnerAssignments,
-  assignWinner,
-} from '../../lib/portalStorage';
+  getTracks,
+  createTrack,
+  updateTrack,
+  deleteTrack,
+  getAdminTeams,
+  stageShortlist,
+  getAdminSubmissions,
+  assignAdminWinner,
+  
+} from '../../lib/api'; // <--- Switch from portalStorage to real api.js
+
 import styles from './AdminDashboard.module.css';
 
 /* ── SVG Nav Icons ── */
@@ -124,137 +124,198 @@ const NAV_TABS = [
 ];
 
 export default function AdminDashboard() {
-  const { auth, logout } = useAuth();
-  const navigate = useNavigate();
+  
+    const { logout } = useAuth();
+    const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [settings, setSettings] = useState(getHackathonSettings());
-  const [problems, setProblems] = useState(getProblemStatements());
-  const [teams, setTeams] = useState(getTeamsData());
-  const [winners, setWinners] = useState(getWinnerAssignments());
-  const [searchQuery, setSearchQuery] = useState('');
-  const [toast, setToast] = useState('');
+    const [activeTab, setActiveTab] = useState('dashboard');
+    const [settings, setSettings] = useState({ name: 'RepoForge Hackathon', year: 2026, deadline: '', hackathonStatus: 'Live', registrationStatus: 'Open' });
+    const [problems, setProblems] = useState([]);
+    const [teams, setTeams] = useState([]);
+    const [submissions, setSubmissions] = useState([]);
+    const [winners, setWinners] = useState({ first: null, second: null, third: null });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [toast, setToast] = useState('');
 
-  // Modals state
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingProblem, setEditingProblem] = useState(null);
-  const [viewProblem, setViewProblem] = useState(null);
+    // Modals state
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [editingProblem, setEditingProblem] = useState(null);
+    const [viewProblem, setViewProblem] = useState(null);
 
-  // Form states
-  const [probForm, setProbForm] = useState({ id: '', title: '', domain: '', tags: '', description: '', difficulty: 'Intermediate' });
+    // Form states
+    const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '' });
 
-  // Sync state
-  useEffect(() => {
-    const handleSync = () => {
-      setSettings(getHackathonSettings());
-      setProblems(getProblemStatements());
-      setTeams(getTeamsData());
-      setWinners(getWinnerAssignments());
+    // Fetch Database Data on Mount & Tab Change
+    const fetchData = async () => {
+      try {
+        const [ tracksRes, teamsRes, subsRes] = await Promise.all([
+         
+          getTracks(),
+          getAdminTeams(),
+          getAdminSubmissions(),
+        ]);
+
+       
+        if (tracksRes.success) setProblems(tracksRes.data);
+        if (teamsRes.success) setTeams(teamsRes.data);
+        if (subsRes.success) setSubmissions(subsRes.data);
+
+        // Extract winners from team results if mapped
+        const winnerMap = {};
+        teamsRes.data.forEach(t => {
+          if (t.result?.rank === 1) winnerMap.first = t.id;
+          if (t.result?.rank === 2) winnerMap.second = t.id;
+          if (t.result?.rank === 3) winnerMap.third = t.id;
+        });
+        setWinners(winnerMap);
+      } catch (err) {
+        showToast('Failed to sync data from database.');
+        console.error(err);
+      }
     };
-    window.addEventListener('crucible_storage_update', handleSync);
-    return () => window.removeEventListener('crucible_storage_update', handleSync);
-  }, []);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
-  };
+    useEffect(() => {
+      fetchData();
+    }, []);
 
-  // Analytics
-  const metrics = useMemo(() => {
-    const totalTeams = teams.length;
-    const submittedTeams = teams.filter((t) => t.submitted).length;
-    const pendingReviews = teams.filter((t) => t.submitted && !t.shortlisted).length;
-    const shortlistedCount = teams.filter((t) => t.shortlisted).length;
-    return { totalTeams, submittedTeams, pendingReviews, shortlistedCount, problemsCount: problems.length };
-  }, [teams, problems]);
+    const showToast = (msg) => {
+      setToast(msg);
+      setTimeout(() => setToast(''), 3000);
+    };
 
-  // Handlers
-  const handleSaveSettings = (e) => {
-    e.preventDefault();
-    saveHackathonSettings(settings);
-    showToast('Settings saved successfully!');
-  };
+    // Analytics computed from real database state
+    const metrics = useMemo(() => {
+      const totalTeams = teams.length;
+      const submittedTeams = teams.filter((t) => t.submissionStatus === 'submitted').length;
+      const pendingReviews = teams.filter((t) => t.submissionStatus === 'submitted' && !t.shortlisted).length;
+      const shortlistedCount = teams.filter((t) => t.shortlisted).length;
+      return { totalTeams, submittedTeams, pendingReviews, shortlistedCount, problemsCount: problems.length };
+    }, [teams, problems]);
 
-  const handleCreateProblem = (e) => {
-    e.preventDefault();
-    if (!probForm.title || !probForm.domain) {
-      alert('Please fill title and domain');
-      return;
-    }
-    if (editingProblem) {
-      updateProblemStatement({
-        ...editingProblem,
-        ...probForm,
-        tags: typeof probForm.tags === 'string' ? probForm.tags.split(',').map((t) => t.trim()) : probForm.tags,
-      });
-      showToast('Problem Statement updated!');
-    } else {
-      addProblemStatement(probForm);
-      showToast('New Problem Statement added!');
-    }
-    setShowAddModal(false);
-    setEditingProblem(null);
-    setProbForm({ id: '', title: '', domain: '', tags: '', description: '', difficulty: 'Intermediate' });
-  };
+    // Handlers connected to Backend APIs
+    const handleSaveSettings = async (e) => {
+      e.preventDefault();
+      try {
+        await saveAdminSettings(settings);
+        showToast('Settings saved to database!');
+      } catch (err) {
+        showToast('Error saving settings');
+      }
+    };
 
-  const handleDeleteProblem = (id) => {
-    if (window.confirm('Are you sure you want to delete this Problem Statement?')) {
-      deleteProblemStatement(id);
-      showToast('Problem Statement removed');
-    }
-  };
-
+    const handleCreateProblem = async (e) => {
+      e.preventDefault();
+      try {
+        if (editingProblem) {
+          await updateTrack(editingProblem.id, probForm);
+          showToast('Problem Statement updated in DB!');
+        } else {
+          await createTrack(probForm);
+          showToast('New Problem Statement added to DB!');
+        }
+        setShowAddModal(false);
+        setEditingProblem(null);
+        setProbForm({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '' });
+        fetchData();
+      } catch (err) {
+        showToast('Operation failed');
+      }
+    };
+  
+    const handleDeleteProblem = async (id) => {
+      if (window.confirm('Are you sure you want to delete this Problem Statement?')) {
+        try {
+          await deleteTrack(id);
+          showToast('Problem Statement removed from DB');
+          fetchData();
+        } catch (err) {
+          showToast('Delete failed');
+        }
+      }
+    };
   const openEditModal = (prob) => {
     setEditingProblem(prob);
     setProbForm({
-      id: prob.id,
-      title: prob.title,
-      domain: prob.domain,
-      tags: Array.isArray(prob.tags) ? prob.tags.join(', ') : prob.tags,
-      description: prob.description,
-      difficulty: prob.difficulty,
+      id: prob.id || '',
+      title: prob.title || '',
+      domain: prob.domain || '',
+      tags: Array.isArray(prob.tags) ? prob.tags.join(', ') : (prob.tags || ''),
+      description: prob.description || '',
+      difficulty: prob.difficulty || 'Intermediate',
     });
     setShowAddModal(true);
   };
-
-  const handleToggleShortlist = (teamId) => {
-    toggleTeamShortlist(teamId);
-    showToast('Updated team shortlist status');
+  const handleTogglePublish = async (prob) => {
+    try {
+      const newStatus = !prob.published;
+      await updateTrack(prob.id, { ...prob, published: newStatus });
+      showToast(`Problem ${prob.id} is now ${newStatus ? 'Published' : 'Hidden'} for participants!`);
+      fetchData();
+    } catch (err) {
+      showToast('Failed to update publication status.');
+      console.error(err);
+    }
   };
 
-  const handleAssignWinner = (position, teamId) => {
-    assignWinner(position, teamId);
-    showToast(`Assigned ${position} place winner`);
+  const handleToggleShortlist = async (teamId) => {
+    try {
+      // 1. Flip the shortlisted state for the targeted team locally
+      const updatedTeams = teams.map((team) =>
+        team.id === teamId ? { ...team, shortlisted: !team.shortlisted } : team
+      );
+
+      // 2. Collect all team IDs that are currently marked as shortlisted
+      const shortlistedIds = updatedTeams
+        .filter((team) => team.shortlisted)
+        .map((team) => team.id);
+
+      // 3. Send the updated array to the backend endpoint
+      await stageShortlist(shortlistedIds);
+
+      // 4. Commit the new teams array to state to re-render the table
+      setTeams(updatedTeams);
+      showToast('Shortlist status updated!');
+    } catch (err) {
+      console.error('Error toggling shortlist:', err);
+      showToast('Failed to update shortlist status.');
+    }
   };
+    const handleAssignWinner = async (position, teamId) => {
+      try {
+        await assignAdminWinner(position, teamId);
+        showToast(`Assigned ${position} place winner`);
+        setWinners({ ...winners, [position]: teamId });
+        fetchData();
+      } catch (err) {
+        showToast('Failed to assign winner');
+      }
+    };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+    const handleLogout = () => {
+      logout();
+      navigate('/login');
+    };
 
-  // Filtered lists
-  const filteredProblems = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return problems.filter(
-      (p) =>
-        p.id.toLowerCase().includes(q) ||
-        p.title.toLowerCase().includes(q) ||
-        p.domain.toLowerCase().includes(q) ||
-        (Array.isArray(p.tags) && p.tags.some((t) => t.toLowerCase().includes(q))),
-    );
-  }, [problems, searchQuery]);
+    // Filtered lists
+    const filteredProblems = useMemo(() => {
+      const q = searchQuery.toLowerCase();
+      return problems.filter(
+        (p) =>
+          p.id.toLowerCase().includes(q) ||
+          p.title.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q)
+      );
+    }, [problems, searchQuery]);
 
-  const filteredTeams = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return teams.filter(
-      (t) =>
-        t.teamName.toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q) ||
-        t.leaderName.toLowerCase().includes(q) ||
-        (t.problemTitle && t.problemTitle.toLowerCase().includes(q)),
-    );
-  }, [teams, searchQuery]);
+    const filteredTeams = useMemo(() => {
+      const q = searchQuery.toLowerCase();
+      return teams.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          t.id.toLowerCase().includes(q) ||
+          t.college.toLowerCase().includes(q)
+      );
+    }, [teams, searchQuery]);
 
   return (
     <div className={styles.container}>
@@ -364,6 +425,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+       
             <div className={styles.sectionCard}>
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>Recent Team Registrations</h3>
@@ -395,13 +457,13 @@ export default function AdminDashboard() {
                           <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>{t.id}</span>
                         </td>
                         <td>
-                          <strong>{t.teamName}</strong>
+                          <strong>{t.name}</strong>
                         </td>
-                        <td>{t.leaderName}</td>
-                        <td>{t.problemTitle || 'Pending Selection'}</td>
+                        <td>{t.members?.find((m) => m.role === 'leader')?.name || t.members?.[0]?.name || ''}</td>
+                        <td>{t.problemStatementId || 'Pending Selection'}</td>
                         <td>
                           <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            {t.submitted ? <>{NavIcons.checkCircle} Submitted</> : <>{NavIcons.clock} Pending</>}
+                            {t.submission ? <>{NavIcons.checkCircle} Submitted</> : <>{NavIcons.clock} Pending</>}
                           </span>
                         </td>
                       </tr>
@@ -434,48 +496,73 @@ export default function AdminDashboard() {
                 + Add New Problem
               </SqBtn>
             </div>
+                
+           <div className={styles.problemsGrid}>
+  {filteredProblems.map((prob) => {
+    // Put console.log safely here inside the function block
+    console.log("print log ", prob);
 
-            <div className={styles.problemsGrid}>
-              {filteredProblems.map((prob) => (
-                <div key={prob.id} className={styles.probCard}>
-                  <div>
-                    <div className={styles.probHeader}>
-                      <span className={styles.probId}>{prob.id}</span>
-                      <span className={`${styles.badge} ${styles.badgeBlue}`}>{prob.domain}</span>
-                    </div>
-                    <h3 className={styles.probTitle} style={{ marginTop: 12 }}>
-                      {prob.title}
-                    </h3>
-                    <p className={styles.probDesc} style={{ marginTop: 8 }}>
-                      {prob.description}
-                    </p>
-                  </div>
-                  <div>
-                    <div className={styles.tagGroup}>
-                      {(Array.isArray(prob.tags) ? prob.tags : prob.tags.split(',')).map((tag) => (
-                        <span key={tag} className={styles.tag}>
-                          #{tag.trim()}
-                        </span>
-                      ))}
-                    </div>
-                    <div className={styles.probActions}>
-                      <SqBtn onClick={() => setViewProblem(prob)} size="sm">
-                        View
-                      </SqBtn>
-                      <SqBtn onClick={() => openEditModal(prob)} size="sm" lineColor="#eab308">
-                        Edit
-                      </SqBtn>
-                      <SqBtn onClick={() => handleDeleteProblem(prob.id)} size="sm" danger>
-                        Delete
-                      </SqBtn>
-                    </div>
-                  </div>
-                </div>
-              ))}
+    return (
+      <div key={prob.id} className={styles.probCard}>
+        <div>
+          <div className={styles.probHeader}>
+            <span className={styles.probId}>{prob.id}</span>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span className={`${styles.badge} ${prob.published ? styles.badgeGreen : styles.badgeYellow}`}>
+                {prob.published ? 'Published' : 'Draft'}
+              </span>
+              <span className={`${styles.badge} ${styles.badgeBlue}`}>{prob.domain}</span>
             </div>
+          </div>
+          <h3 className={styles.probTitle} style={{ marginTop: 12 }}>
+            {prob.title}
+          </h3>
+          <p className={styles.probDesc} style={{ marginTop: 8 }}>
+            {prob.description}
+          </p>
+        </div>
+
+        <div>
+          <div className={styles.tagGroup}>
+            {(Array.isArray(prob?.tags)
+              ? prob.tags
+              : typeof prob?.tags === 'string'
+                ? prob.tags.split(',')
+                : []
+            ).map((tag, idx) => (
+              <span key={idx} className={styles.tag}>
+                #{typeof tag === 'string' ? tag.trim() : tag}
+              </span>
+            ))}
+          </div>
+          <div className={styles.probActions} style={{ marginTop: '1rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <SqBtn
+              onClick={() => handleTogglePublish(prob)}
+              size="sm"
+              lineColor={prob.published ? '#ff6b75' : '#22c55e'}
+              baseColor={prob.published ? '#2a1215' : '#0a2a16'}
+            >
+              {prob.published ? 'Unpublish' : 'Publish PS'}
+            </SqBtn>
+            <SqBtn onClick={() => setViewProblem(prob)} size="sm">
+              View
+            </SqBtn>
+            <SqBtn onClick={() => openEditModal(prob)} size="sm" lineColor="#eab308">
+              Edit
+            </SqBtn>
+            <SqBtn onClick={() => handleDeleteProblem(prob.id)} size="sm" danger>
+              Delete
+            </SqBtn>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
           </div>
         )}
 
+       
         {/* ── 3. TEAMS MANAGEMENT TAB ── */}
         {activeTab === 'teams' && (
           <div className={styles.sectionCard}>
@@ -503,41 +590,45 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTeams.map((t) => (
-                    <tr key={t.id}>
-                      <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>{t.id}</td>
-                      <td>
-                        <strong>{t.teamName}</strong>
-                      </td>
-                      <td>{t.leaderEmail}</td>
-                      <td>{t.problemTitle || 'None Selected'}</td>
-                      <td>
-                        <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`}>
-                          {t.submitted ? 'Submitted' : 'Pending'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`${styles.badge} ${t.shortlisted ? styles.badgeGreen : styles.badgeYellow}`}>
-                          {t.shortlisted ? 'Shortlisted' : 'Under Review'}
-                        </span>
-                      </td>
-                      <td>
-                        <SqBtn
-                          size="sm"
-                          lineColor={t.shortlisted ? '#ff6b75' : '#22c55e'}
-                          onClick={() => handleToggleShortlist(t.id)}
-                        >
-                          {t.shortlisted ? 'Remove Shortlist' : 'Shortlist'}
-                        </SqBtn>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredTeams.map((t) => {
+                    //console.log("Inspecting team object t:", t);
+                    const isSubmitted = Boolean(t.submitted || t.submission || t.submissionFile || t.submissionStatus === 'submitted');
+                    return (
+                      
+                      <tr key={t.id}>
+                        <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>{t.id}</td>
+                        <td>
+                          <strong>{t.name}</strong>
+                        </td>
+                        <td>{t.members?.find((m) => m.role === 'leader')?.email || t.members?.[0]?.email || 'No Email'}</td>
+                        <td>{t.problemStatementId || 'None Selected'}</td>
+                        <td>
+                          <span className={`${styles.badge} ${isSubmitted ? styles.badgeGreen : styles.badgeYellow}`}>
+                            {isSubmitted ? 'Submitted' : 'Pending'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`${styles.badge} ${t.shortlisted ? styles.badgeGreen : styles.badgeYellow}`}>
+                            {t.shortlisted ? 'Shortlisted' : 'Under Review'}
+                          </span>
+                        </td>
+                        <td>
+                          <SqBtn
+                            size="sm"
+                            lineColor={t.shortlisted ? '#ff6b75' : '#22c55e'}
+                            onClick={() => handleToggleShortlist(t.id)}
+                          >
+                            {t.shortlisted ? 'Remove Shortlist' : 'Shortlist'}
+                          </SqBtn>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
-
         {/* ── 4. SUBMISSIONS REVIEW TAB ── */}
         {activeTab === 'submissions' && (
           <div className={styles.sectionCard}>
@@ -555,20 +646,27 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {teams.map((t) => (
-                    <tr key={t.id}>
-                      <td>
-                        <strong>{t.teamName}</strong> ({t.id})
-                      </td>
-                      <td>{t.submissionFile || '—'}</td>
-                      <td>{t.submissionDate || 'Not Submitted'}</td>
-                      <td>
-                        <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`}>
-                          {t.submitted ? 'File Ready' : 'Pending Submission'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {teams.map((t) => {
+                    console.log("Team object t:", t); // <-- Inspect t here
+                    return (
+                      <tr key={t.id}>
+                        <td>
+                          <strong>{t.teamName || t.name}</strong> ({t.id})
+                        </td>
+                        <td>
+                          {t.submission?.original_name || t.submissionFile || '—'}
+                        </td>
+                        <td>
+                          {t.submission?.submitted_at ? new Date(t.submission.submitted_at).toLocaleString() : (t.submissionDate || 'Not Submitted')}
+                        </td>
+                        <td>
+                          <span className={`${styles.badge} ${(t.submission || t.submitted) ? styles.badgeGreen : styles.badgeYellow}`}>
+                            {(t.submission || t.submitted) ? 'Submitted' : 'Pending Submission'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

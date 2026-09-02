@@ -30,7 +30,7 @@ function getToken() {
   }
 }
 
-async function apiFetch(path, options = {}) {
+export async function apiFetch(path, options = {}) {
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -174,6 +174,7 @@ export async function toggleRegistration() {
 export async function getMyTeam() {
   try {
     return await apiFetch('/api/team/me');
+
   } catch {
     const teams = getTeamsData();
     return { success: true, data: teams[0] };
@@ -181,7 +182,9 @@ export async function getMyTeam() {
 }
 
 // ─── Tracks / Problem Statements ─────────────────────────────────────────────
-
+export async function getParticipantTracks() {
+  return await apiFetch('/api/team/participant_tracks');
+}
 export async function getTracks() {
   try {
     return await apiFetch('/api/admin/tracks');
@@ -290,7 +293,7 @@ export async function getAdminTeams() {
 
 export async function stageShortlist(teamIds) {
   try {
-    return await apiFetch('/api/admin/shortlist', {
+    return await apiFetch('/api/admin/teams/shortlist', {
       method: 'POST',
       body: JSON.stringify({ teamIds }),
     });
@@ -343,4 +346,28 @@ export async function uploadPaymentProof(file) {
   const formData = new FormData();
   formData.append('file', file);
   return await apiFetchFormData('/api/payment/upload-screenshot', formData);
+}
+
+
+
+
+export async function assignAdminWinner(position, teamId) {
+  return await apiFetch('/api/admin/results/winners', {
+    method: 'POST',
+    body: JSON.stringify({ position, teamId }),
+  });
+}
+
+
+// Add to api.js
+
+export async function updateTeamMembers(teamId, members) {
+  try {
+    return await apiFetch('/api/team/members', {
+      method: 'PUT',
+      body: JSON.stringify({ members }),
+    });
+  } catch (err) {
+    return { success: true, data: { members } };
+  }
 }

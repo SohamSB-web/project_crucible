@@ -165,7 +165,9 @@ model Track {
   description       String @db.Text @default("")
   difficulty        String @default("Intermediate")
   reward            String @default("")
+  tags        String[] @default([])
   teams             Int    @default(0)
+  published   Boolean  @default(false) // <--- Add this line
 
   @@map("tracks")
 }
@@ -190,4 +192,27 @@ model Payment {
   uploaded_at   DateTime @default(now())
 
   @@map("payments")
+}
+
+model HackathonSetting {
+  id                 Int      @id @default(1)
+  name               String   @default("CRUCIBLE Hackathon 2026")
+  year               Int      @default(2026)
+  deadline           String   @default("2026-08-30")
+  hackathonStatus    String   @default("Live") // 'Live' | 'Paused' | 'Closed'
+  registrationStatus String   @default("Open") // 'Open' | 'Closed'
+  updated_at         DateTime @updatedAt
+
+  @@map("hackathon_settings")
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  title      String
+  time       String   @default("")
+  unread     Boolean  @default(true)
+  detail     String   @db.Text
+  created_at DateTime @default(now())
+
+  @@map("notifications")
 }

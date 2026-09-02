@@ -29,6 +29,13 @@ const trackSchema = z.object({
   description: z.string().default(''),
   difficulty: z.string().default('Intermediate'),
   reward: z.string().default(''),
+  tags: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      return val.split(',').map((t) => t.trim()).filter(Boolean);
+    }
+    if (Array.isArray(val)) return val;
+    return [];
+  }, z.array(z.string())).optional(),
 });
 
 // ─── Registration window ──────────────────────────────────────────────────────
@@ -332,14 +339,27 @@ router.post('/tracks', requireAuth, requireRole('admin'), async (req, res) => {
 });
 
 router.patch('/tracks/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  // 1. Validate and transform incoming data using Zod (handles tags array and mapping)
+  const parsed = trackSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'Validation failed.', details: parsed.error.format() });
+  }
+
   try {
+    // 2. Map frontend 'domain' to database 'category' if your schema uses category
+    const { domain, ...restData } = parsed.data;
+
     const track = await prisma.track.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: {
+        ...restData,
+        ...(domain && { category: domain }), // maps domain to category safely
+      },
     });
     return res.json({ success: true, data: track });
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ success: false, error: 'Track not found.' });
+    console.error('Update track error:', err);
     return res.status(500).json({ success: false, error: 'Failed to update track.' });
   }
 });
@@ -364,5 +384,7 @@ router.post('/submissions/lock-all', requireAuth, requireRole('admin'), async (_
     return res.status(500).json({ success: false, error: 'Failed to lock submissions.' });
   }
 });
+
+
 
 module.exports = router;
