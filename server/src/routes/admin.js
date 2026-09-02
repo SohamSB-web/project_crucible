@@ -73,6 +73,7 @@ router.get('/teams', requireAuth, requireRole('admin', 'judge'), async (_req, re
         members: true,
         submission: { select: { id: true, original_name: true, submitted_at: true, locked: true, version: true } },
         result: true,
+        payment: true,
       },
       orderBy: { created_at: 'desc' },
     });
@@ -92,6 +93,7 @@ router.get('/teams', requireAuth, requireRole('admin', 'judge'), async (_req, re
       members: t.members,
       submission: t.submission,
       result: t.result,
+      payment: t.payment, // <── ADD THIS LINE
     }));
 
     return res.json({ success: true, data: shaped });
@@ -386,5 +388,142 @@ router.post('/submissions/lock-all', requireAuth, requireRole('admin'), async (_
 });
 
 
+// Add to admin.js (or your settings route file)
+const settingsSchema = z.object({
+  name: z.string().min(1),
+  year: z.number().int(),
+  deadline: z.string(),
+  hackathonStatus: z.enum(['Live', 'Paused', 'Closed']),
+  registrationStatus: z.enum(['Open', 'Closed']),
+  acceptingSubmissions: z.boolean(),
+});
 
+router.get('/settings', async (_req, res) => {
+  try {
+    let settings = await prisma.hackathonSetting.findUnique({ where: { id: 1 } });
+    if (!settings) {
+      settings = await prisma.hackathonSetting.create({ data: { id: 1 } });
+    }
+    return res.json({ success: true, data: settings });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to fetch settings.' });
+  }
+});
+
+router.put('/settings', requireAuth, requireRole('admin'), async (req, res) => {
+  const parsed = settingsSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'Validation failed.', details: parsed.error.format() });
+  }
+
+  try {
+    const settings = await prisma.hackathonSetting.upsert({
+      where: { id: 1 },
+      create: { id: 1, ...parsed.data },
+      update: parsed.data,
+    });
+    return res.json({ success: true, data: settings });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'Failed to update settings.' });
+  }
+});
+
+const rankSchema = z.object({
+  position: z.enum(['first', 'second', 'third']),
+  teamId: z.string().min(1),
+});
+
+router.post('/results/winners', requireAuth, requireRole('admin'), async (req, res) => {
+  const parsed = rankSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, error: 'Validation failed.' });
+  }
+
+  const { position, teamId } = parsed.data;
+  const rankMap = { first: 1, second: 2, third: 3 };
+  const targetRank = rankMap[position];
+
+  try {
+    // Clear any existing team holding this rank to maintain unique positioning
+    await prisma.result.updateMany({
+      where: { rank: targetRank },
+      data: { rank: null },
+    });
+
+    // Assign the rank to the newly selected team
+    const result = await prisma.result.upsert({
+      where: { team_id: teamId },
+      create: { team_id: teamId, rank: targetRank, shortlisted: true },
+      update: { rank: targetRank, shortlisted: true },
+    });
+
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('[Admin/AssignWinner]', err);
+    return res.status(500).json({ success: false, error: 'Failed to assign winner rank.' });
+  }
+});
+
+// ─── POST /api/admin/results/publish ──────────────────────────────────────
+router.post('/results/publish', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { teamIds } = req.body;
+
+    let updated;
+    if (Array.isArray(teamIds) && teamIds.length > 0) {
+      // Publish only the specified teams
+      updated = await prisma.result.updateMany({
+        where: { team_id: { in: teamIds } },
+        data: { published: true }
+      });
+    } else {
+      // Fallback: Publish ALL results if no specific array was sent
+      updated = await prisma.result.updateMany({
+        data: { published: true }
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Successfully published ${updated.count} results.`
+    });
+  } catch (err) {
+    console.error('[Admin/PublishResults]', err);
+    return res.status(500).json({ success: false, error: 'Failed to publish results.' });
+  }
+});
+
+// ─── POST /api/admin/teams/:teamId/verify-payment ─────────────────────────────
+router.post('/teams/:teamId/verify-payment', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { teamId } = req.params;
+
+    const updatedTeam = await prisma.team.update({
+      where: { id: teamId }, // Adjust to Number(teamId) if your ID is an integer
+      data: { paymentVerified: true }
+    });
+
+    return res.json({ success: true, data: updatedTeam });
+  } catch (err) {
+    console.error('[Admin/VerifyPayment]', err);
+    return res.status(500).json({ success: false, error: 'Failed to verify payment.' });
+  }
+});
+
+router.patch('/teams/:teamId/payment-status', requireAuth, requireRole('admin', 'judge'), async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { status } = req.body;
+
+    const updatedPayment = await prisma.payment.update({
+      where: { team_id: teamId },
+      data: { status },
+    });
+
+    return res.json({ success: true, data: updatedPayment });
+  } catch (err) {
+    console.error('[Admin/PaymentStatus]', err);
+    return res.status(500).json({ success: false, error: 'Failed to update payment status.' });
+  }
+});
 module.exports = router;

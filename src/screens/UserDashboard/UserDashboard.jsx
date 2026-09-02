@@ -6,7 +6,7 @@ import StarBorder from '../../components/ui/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useLenis } from '../../context/LenisContext.jsx';
 import {
-  getHackathonSettings,
+
   getProblemStatements,
   getTeamsData,
   getSelectedProblem,
@@ -26,7 +26,8 @@ import {
   uploadPaymentProof,
   getMyTeam,
   apiFetch,
-  updateTeamMembers
+  updateTeamMembers,
+  getHackathonSettings, getTeamDashboardSettings
 } from '../../lib/api';
 
 import qrCodeImg from '../../assets/upi_qr_code.jpg';
@@ -262,7 +263,8 @@ export default function UserDashboard() {
     }
   });
   const [teamLoading, setTeamLoading] = useState(!liveTeam);
-
+  const [dynamicSettings, setDynamicSettings] = useState(getHackathonSettings());
+  const [teamResult, setTeamResult] = useState(null);
   // Prefer live API data; fall back strictly to neutral placeholder (Member 1, Member 2, Member 3)
   const currentTeam = useMemo(() => {
     if (liveTeam) {
@@ -320,6 +322,15 @@ export default function UserDashboard() {
   // Fetch live team data from backend on mount
   useEffect(() => {
     let cancelled = false;
+
+    getTeamDashboardSettings()
+      .then((res) => {
+        if (!cancelled && res?.data) {
+          if (res.data.settings) setDynamicSettings(res.data.settings);
+          if (res.data.result) setTeamResult(res.data.result);
+        }
+      })
+      .catch(() => { });
     getMyTeam()
       .then((res) => {
         if (!cancelled && res?.data) {
@@ -872,7 +883,20 @@ const [selectedProb, setSelectedProb] = useState(null);
                   )}
                 </span>
               </div>
-
+              {/* Col: Result Announcement Card */}
+              {teamResult?.published && (
+                <div className={styles.statusCard} style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg, rgba(234,179,8,0.15), rgba(217,119,6,0.05))', border: '1px solid rgba(234,179,8,0.4)' }}>
+                  <span className={styles.cardIcon} style={{ color: '#eab308' }}>{Icons.award}</span>
+                  <span className={styles.cardLabel}>Final Hackathon Verdict</span>
+                  <span className={styles.cardValue} style={{ fontSize: '1.1rem', color: '#eab308', fontWeight: 800 }}>
+                    {teamResult.rank
+                      ? `🎉 Winner! Secured Rank #${teamResult.rank}`
+                      : teamResult.shortlisted
+                        ? '🌟 Shortlisted for Final Pitches!'
+                        : '💡 Don’t give up! Keep building and try again for the next hackathon.'}
+                  </span>
+                </div>
+              )}
               
             </div>
 

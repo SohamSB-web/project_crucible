@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
 const { uploadPaymentScreenshot } = require('../lib/paymentStorage');
+const { uploadParticipantId } = require('../lib/paymentStorage');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { uploadPayment, validatePaymentMimeType } = require('../middleware/upload');
 
@@ -90,4 +91,54 @@ router.post(
     }
 );
 
+router.post(
+    '/upload-ids',
+    requireAuth,
+    requireRole('team'),
+    uploadPayment.single('file'), // Handle single combined PDF file upload
+    validatePaymentMimeType,
+    async (req, res) => {
+        try {
+            const teamId = req.user?.teamId || req.user?.id;
+            const file = req.file;
+
+            if (!file) {
+                return res.status(400).json({ success: false, error: 'No ID proofs PDF provided.' });
+            }
+
+            const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
+            const storagePath = `${teamId}/participant-ids${ext}`;
+
+            // 1. Upload combined PDF to the 'IDS' bucket
+            const uploadRes = await uploadParticipantId(storagePath, file.buffer, file.mimetype);
+
+            // 2. Save or update record in the new 'participant_ids' table via Prisma
+            const idRecord = await prisma.participantId.upsert({
+                where: { team_id: teamId },
+                create: {
+                    team_id: teamId,
+                    file_path: uploadRes.path,
+                    original_name: file.originalname,
+                },
+                update: {
+                    file_path: uploadRes.path,
+                    original_name: file.originalname,
+                    uploaded_at: new Date(),
+                },
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'Participant IDs uploaded successfully to IDS bucket and recorded.',
+                data: idRecord,
+            });
+        } catch (err) {
+            console.error('[Upload IDs Error]:', err);
+            return res.status(500).json({
+                success: false,
+                error: err.message || 'Failed to upload participant IDs.',
+            });
+        }
+    }
+);
 module.exports = router;

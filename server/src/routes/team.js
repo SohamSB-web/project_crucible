@@ -8,6 +8,8 @@ const { sendCredentialEmail, sendMemberWelcomeEmail } = require('../lib/email');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { publicWriteLimiter } = require('../middleware/ratelimit');
 const { verifyTurnstile } = require('../middleware/turnstile');
+const { uploadPayment, validatePaymentMimeType } = require('../middleware/upload');
+const { uploadParticipantId } = require('../lib/paymentStorage');
 
 const router = Router();
 
@@ -67,126 +69,181 @@ function generateTempPassword(length = 10) {
 
 // ─── POST /api/team/register ──────────────────────────────────────────────────
 
-router.post('/register', publicWriteLimiter, verifyTurnstile, async (req, res) => {
-  const parsed = registerSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation failed.',
-      details: parsed.error.flatten().fieldErrors,
+router.post(
+  '/register',
+  publicWriteLimiter,
+  // Registration is now submitted as multipart/form-data: text fields + the
+  // combined participant-IDs PDF under the field name "idsFile".
+  (req, res, next) => {
+    uploadPayment.single('idsFile')(req, res, function (err) {
+      if (err) {
+        console.error('[Team/Register] Multer error:', err);
+        return res.status(400).json({ success: false, error: err.message || 'File upload error' });
+      }
+      next();
     });
-  }
+  },
+  validatePaymentMimeType,
+  verifyTurnstile,
+  async (req, res) => {
+    // Multer/multipart puts nested data on the wire as a JSON string — parse it
+    // back into an array before validation.
+    if (typeof req.body.members === 'string') {
+      try {
+        req.body.members = JSON.parse(req.body.members);
+      } catch {
+        return res.status(400).json({ success: false, error: 'Invalid members payload.' });
+      }
+    }
 
-  const {
-    teamName, problemStatementId, problemStatement,
-    leadName, leadEmail, leadPhone, college, year, dept, members,
-    password,
-    themeTrack,
-  } = parsed.data;
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation failed.',
+        details: parsed.error.flatten().fieldErrors,
+      });
+    }
 
-  // Check registration window is open
-  const window = await prisma.registrationWindow.findFirst();
-  if (window && !window.open) {
-    return res.status(403).json({ success: false, error: 'Registrations are currently closed.' });
-  }
+    const idsFile = req.file;
+    if (!idsFile) {
+      return res.status(400).json({ success: false, error: 'Participant ID proofs PDF is required.' });
+    }
 
-  // Check total members won't exceed cap
-  if (members.length + 1 > MAX_TEAM_SIZE) {
-    return res.status(400).json({
-      success: false,
-      error: `Team size cannot exceed ${MAX_TEAM_SIZE} members (including lead).`,
-    });
-  }
+    const {
+      teamName, problemStatementId, problemStatement,
+      leadName, leadEmail, leadPhone, college, year, dept, members,
+      password,
+      themeTrack,
+    } = parsed.data;
 
-  // Check if lead email already registered
-  const existingTeam = await prisma.team.findUnique({ where: { lead_email: leadEmail.toLowerCase() } });
-  if (existingTeam) {
-    return res.status(409).json({ success: false, error: 'This email is already registered as a team lead.' });
-  }
+    // Check registration window is open
+    const window = await prisma.registrationWindow.findFirst();
+    if (window && !window.open) {
+      return res.status(403).json({ success: false, error: 'Registrations are currently closed.' });
+    }
 
-  try {
-    const joinCode = await generateJoinCode();
-    const finalPassword = password || generateTempPassword();
-    const passwordHash = await bcrypt.hash(finalPassword, 12);
+    // Check total members won't exceed cap
+    if (members.length + 1 > MAX_TEAM_SIZE) {
+      return res.status(400).json({
+        success: false,
+        error: `Team size cannot exceed ${MAX_TEAM_SIZE} members (including lead).`,
+      });
+    }
 
-    const team = await prisma.$transaction(async (tx) => {
-      const newTeam = await tx.team.create({
-        data: {
-          name: teamName,
-          join_code: joinCode,
-          theme_track: themeTrack || problemStatementId || '',
-          problem_statement_id: problemStatementId || '',
-          problem_statement: problemStatement || '',
-          lead_email: leadEmail.toLowerCase(),
-          phone: leadPhone,
-          college,
-          year,
-          dept: dept || '',
-          members: {
-            create: [
-              {
-                name: leadName,
-                email: leadEmail.toLowerCase(),
-                phone: leadPhone,
-                role: 'lead',
-                custom_role: 'Team Lead',
-                year,
-                dept: dept || '',
+    // Check if lead email already registered
+    const existingTeam = await prisma.team.findUnique({ where: { lead_email: leadEmail.toLowerCase() } });
+    if (existingTeam) {
+      return res.status(409).json({ success: false, error: 'This email is already registered as a team lead.' });
+    }
+
+    try {
+      const joinCode = await generateJoinCode();
+      const finalPassword = password || generateTempPassword();
+      const passwordHash = await bcrypt.hash(finalPassword, 12);
+
+      // Generate the team id upfront so the storage path (and the DB row) can
+      // reference it, and so the PDF is safely on Supabase before we touch the DB.
+      const teamId = crypto.randomUUID();
+      const idsExt = idsFile.originalname.slice(idsFile.originalname.lastIndexOf('.')).toLowerCase() || '.pdf';
+      const idsStoragePath = `${teamId}/participant-ids${idsExt}`;
+
+      let idsUploadResult;
+      try {
+        idsUploadResult = await uploadParticipantId(idsStoragePath, idsFile.buffer, idsFile.mimetype);
+      } catch (uploadErr) {
+        console.error('[Team/Register] Failed to upload participant IDs PDF:', uploadErr);
+        return res.status(500).json({ success: false, error: 'Failed to upload participant ID proofs. Please try again.' });
+      }
+
+      const team = await prisma.$transaction(async (tx) => {
+        const newTeam = await tx.team.create({
+          data: {
+            id: teamId,
+            name: teamName,
+            join_code: joinCode,
+            theme_track: themeTrack || problemStatementId || '',
+            problem_statement_id: problemStatementId || '',
+            problem_statement: problemStatement || '',
+            lead_email: leadEmail.toLowerCase(),
+            phone: leadPhone,
+            college,
+            year,
+            dept: dept || '',
+            members: {
+              create: [
+                {
+                  name: leadName,
+                  email: leadEmail.toLowerCase(),
+                  phone: leadPhone,
+                  role: 'lead',
+                  custom_role: 'Team Lead',
+                  year,
+                  dept: dept || '',
+                },
+                ...members.map((m) => ({
+                  name: m.name,
+                  email: m.email.toLowerCase(),
+                  phone: m.phone,
+                  role: 'member',
+                  custom_role: m.role || 'Member',
+                  year: m.year || '',
+                  dept: m.dept || '',
+                })),
+              ],
+            },
+            credential: {
+              create: {
+                password_hash: passwordHash,
+                email_sent_at: null,
               },
-              ...members.map((m) => ({
-                name: m.name,
-                email: m.email.toLowerCase(),
-                phone: m.phone,
-                role: 'member',
-                custom_role: m.role || 'Member',
-                year: m.year || '',
-                dept: m.dept || '',
-              })),
-            ],
-          },
-          credential: {
-            create: {
-              password_hash: passwordHash,
-              email_sent_at: null,
             },
           },
-        },
+        });
+
+        // Create an initial Result row (not shortlisted/published yet)
+        await tx.result.create({ data: { team_id: newTeam.id } });
+
+        // Record the participant IDs PDF that was just uploaded to the 'ids' bucket
+        await tx.participantId.create({
+          data: {
+            team_id: newTeam.id,
+            file_path: idsUploadResult.path || idsStoragePath,
+            original_name: idsFile.originalname,
+          },
+        });
+
+        return newTeam;
       });
 
-      // Create an initial Result row (not shortlisted/published yet)
-      await tx.result.create({ data: { team_id: newTeam.id } });
-
-      return newTeam;
-    });
-
-    // Send credential email (non-blocking — don't fail registration if email fails)
-    sendCredentialEmail({
-      to: leadEmail,
-      teamName,
-      teamId: team.id,
-      joinCode,
-      tempPassword: finalPassword,
-    })
-      .then(() => prisma.credential.update({
-        where: { team_id: team.id },
-        data: { email_sent_at: new Date() },
-      }))
-      .catch((err) => console.error('[Email] Credential email failed:', err.message));
-
-    return res.status(201).json({
-      success: true,
-      data: {
+      // Send credential email (non-blocking — don't fail registration if email fails)
+      sendCredentialEmail({
+        to: leadEmail,
+        teamName,
         teamId: team.id,
         joinCode,
-        email: leadEmail.toLowerCase(),
-        message: 'Registration successful! Login credentials have been sent to your email.',
-      },
-    });
-  } catch (err) {
-    console.error('[Team/Register]', err);
-    return res.status(500).json({ success: false, error: 'Registration failed. Please try again.' });
-  }
-});
+        tempPassword: finalPassword,
+      })
+        .then(() => prisma.credential.update({
+          where: { team_id: team.id },
+          data: { email_sent_at: new Date() },
+        }))
+        .catch((err) => console.error('[Email] Credential email failed:', err.message));
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          teamId: team.id,
+          joinCode,
+          email: leadEmail.toLowerCase(),
+          message: 'Registration successful! Login credentials have been sent to your email.',
+        },
+      });
+    } catch (err) {
+      console.error('[Team/Register]', err);
+      return res.status(500).json({ success: false, error: 'Registration failed. Please try again.' });
+    }
+  });
 
 // ─── POST /api/team/join ──────────────────────────────────────────────────────
 
@@ -340,7 +397,7 @@ router.post('/change-password', requireAuth, requireRole('team'), async (req, re
 
 router.get('/participant_tracks', async (req, res) => {
 
-try {
+  try {
     const tracks = await prisma.track.findMany({
       where: {
         published: true
@@ -414,9 +471,7 @@ router.put('/members', requireAuth, requireRole('team'), async (req, res) => {
 
   try {
     const updatedTeam = await prisma.$transaction(async (tx) => {
-      const existingMembers = await tx.teamMember.findMany({ where: { team_id: teamId } });
-      const leadMember = existingMembers.find((m) => m.role === 'lead');
-
+      // 1. Delete old members and bulk insert new ones in parallel or direct sequence without extra findMany overhead
       await tx.teamMember.deleteMany({ where: { team_id: teamId } });
 
       const newMembersData = members.map((m, idx) => {
@@ -424,21 +479,25 @@ router.put('/members', requireAuth, requireRole('team'), async (req, res) => {
         return {
           team_id: teamId,
           name: m.name,
-          email: m.email || leadMember?.email || `${teamId.toLowerCase()}_m${idx + 1}@placeholder.com`,
-          phone: m.phone || leadMember?.phone || '',
+          email: m.email || `${teamId.toLowerCase()}_m${idx + 1}@placeholder.com`,
+          phone: m.phone || '',
           role: isLead ? 'lead' : 'member',
           custom_role: m.role || (isLead ? 'Team Lead' : 'Member'),
-          year: m.year || leadMember?.year || '',
-          dept: m.dept || leadMember?.dept || '',
+          year: m.year || '',
+          dept: m.dept || '',
         };
       });
 
       await tx.teamMember.createMany({ data: newMembersData });
 
+      // 2. Return final updated team
       return await tx.team.findUnique({
         where: { id: teamId },
         include: { members: { orderBy: { joined_at: 'asc' } }, submission: true, payment: true, result: true },
       });
+    }, {
+      maxWait: 10000, // 10s max wait to acquire a connection
+      timeout: 10000, // 10s timeout limit for transaction execution
     });
 
     return res.json({ success: true, data: updatedTeam });
@@ -447,5 +506,27 @@ router.put('/members', requireAuth, requireRole('team'), async (req, res) => {
     return res.status(500).json({ success: false, error: 'Failed to update team members.' });
   }
 });
+// ─── GET /api/team/settings-and-results ──────────────────────────────────────
+router.get('/settings-and-results', requireAuth, requireRole('team'), async (req, res) => {
+  try {
+    const settings = await prisma.hackathonSetting.findFirst({
+      where: { id: 1 }
+    });
 
+    const result = await prisma.result.findUnique({
+      where: { team_id: req.user.teamId }
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        settings: settings || { name: 'RepoForge Hackathon', year: 2026, hackathonStatus: 'Live' },
+        result: result || { shortlisted: false, rank: null, published: false }
+      }
+    });
+  } catch (err) {
+    console.error('[Team/SettingsAndResults]', err);
+    return res.status(500).json({ success: false, error: 'Failed to fetch settings and results.' });
+  }
+});
 module.exports = router;

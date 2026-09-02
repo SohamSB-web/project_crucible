@@ -12,6 +12,13 @@ import {
   stageShortlist,
   getAdminSubmissions,
   assignAdminWinner,
+  getHackathonSettings,       
+  updateHackathonSettings,
+  publishHackathonResults,
+  verifyTeamPayment, 
+  updatePaymentStatus
+  
+  
   
 } from '../../lib/api'; // <--- Switch from portalStorage to real api.js
 
@@ -95,7 +102,7 @@ const NavIcons = {
       <path d="M15 9l-3-6-3 6" />
     </svg>
   ),
-};
+};    
 
 const SqBtn = ({ children, onClick, type = 'button', danger = false, success = false, lineColor, baseColor, size = 'sm', fullWidth = false }) => (
   <SpecularButton
@@ -129,7 +136,7 @@ export default function AdminDashboard() {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState('dashboard');
-    const [settings, setSettings] = useState({ name: 'RepoForge Hackathon', year: 2026, deadline: '', hackathonStatus: 'Live', registrationStatus: 'Open' });
+
     const [problems, setProblems] = useState([]);
     const [teams, setTeams] = useState([]);
     const [submissions, setSubmissions] = useState([]);
@@ -144,36 +151,41 @@ export default function AdminDashboard() {
 
     // Form states
     const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '' });
-
+  const [settings, setSettings] = useState({
+    name: 'RepoForge Hackathon',
+    year: 2026,
+    deadline: '',
+    hackathonStatus: 'Live',
+    registrationStatus: 'Open',
+    acceptingSubmissions: true,
+  });
     // Fetch Database Data on Mount & Tab Change
-    const fetchData = async () => {
-      try {
-        const [ tracksRes, teamsRes, subsRes] = await Promise.all([
-         
-          getTracks(),
-          getAdminTeams(),
-          getAdminSubmissions(),
-        ]);
+ // Inside fetchData() in AdminDashboard.jsx
+  // Inside fetchData() in AdminDashboard.jsx
+  const fetchData = async () => {
+    try {
+      const [tracksRes, teamsRes, subsRes] = await Promise.all([
+        getTracks(),
+        getAdminTeams(),
+        getAdminSubmissions(),
+      ]);
 
-       
-        if (tracksRes.success) setProblems(tracksRes.data);
-        if (teamsRes.success) setTeams(teamsRes.data);
-        if (subsRes.success) setSubmissions(subsRes.data);
+      if (tracksRes.success) setProblems(tracksRes.data);
+      if (teamsRes.success) setTeams(teamsRes.data);
+      if (subsRes.success) setSubmissions(subsRes.data);
 
-        // Extract winners from team results if mapped
-        const winnerMap = {};
-        teamsRes.data.forEach(t => {
-          if (t.result?.rank === 1) winnerMap.first = t.id;
-          if (t.result?.rank === 2) winnerMap.second = t.id;
-          if (t.result?.rank === 3) winnerMap.third = t.id;
-        });
-        setWinners(winnerMap);
-      } catch (err) {
-        showToast('Failed to sync data from database.');
-        console.error(err);
-      }
-    };
-
+      // Map existing ranks from team result objects to the winners state
+      const winnerMap = { first: null, second: null, third: null };
+      teamsRes.data.forEach(t => {
+        if (t.result?.rank === 1) winnerMap.first = t.id;
+        if (t.result?.rank === 2) winnerMap.second = t.id;
+        if (t.result?.rank === 3) winnerMap.third = t.id;
+      });
+      setWinners(winnerMap);
+    } catch (err) {
+      showToast('Failed to sync data from database.');
+    }
+  };
     useEffect(() => {
       fetchData();
     }, []);
@@ -193,16 +205,50 @@ export default function AdminDashboard() {
     }, [teams, problems]);
 
     // Handlers connected to Backend APIs
-    const handleSaveSettings = async (e) => {
-      e.preventDefault();
-      try {
-        await saveAdminSettings(settings);
-        showToast('Settings saved to database!');
-      } catch (err) {
-        showToast('Error saving settings');
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      await updateHackathonSettings(settings);
+      showToast('Settings saved & submission rules updated!');
+    } catch (err) {
+      showToast('Error saving settings');
+    }
+  };
+  const handleVerify = async (teamId) => {
+    try {
+      const res = await verifyTeamPayment(teamId);
+      if (res?.success) {
+        alert("✅ Payment successfully verified!");
+        // Refresh your teams list state here if needed
+      } else {
+        alert(res?.error || "Failed to verify payment.");
       }
-    };
+    } catch (error) {
+      alert("An error occurred while verifying.");
+    }
+  };
+  const handleStatusChange = async (teamId, newStatus) => {
+    try {
+      // Call the imported function directly
+      const res = await updatePaymentStatus(teamId, newStatus);
 
+      if (res?.success) {
+        setTeams((prevTeams) =>
+          prevTeams.map((t) =>
+            t.id === teamId
+              ? { ...t, payment: { ...t.payment, status: newStatus } }
+              : t
+          )
+        );
+        alert(`Payment status updated to ${newStatus}`);
+      } else {
+        alert(res?.error || "Failed to update status.");
+      }
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      alert(error.message || "An error occurred.");
+    }
+  };
     const handleCreateProblem = async (e) => {
       e.preventDefault();
       try {
@@ -290,7 +336,28 @@ export default function AdminDashboard() {
         showToast('Failed to assign winner');
       }
     };
+  const [isPublishing, setIsPublishing] = useState(false);
 
+  const handlePublishResults = async () => {
+    if (!window.confirm("Are you sure you want to publish all results?")) return;
+
+    // Extract all team IDs from your loaded teams state
+    const allTeamIds = teams.map((t) => t.id);
+
+    setIsPublishing(true);
+    try {
+      const res = await publishHackathonResults(allTeamIds);
+      if (res?.success) {
+        alert("🎉 Results are now live and published to all teams!");
+      } else {
+        alert(res?.error || "Failed to publish results.");
+      }
+    } catch (error) {
+      alert("An error occurred while publishing.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
     const handleLogout = () => {
       logout();
       navigate('/login');
@@ -583,42 +650,97 @@ export default function AdminDashboard() {
                     <th>Team ID</th>
                     <th>Team Name</th>
                     <th>Leader Email</th>
-                    <th>Selected Problem</th>
-                    <th>Submission Status</th>
-                    <th>Shortlist Status</th>
-                    <th>Action</th>
+                    <th>Problem</th>
+                    <th>Submission</th>
+                    <th>Payment & Verification</th>
+                    <th>Shortlist Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTeams.map((t) => {
-                    //console.log("Inspecting team object t:", t);
                     const isSubmitted = Boolean(t.submitted || t.submission || t.submissionFile || t.submissionStatus === 'submitted');
+                    const hasPayment = t.payment !== null && t.payment !== undefined;
+                    const paymentStatus = t.payment?.status || 'Not Uploaded';
+
                     return (
-                      
                       <tr key={t.id}>
                         <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>{t.id}</td>
                         <td>
-                          <strong>{t.name}</strong>
+                          <strong>{t.name || t.teamName}</strong>
                         </td>
                         <td>{t.members?.find((m) => m.role === 'leader')?.email || t.members?.[0]?.email || 'No Email'}</td>
-                        <td>{t.problemStatementId || 'None Selected'}</td>
+                        <td>{t.problemStatementId || t.problem_statement_id || 'None'}</td>
+
+                        {/* Submission Status */}
                         <td>
                           <span className={`${styles.badge} ${isSubmitted ? styles.badgeGreen : styles.badgeYellow}`}>
                             {isSubmitted ? 'Submitted' : 'Pending'}
                           </span>
                         </td>
+
+                        {/* Payment Proof & Status Column */}
                         <td>
-                          <span className={`${styles.badge} ${t.shortlisted ? styles.badgeGreen : styles.badgeYellow}`}>
-                            {t.shortlisted ? 'Shortlisted' : 'Under Review'}
-                          </span>
+                          {!hasPayment ? (
+                            <span className={`${styles.badge} ${styles.badgeYellow}`} style={{ fontSize: '0.75rem' }}>
+                              Not Uploaded
+                            </span>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span className={`${styles.badge} ${styles.badgeGreen}`} style={{ fontSize: '0.75rem' }}>
+                                  Uploaded
+                                </span>
+                                
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '0.8rem', color: paymentStatus === 'Verified' ? '#22c55e' : '#eab308' }}>
+                                  {paymentStatus}
+                                </span>
+                                {paymentStatus !== 'Verified' ? (
+                                  <button
+                                    onClick={() => handleStatusChange(t.id, 'Verified')}
+                                    style={{
+                                      padding: '0.2rem 0.4rem',
+                                      backgroundColor: '#16a34a',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    Verify
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleStatusChange(t.id, 'Pending')}
+                                    style={{
+                                      padding: '0.2rem 0.4rem',
+                                      backgroundColor: '#6b7280',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    Revert
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </td>
+
+                        {/* Merged Shortlist / Remove Action Column */}
                         <td>
                           <SqBtn
                             size="sm"
                             lineColor={t.shortlisted ? '#ff6b75' : '#22c55e'}
                             onClick={() => handleToggleShortlist(t.id)}
                           >
-                            {t.shortlisted ? 'Remove Shortlist' : 'Shortlist'}
+                            {t.shortlisted ? 'Remove' : 'Shortlist'}
                           </SqBtn>
                         </td>
                       </tr>
@@ -695,17 +817,18 @@ export default function AdminDashboard() {
                     {teams.find((t) => t.id === winners.first)?.teamName || 'Unassigned'}
                   </span>
                   <select
-                    style={{ background: '#0a0e17', color: '#fff', padding: '8px', borderRadius: '8px', width: '100%' }}
-                    value={winners.first || ''}
-                    onChange={(e) => handleAssignWinner('first', e.target.value)}
-                  >
-                    <option value="">Select Team</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teamName} ({t.id})
-                      </option>
-                    ))}
-                  </select>
+  style={{ background: '#0a0e17', color: '#fff', padding: '8px', borderRadius: '8px', width: '100%' }}
+  value={winners.first || ''}
+  onChange={(e) => handleAssignWinner('first', e.target.value)}
+>
+  <option value="">Select Team</option>
+  {teams.map((t) => (
+    <option key={t.id} value={t.id}>
+      {t.name || t.teamName} ({t.id})
+    </option>
+  ))}
+</select>
+                   
                 </div>
 
                 {/* 2nd Place */}
@@ -750,6 +873,33 @@ export default function AdminDashboard() {
                   </select>
                 </div>
               </div>
+
+              {/* ─── ADD THIS BELOW YOUR RESULTS SECTION ─── */}
+              <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem' }}>Publish Hackathon Results</h3>
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    This will update all team dashboards to display their final verdict, rank, or shortlist status.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handlePublishResults}
+                  disabled={isPublishing}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: isPublishing ? '#93c5fd' : '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: '600',
+                    cursor: isPublishing ? 'not-allowed' : 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  {isPublishing ? 'Publishing...' : '🚀 Publish All Results'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -778,7 +928,16 @@ export default function AdminDashboard() {
                   onChange={(e) => setSettings({ ...settings, year: Number(e.target.value) })}
                 />
               </div>
-
+              <div className={styles.field}>
+                <label>Accept PPT Submissions</label>
+                <select
+                  value={settings.acceptingSubmissions ? 'Yes' : 'No'}
+                  onChange={(e) => setSettings({ ...settings, acceptingSubmissions: e.target.value === 'Yes' })}
+                >
+                  <option value="Yes">Enabled (Accepting PPTs)</option>
+                  <option value="No">Disabled (Stopped)</option>
+                </select>
+              </div>
               <div className={styles.field}>
                 <label>Submission Deadline</label>
                 <input

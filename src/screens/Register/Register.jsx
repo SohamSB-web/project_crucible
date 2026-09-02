@@ -44,6 +44,8 @@ export default function Register() {
   const [submitted, setSubmitted] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [idsFile, setIdsFile] = useState(null);
+  const [idsFileError, setIdsFileError] = useState('');
 
   const form = useForm({
     resolver: zodResolver(registerSchema),
@@ -102,9 +104,35 @@ export default function Register() {
     form.setValue('members', members.filter((_, i) => i !== index));
   };
 
+  const handleIdsFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    if (!file) {
+      setIdsFile(null);
+      return;
+    }
+    if (file.type !== 'application/pdf') {
+      setIdsFileError('Please upload a single PDF combining every member\u2019s ID proof.');
+      setIdsFile(null);
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setIdsFileError('File is too large (max 10MB).');
+      setIdsFile(null);
+      e.target.value = '';
+      return;
+    }
+    setIdsFileError('');
+    setIdsFile(file);
+  };
+
   const onFinalSubmit = async (payload) => {
+    if (!idsFile) {
+      setIdsFileError('Please upload a combined PDF of all participant ID proofs.');
+      return;
+    }
     try {
-      const response = await registerTeam({ ...payload, cf_turnstile_response: turnstileToken });
+      const response = await registerTeam({ ...payload, cf_turnstile_response: turnstileToken }, idsFile);
       setSuccessData(response.data);
       setSubmitted(true);
     } catch (err) {
@@ -370,6 +398,22 @@ export default function Register() {
                             </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Participant ID proofs (single combined PDF) */}
+                      <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        <h3 className={styles.reviewHeading} style={{ marginBottom: '6px' }}>Participant ID Proofs</h3>
+                        <p style={{ fontSize: '0.8rem', color: '#8f9bba', margin: '0 0 14px' }}>
+                          Upload one PDF containing the ID proof of every team member (combined into a single file).
+                        </p>
+                        <div className={styles.field}>
+                          <label>Combined ID Proofs (PDF)</label>
+                          <input type="file" accept="application/pdf" onChange={handleIdsFileChange} />
+                          {idsFile && (
+                            <small style={{ color: '#6fe3a0' }}>{idsFile.name} selected</small>
+                          )}
+                          {idsFileError && <small>{idsFileError}</small>}
+                        </div>
                       </div>
 
                       {/* Password setup for team login */}
