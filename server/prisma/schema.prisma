@@ -30,6 +30,7 @@ model Team {
   members     TeamMember[]
   credential  Credential?
   submission  Submission?
+  payment  Payment?
   result      Result?
 
   @@map("teams")
@@ -176,4 +177,17 @@ model RegistrationWindow {
   open Boolean @default(true)
 
   @@map("registration_window")
+}
+
+
+model Payment {
+  id            String   @id @default(uuid())
+  team_id       String   @unique
+  team          Team     @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  file_path     String
+  original_name String
+  status        String   @default("Pending")
+  uploaded_at   DateTime @default(now())
+
+  @@map("payments")
 }

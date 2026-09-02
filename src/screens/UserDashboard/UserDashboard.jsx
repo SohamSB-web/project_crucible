@@ -12,13 +12,13 @@ import {
   getSelectedProblem,
   setSelectedProblem,
   getUserSubmission,
-  saveUserSubmission,
   getUserPayment,
   saveUserPayment,
   getNotifications,
   markNotificationsRead,
   updateTeamMembers,
 } from '../../lib/portalStorage';
+import { uploadSubmission, getMySubmission, uploadPaymentProof } from '../../lib/api';
 import { getMyTeam } from '../../lib/api';
 import qrCodeImg from '../../assets/upi_qr_code.jpg';
 import styles from './UserDashboard.module.css';
@@ -332,8 +332,8 @@ export default function UserDashboard() {
 
   // User selection & submission & payment state
   const [selectedProb, setSelectedProbState] = useState(getSelectedProblem(teamId) || (currentTeam ? { id: currentTeam.problemId, title: currentTeam.problemTitle } : null));
-  const [submission, setSubmissionState] = useState(getUserSubmission(teamId) || null);
-  const [paymentRecord, setPaymentRecord] = useState(getUserPayment(teamId) || null);
+  const [submission, setSubmissionState] = useState(null);
+  const [paymentRecord, setPaymentRecord] = useState(null);
 
   // UI state
   const [searchQuery, setSearchQuery] = useState('');
@@ -349,7 +349,11 @@ export default function UserDashboard() {
 
   // Sync localStorage state
   useEffect(() => {
+    let cancelled = false;
+
+    // 1. Function to sync local storage states (your existing logic)
     const handleSync = () => {
+      if (cancelled) return;
       setSettings(getHackathonSettings());
       setProblems(getProblemStatements());
       setTeams(getTeamsData());
@@ -358,10 +362,43 @@ export default function UserDashboard() {
       setSubmissionState(getUserSubmission(teamId));
       setPaymentRecord(getUserPayment(teamId));
     };
-    window.addEventListener('crucible_storage_update', handleSync);
-    return () => window.removeEventListener('crucible_storage_update', handleSync);
-  }, [teamId]);
 
+    // 2. Fetch live data from the backend on mount
+    Promise.all([
+      getMyTeam().catch(() => null),
+      getMySubmission().catch(() => null),
+    ]).then(([teamRes, subRes]) => {
+      if (cancelled) return;
+
+      if (teamRes?.data) {
+        setLiveTeam(teamRes.data);
+        // If your backend team object contains the payment info, update state & local storage
+        if (teamRes.data.payment) {
+          const paymentData = {
+            fileName: teamRes.data.payment.original_name,
+            status: teamRes.data.payment.status,
+          };
+          setPaymentRecord(paymentData);
+        }
+      }
+
+      if (subRes?.data) {
+        setSubmissionState({
+          fileName: subRes.data.original_name || subRes.data.fileName,
+          fileSize: subRes.data.file_size || 'PDF/PPT',
+          date: new Date(subRes.data.uploaded_at || Date.now()).toLocaleDateString(),
+        });
+      }
+    });
+
+    // 3. Keep the event listener for local storage updates
+    window.addEventListener('crucible_storage_update', handleSync);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('crucible_storage_update', handleSync);
+    };
+  }, [teamId]);
   const lenis = useLenis();
 
   // Lock background body scroll & pause Lenis smooth scroll when any modal is open
@@ -393,11 +430,33 @@ export default function UserDashboard() {
   }, [settings.deadline]);
 
   // Handlers
-  const handlePaymentScreenshotUpload = (file) => {
+  const handlePaymentScreenshotUpload = async (file) => {
     if (!file) return;
-    const rec = saveUserPayment(teamId, { fileName: file.name });
-    setPaymentRecord(rec);
-    showToast('Payment screenshot uploaded! Pending verification by organizers.');
+
+    // Basic validation for image formats
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, JPEG).');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit.');
+      return;
+    }
+
+    try {
+      const res = await uploadPaymentProof(file);
+      if (res.success) {
+        // Update local UI state with server response data
+        setPaymentRecord({
+          fileName: res.data.fileName,
+          status: res.data.status,
+        });
+        showToast('Payment screenshot uploaded successfully! Pending verification.');
+      }
+    } catch (err) {
+      alert(err.message || 'Payment upload failed. Please try again.');
+    }
   };
 
   const openEditTeamModal = () => {
@@ -467,23 +526,28 @@ export default function UserDashboard() {
     showToast(`Selected Problem ${confirmSelectModal.id}!`);
   };
 
-  const handleFileUpload = (file) => {
+  const handleFileUpload = async (file) => {
     if (!file) return;
     const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
     if (!['.pdf', '.ppt', '.pptx'].includes(ext)) {
       alert('Invalid file format. Please upload a .pdf, .ppt, or .pptx file.');
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size exceeds 10 MB limit.');
+    if (file.size > 20 * 1024 * 1024) { // Match backend limit (20MB)
+      alert('File size exceeds 20 MB limit.');
       return;
     }
 
-    const res = saveUserSubmission(teamId, file);
-    setSubmissionState(res);
-    showToast('Presentation submitted successfully!');
+    try {
+      const res = await uploadSubmission(file);
+      if (res.success) {
+        setSubmissionState(res.data);
+        showToast('Presentation submitted successfully to Supabase & Neon!');
+      }
+    } catch (err) {
+      alert(err.message || 'Upload failed. Please try again.');
+    }
   };
-
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);

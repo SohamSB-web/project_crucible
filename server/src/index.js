@@ -8,6 +8,7 @@ const authRouter = require('./routes/auth');
 const teamRouter = require('./routes/team');
 const submissionRouter = require('./routes/submission');
 const adminRouter = require('./routes/admin');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/team', teamRouter);
 app.use('/api/submission', submissionRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/payment', paymentRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

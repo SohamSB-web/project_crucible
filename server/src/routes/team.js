@@ -258,6 +258,7 @@ router.get('/me', requireAuth, requireRole('team'), async (req, res) => {
       include: {
         members: { orderBy: { joined_at: 'asc' } },
         submission: true,
+        payment: true,
         result: true,
       },
     });

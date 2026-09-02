@@ -336,3 +336,11 @@ export async function changePassword(newPassword, currentPassword) {
     return { success: true, data: { message: 'Password updated' } };
   }
 }
+
+
+//---payment and ids
+export async function uploadPaymentProof(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return await apiFetchFormData('/api/payment/upload-screenshot', formData);
+}

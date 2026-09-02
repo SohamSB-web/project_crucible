@@ -2,35 +2,54 @@ const multer = require('multer');
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
-const ALLOWED_MIMES = new Set([
+const ALLOWED_DOCUMENT_MIMES = new Set([
   'application/pdf',
   'application/vnd.ms-powerpoint',                                                   // .ppt
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',       // .pptx
 ]);
 
-const ALLOWED_EXTENSIONS = new Set(['.pdf', '.ppt', '.pptx']);
+const ALLOWED_DOCUMENT_EXTENSIONS = new Set(['.pdf', '.ppt', '.pptx']);
+
+const ALLOWED_PAYMENT_MIMES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp'
+]);
+
+const ALLOWED_PAYMENT_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png', '.webp']);
 
 // Store in memory so we can MIME-sniff before uploading to Supabase
 const storage = multer.memoryStorage();
 
+// 1. Upload middleware for standard documents (PPT, PPTX, PDF)
 const upload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
+    if (!ALLOWED_DOCUMENT_EXTENSIONS.has(ext)) {
       return cb(new Error(`Invalid file type. Allowed: PDF, PPT, PPTX.`));
     }
     cb(null, true);
   },
 });
 
+// 2. Upload middleware specifically for payment screenshots (Images + PDF)
+const uploadPayment = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: (_req, file, cb) => {
+    const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
+    if (!ALLOWED_PAYMENT_EXTENSIONS.has(ext)) {
+      return cb(new Error(`Invalid file type. Allowed: PDF, JPG, PNG, WEBP.`));
+    }
+    cb(null, true);
+  },
+});
+
 /**
- * Express middleware: MIME-sniff the uploaded buffer using the `file-type` library.
- * This detects disguised files (e.g. a .exe renamed to .pdf).
- * Must run AFTER multer has placed the buffer at req.file.buffer.
- *
- * file-type v19+ is ESM-only so we use a dynamic import().
+ * Express middleware: MIME-sniff uploaded documents using the `file-type` library.
  */
 async function validateMimeType(req, res, next) {
   if (!req.file) {
@@ -38,23 +57,54 @@ async function validateMimeType(req, res, next) {
   }
 
   try {
-    // Dynamic import because file-type v19+ is ESM-only
     const { fileTypeFromBuffer } = await import('file-type');
     const detected = await fileTypeFromBuffer(req.file.buffer);
 
-    if (!detected || !ALLOWED_MIMES.has(detected.mime)) {
+    if (!detected || !ALLOWED_DOCUMENT_MIMES.has(detected.mime)) {
       return res.status(400).json({
         success: false,
         error: `File content does not match an allowed type (PDF, PPT, PPTX). Detected: ${detected?.mime || 'unknown'}.`,
       });
     }
 
-    // Attach the sniffed MIME to req.file for downstream use
     req.file.detectedMime = detected.mime;
     next();
   } catch (err) {
     console.error('[MIME Sniff] Error:', err.message);
     return res.status(400).json({ success: false, error: 'File validation failed.' });
+  }
+}
+
+/**
+ * Express middleware: MIME-sniff payment receipts (allows images and PDF).
+ */
+async function validatePaymentMimeType(req, res, next) {
+  if (!req.file) {
+    return res.status(400).json({ success: false, error: 'No file uploaded.' });
+  }
+
+  // If it's a PDF, we can use file-type library. For raw JPEGs/PNGs, 
+  // file-type handles them natively too.
+  try {
+    const { fileTypeFromBuffer } = await import('file-type');
+    const detected = await fileTypeFromBuffer(req.file.buffer);
+
+    // If file-type cannot recognize a valid image/pdf header signature, 
+    // fall back to checking req.file.mimetype or block it.
+    const mimeToCheck = detected ? detected.mime : req.file.mimetype;
+
+    if (!ALLOWED_PAYMENT_MIMES.has(mimeToCheck)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid file content. Allowed: PDF, JPG, PNG, WEBP.`,
+      });
+    }
+
+    req.file.detectedMime = mimeToCheck;
+    next();
+  } catch (err) {
+    console.error('[Payment MIME Sniff] Error:', err.message);
+    return res.status(400).json({ success: false, error: 'Payment file validation failed.' });
   }
 }
 
@@ -74,4 +124,10 @@ function handleMulterError(err, req, res, next) {
   next();
 }
 
-module.exports = { upload, validateMimeType, handleMulterError };
+module.exports = {
+  upload,
+  uploadPayment,
+  validateMimeType,
+  validatePaymentMimeType,
+  handleMulterError
+};
