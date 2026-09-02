@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SpecularButton from '../../components/ui/SpecularButton';
 import { useAuth } from '../../context/AuthContext';
+import { useLenis } from '../../context/LenisContext.jsx';
 import {
   getHackathonSettings,
   saveHackathonSettings,
@@ -97,22 +97,23 @@ const NavIcons = {
   ),
 };
 
-const SqBtn = ({ children, onClick, type = 'button', danger = false, success = false, lineColor, baseColor, size = 'sm', fullWidth = false }) => (
-  <SpecularButton
-    size={size}
-    radius={10}
-    lineColor={danger ? '#ff6b75' : success ? '#22c55e' : lineColor || '#71a7ff'}
-    baseColor={danger ? '#2a1215' : success ? '#0a2a16' : baseColor || '#142034'}
-    textColor={danger ? '#ff6b75' : success ? '#22c55e' : '#ffffff'}
-    intensity={1}
-    speed={0.35}
-    onClick={onClick}
-    type={type}
-    className={fullWidth ? 'full-width' : ''}
-  >
-    {children}
-  </SpecularButton>
-);
+const SqBtn = ({ children, onClick, type = 'button', danger = false, success = false, lineColor, baseColor, textColor, size = 'sm', fullWidth = false, style = {} }) => {
+  const customStyles = { ...style };
+  if (lineColor) customStyles['--line-color'] = lineColor;
+  if (baseColor) customStyles['--base-color'] = baseColor;
+  if (textColor) customStyles['--text-color'] = textColor;
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      style={customStyles}
+      className={`${styles.sqBtn} ${danger ? styles.sqBtnDanger : ''} ${success ? styles.sqBtnSuccess : ''} ${fullWidth ? styles.sqBtnFull : ''}`}
+    >
+      {children}
+    </button>
+  );
+};
 
 const NAV_TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: NavIcons.dashboard },
@@ -124,7 +125,7 @@ const NAV_TABS = [
 ];
 
 export default function AdminDashboard() {
-  const { auth, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -142,6 +143,23 @@ export default function AdminDashboard() {
 
   // Form states
   const [probForm, setProbForm] = useState({ id: '', title: '', domain: '', tags: '', description: '', difficulty: 'Intermediate' });
+
+  const lenis = useLenis();
+  const isAnyModalOpen = Boolean(showAddModal || viewProblem);
+
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      lenis?.stop();
+    } else {
+      document.body.style.overflow = '';
+      lenis?.start();
+    }
+    return () => {
+      document.body.style.overflow = '';
+      lenis?.start();
+    };
+  }, [isAnyModalOpen, lenis]);
 
   // Sync state
   useEffect(() => {
@@ -391,15 +409,13 @@ export default function AdminDashboard() {
                   <tbody>
                     {teams.map((t) => (
                       <tr key={t.id}>
-                        <td>
-                          <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>{t.id}</span>
-                        </td>
-                        <td>
+                        <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', whiteSpace: 'nowrap' }}>{t.id}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
                           <strong>{t.teamName}</strong>
                         </td>
-                        <td>{t.leaderName}</td>
-                        <td>{t.problemTitle || 'Pending Selection'}</td>
-                        <td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{t.leaderName}</td>
+                        <td style={{ minWidth: 180, maxWidth: 280, lineHeight: 1.4 }}>{t.problemTitle || 'Pending Selection'}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
                           <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                             {t.submitted ? <>{NavIcons.checkCircle} Submitted</> : <>{NavIcons.clock} Pending</>}
                           </span>
@@ -505,23 +521,23 @@ export default function AdminDashboard() {
                 <tbody>
                   {filteredTeams.map((t) => (
                     <tr key={t.id}>
-                      <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>{t.id}</td>
-                      <td>
+                      <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', whiteSpace: 'nowrap' }}>{t.id}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <strong>{t.teamName}</strong>
                       </td>
-                      <td>{t.leaderEmail}</td>
-                      <td>{t.problemTitle || 'None Selected'}</td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{t.leaderEmail}</td>
+                      <td style={{ minWidth: 180, maxWidth: 300, lineHeight: 1.4 }}>{t.problemTitle || 'None Selected'}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`}>
                           {t.submitted ? 'Submitted' : 'Pending'}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span className={`${styles.badge} ${t.shortlisted ? styles.badgeGreen : styles.badgeYellow}`}>
                           {t.shortlisted ? 'Shortlisted' : 'Under Review'}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <SqBtn
                           size="sm"
                           lineColor={t.shortlisted ? '#ff6b75' : '#22c55e'}
@@ -557,12 +573,12 @@ export default function AdminDashboard() {
                 <tbody>
                   {teams.map((t) => (
                     <tr key={t.id}>
-                      <td>
-                        <strong>{t.teamName}</strong> ({t.id})
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <strong>{t.teamName}</strong> <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>({t.id})</span>
                       </td>
-                      <td>{t.submissionFile || '—'}</td>
-                      <td>{t.submissionDate || 'Not Submitted'}</td>
-                      <td>
+                      <td style={{ minWidth: 160 }}>{t.submissionFile || '—'}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{t.submissionDate || 'Not Submitted'}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`}>
                           {t.submitted ? 'File Ready' : 'Pending Submission'}
                         </span>
