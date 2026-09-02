@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container footer-shell">
         {/* Brand & Mission Info */}
         <div className="footer-brand-block">
-          <Link to="/" className="brand brand-footer" aria-label="Mission Crucible">
+          <Link to="/" className="brand brand-footer" aria-label="RepoForge">
             <span className="brand-mark">C</span>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
               <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#ffffff', letterSpacing: '-0.01em' }}>
@@ -67,7 +67,7 @@ export default function Footer() {
       {/* Bottom Legal & Copyright Bar */}
       <div className="footer-bottom-bar">
         <div className="container footer-bottom-inner">
-          <p>© 2026 Mission Crucible • XIE-CSI. All rights reserved.</p>
+          <p>© 2026 RepoForge • XIE-CSI. All rights reserved.</p>
           <p className="footer-credit">Crafted for passionate builders</p>
         </div>
       </div>

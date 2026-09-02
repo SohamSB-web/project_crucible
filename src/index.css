@@ -161,19 +161,20 @@ button {
   display: flex;
   align-items: center;
   overflow: hidden;
-  max-width: 200px;
-  height: 38px;
+  max-width: 260px;
+  height: 40px;
   position: relative;
-  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
-  margin: 0 10px;
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  margin: 0 12px;
+  flex-shrink: 0;
 }
 
 .nav-sponsors-track {
   display: flex;
   align-items: center;
-  gap: 20px;
-  animation: navSponsorMarquee 12s linear infinite;
+  gap: 22px;
+  animation: navSponsorMarquee 14s linear infinite;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -193,12 +194,12 @@ button {
 }
 
 .nav-sponsor-logo {
-  height: 28px;
+  height: 30px;
   width: auto;
-  max-width: 80px;
+  max-width: 90px;
   object-fit: contain;
-  opacity: 0.85;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
   transition: opacity 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
 }
@@ -208,9 +209,16 @@ button {
   transform: scale(1.08);
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 640px) {
   .nav-sponsors-container {
-    display: none;
+    max-width: 120px;
+    height: 32px;
+    margin: 0 6px;
+  }
+
+  .nav-sponsor-logo {
+    height: 24px;
+    max-width: 60px;
   }
 }
 

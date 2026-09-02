@@ -75,14 +75,20 @@ export async function login(email, password) {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-  } catch {
+  } catch (teamErr) {
     try {
       return await apiFetch('/api/auth/admin/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-    } catch {
-      // Offline fallback login
+    } catch (adminErr) {
+      // If server is reachable and returned a message, throw that real error
+      const message = teamErr?.message || adminErr?.message;
+      if (message && !message.includes('Failed to fetch')) {
+        throw new Error(message);
+      }
+
+      // Offline fallback login (only when backend is truly offline/unreachable)
       const input = String(email).toLowerCase();
       const isAdmin = input.includes('admin') || input === 'admin001';
 

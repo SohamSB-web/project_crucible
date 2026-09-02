@@ -179,7 +179,7 @@ export default function Register() {
         <motion.div className={styles.card} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
           {/* Header */}
           <div className={styles.cardHeader}>
-            <p className={styles.eyebrow}>JOIN MISSION CRUCIBLE</p>
+            <p className={styles.eyebrow}>JOIN RepoForge</p>
             <h2 className={styles.cardTitle}>{steps[step]}</h2>
           </div>
 
@@ -223,12 +223,12 @@ export default function Register() {
                       </div>
                       {/* Cloudflare Turnstile CAPTCHA */}
                       <div className={styles.field}>
-                        <div
+                        {/* <div
                           className="cf-turnstile"
                           data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
                           data-callback={(token) => setTurnstileToken(token)}
                           data-theme="dark"
-                        />
+                        /> */}
                         <small style={{ color: '#506080' }}>Verification your details before submission.</small>
                       </div>
                     </>

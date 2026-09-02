@@ -1,4 +1,4 @@
-# CRUCIBLE HACKATHON PROJECT - PORTAL FUNCTIONALITIES
+# REPOFORGE HACKATHON PROJECT - PORTAL FUNCTIONALITIES
 
 ## Table of Contents
 - [Admin Portal](#admin-portal)
@@ -79,7 +79,7 @@
 - **Admin Header**: Shows "ADMINISTRATION" heading and current section
 - **Admin Profile**: Displays admin avatar and ID (ADMIN001)
 - **Logout**: Secure logout button in sidebar
-- **Brand Section**: CRUCIBLE logo and admin portal label
+- **Brand Section**: REPOFORGE logo and admin portal label
 
 ---
 
@@ -162,7 +162,7 @@
 
 ### 6. Navigation & Header
 - **Navbar Components**:
-  - Brand logo "IX" with "CRUCIBLE" branding
+  - Brand logo "IX" with "REPOFORGE" branding
   - Hackathon name and year display
   - Navigation tabs: Dashboard, Problem Statements, My Team, Submission
   - Tab highlighting for active section
@@ -229,9 +229,9 @@
 - **problemStorage.js**: Manages problem statements
   - CRUD operations for problems
 - **Demo Teams Data**: Pre-populated with 3 teams:
-  - Team Phoenix (PHX024) - Leader: Rahul Sharma
-  - Team Nova (NOVA018) - Leader: Ananya Patel
-  - Team Titans (TITAN031) - Leader: Vikram Shah
+  - Team Phoenix (PHX024) - Leader: Member 1
+  - Team Nova (NOVA018) - Leader: Member 1
+  - Team Titans (TITAN031) - Leader: Member 1
 
 ### UI/UX Features
 - **Responsive Design**: Works across devices
@@ -367,4 +367,4 @@ src/
 
 **Last Updated**: 2026-09-01  
 **Version**: 1.0  
-**Project**: CRUCIBLE Hackathon Portal
+**Project**: REPOFORGE Hackathon Portal

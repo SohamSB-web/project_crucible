@@ -126,14 +126,14 @@ export default function Landing() {
               </div>
 
               {/* Hero Title with Shuffle animation */}
-              <h1 className={styles.heroTitle} aria-label="MISSION CRUCIBLE">
+              <h1 className={styles.heroTitle} aria-label="RepoForge">
                 <GradientText
                   colors={["#3794f8ff", "#8bbaff", "#ffffff"]}
                   animationSpeed={6}
                   showBorder={false}
                   className={styles.shuffleHeroProject}
                 >
-                  MISSION
+                  REPOFORGE
                 </GradientText>
                 <GradientText
                   colors={["#ffffff", "#8bbaff", "#3794f8ff"]}
@@ -141,12 +141,12 @@ export default function Landing() {
                   showBorder={false}
                   className={styles.shuffleHeroCrucible}
                 >
-                  CRUCIBLE
+
                 </GradientText>
               </h1>
 
               {/* Subtitle & Description */}
-              <h2 className={styles.heroSubtitle}>Forge what's next. Ship live.</h2>
+              <h2 className={styles.heroSubtitle}>Build the Foundation; Commit the Future.</h2>
               <p className={styles.heroDesc}>
                 The premier high-intensity hackathon where software architects, engineers, and product builders collaborate to solve real-world industry challenges. Win Exciting Prizes!
               </p>
@@ -317,7 +317,7 @@ export default function Landing() {
           <div className="container">
             {/* Centered Heading */}
             <div className={styles.tracksHeaderCentered}>
-              <p className={styles.eyebrowBlue}>ROAD TO MISSION CRUCIBLE</p>
+              <p className={styles.eyebrowBlue}>ROAD TO RepoForge</p>
               <h2 className={styles.tracksTitle}>
                 One challenge. <span>Many milestones.</span>
               </h2>
@@ -346,7 +346,7 @@ export default function Landing() {
                     <span className={styles.statusPillActive}>ACTIVE</span>
                   </div>
                   <h3>Registrations OPEN</h3>
-                  <p>Register via this website to secure your spot in Mission Crucible Hackathon 2026.</p>
+                  <p>Register via this website to secure your spot in RepoForge Hackathon 2026.</p>
                 </div>
 
                 {/* 02: Problem Statement Release */}
@@ -362,7 +362,7 @@ export default function Landing() {
                   <div className={styles.dateLabelDark}>26 SEPT</div>
                   <div className={styles.dateSubtextDark}></div>
                   <h3>Registration Deadline</h3>
-                  <p>Last date to register for Mission Crucible hackathon 2026.</p>
+                  <p>Last date to register for RepoForge hackathon 2026.</p>
                 </div>
 
                 {/* 04: PPT & SOP Submission Deadline */}

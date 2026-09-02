@@ -1,4 +1,4 @@
-export const mockTeams = [
+/*export const mockTeams = [
   {
     id: 'team-1',
     name: 'Signal Bloom',
@@ -89,4 +89,4 @@ export const mockTeams = [
     ],
     contact: { college: 'Manipal Institute of Technology', year: '4th Year', phone: '+91 98888 11223' },
   },
-];
+];*/

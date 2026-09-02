@@ -1,21 +1,91 @@
+/**
+ * email.js — Dual-mode mailer
+ *
+ * Priority: SMTP (Nodemailer) → Resend → console-log fallback
+ *
+ * For local dev:    Set SMTP_USER + SMTP_PASS (Gmail App Password works great)
+ * For production:   Use Resend (RESEND_API_KEY) with a custom domain
+ *
+ * Gmail setup:
+ *   1. Enable 2FA on your Google account
+ *   2. Go to https://myaccount.google.com/apppasswords
+ *   3. Generate an App Password for "Mail"
+ *   4. Set SMTP_USER=yourmail@gmail.com, SMTP_PASS=the-16-char-app-password
+ */
+
+const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
+
+// ─── SMTP Transport (Nodemailer) ──────────────────────────────────────────────
+
+let _smtpTransport;
+function getSmtpTransport() {
+  if (_smtpTransport) return _smtpTransport;
+
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE } = process.env;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return null;
+
+  _smtpTransport = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT) || 465,
+    secure: SMTP_SECURE !== 'false',
+    auth: { user: SMTP_USER, pass: SMTP_PASS.replace(/\s+/g, '') },
+    tls: { rejectUnauthorized: false },
+  });
+
+  return _smtpTransport;
+}
+
+// ─── Resend Transport ─────────────────────────────────────────────────────────
 
 let _resend;
 function getResend() {
-  if (!_resend) {
-    if (!process.env.RESEND_API_KEY) {
-      console.warn('[Email] RESEND_API_KEY not set — emails will be logged to console only.');
-      return null;
-    }
-    _resend = new Resend(process.env.RESEND_API_KEY);
-  }
+  if (_resend) return _resend;
+  if (!process.env.RESEND_API_KEY) return null;
+  _resend = new Resend(process.env.RESEND_API_KEY);
   return _resend;
 }
-const FROM = process.env.EMAIL_FROM || 'Hackathon 2026 <noreply@example.com>';
+
+// ─── FROM address ─────────────────────────────────────────────────────────────
+
+const FROM = process.env.EMAIL_FROM || 'Mission Crucible <noreply@example.com>';
+
+// ─── Unified send function ─────────────────────────────────────────────────────
+
+async function sendMail({ to, subject, html }) {
+  // 1. Try SMTP (Nodemailer)
+  const smtp = getSmtpTransport();
+  if (smtp) {
+    try {
+      await smtp.sendMail({ from: FROM, to, subject, html });
+      console.log('[Email/SMTP] Sent to:', to, '| Subject:', subject);
+      return;
+    } catch (smtpErr) {
+      console.warn('[Email/SMTP] Failed (' + smtpErr.message + '), falling back to Resend/console...');
+    }
+  }
+
+  // 2. Try Resend
+  const resend = getResend();
+  if (resend) {
+    try {
+      await resend.emails.send({ from: FROM, to: [to], subject, html });
+      console.log('[Email/Resend] Sent to:', to, '| Subject:', subject);
+      return;
+    } catch (resendErr) {
+      console.warn('[Email/Resend] Failed (' + resendErr.message + '), logging to console...');
+    }
+  }
+
+  // 3. Fallback: log to console
+  console.warn('[Email] Fallback — logged to console.');
+  console.log('[Email/console] To:', to, '| Subject:', subject);
+}
+
+// ─── Email Templates ──────────────────────────────────────────────────────────
 
 /**
- * Send credential delivery email to the Team Lead.
- * Called immediately after a successful team registration.
+ * Send credential delivery email to the Team Lead after registration.
  */
 async function sendCredentialEmail({ to, teamName, teamId, joinCode, tempPassword }) {
   const html = `
@@ -24,7 +94,7 @@ async function sendCredentialEmail({ to, teamName, teamId, joinCode, tempPasswor
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>You're registered — Hackathon 2026</title>
+  <title>You're registered — Mission Crucible 2026</title>
   <style>
     body { margin: 0; padding: 0; background: #0a0e17; font-family: 'Segoe UI', Arial, sans-serif; color: #e8eeff; }
     .container { max-width: 560px; margin: 40px auto; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; }
@@ -50,7 +120,7 @@ async function sendCredentialEmail({ to, teamName, teamId, joinCode, tempPasswor
       <h1 class="title">You're in. ✦</h1>
     </div>
     <div class="body">
-      <p class="greeting">Hi there, <strong>${teamName}</strong> — your team is officially registered for <strong>Hackathon 2026</strong>. Share the join code below with your teammates so they can join your team.</p>
+      <p class="greeting">Hi there, <strong>${teamName}</strong> — your team is officially registered for <strong>Mission Crucible 2026</strong>. Share the join code below with your teammates so they can join your team.</p>
 
       <div class="card">
         <div class="row">
@@ -66,16 +136,20 @@ async function sendCredentialEmail({ to, teamName, teamId, joinCode, tempPasswor
           <span class="value">${joinCode}</span>
         </div>
         <div class="row">
-          <span class="label">TEMP PASSWORD</span>
+          <span class="label">TEAM LOGIN EMAIL</span>
+          <span class="value">${to}</span>
+        </div>
+        <div class="row">
+          <span class="label">PASSWORD</span>
           <span class="value">${tempPassword}</span>
         </div>
       </div>
 
       <div class="warning">
-        ⚠️ This is your temporary password. Please change it after your first login. Do not share it — only share the <strong>Join Code</strong> with teammates.
+        ⚠️ This is your team login password. Please change it after your first login. Do not share it — only share the <strong>Join Code</strong> with teammates.
       </div>
 
-      <a class="cta" href="${process.env.FRONTEND_URL || '#'}/login">Login to your dashboard →</a>
+      <a class="cta" href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/login">Login to your dashboard →</a>
 
       <p style="font-size:13px; color:#71a7ff; margin:0;">
         <strong>Round 1 Submission Window:</strong> Sept 22 – Sept 25, 2026<br/>
@@ -83,25 +157,14 @@ async function sendCredentialEmail({ to, teamName, teamId, joinCode, tempPasswor
       </p>
     </div>
     <div class="footer">
-      CSI Student Chapter · Xavier Institute of Engineering · Hackathon 2026<br/>
-      You're receiving this because you registered at Mission Crucible.
+      CSI Student Chapter · Xavier Institute of Engineering · Mission Crucible 2026<br/>
+      You are receiving this because you registered for the hackathon.
     </div>
   </div>
 </body>
 </html>`;
 
-  const resend = getResend();
-  if (!resend) {
-    console.log('[Email] Would send credential email to:', to, { teamId, joinCode, tempPassword });
-    return;
-  }
-
-  await resend.emails.send({
-    from: FROM,
-    to: [to],
-    subject: `✦ Hackathon 2026 — You're in! Team credentials inside`,
-    html,
-  });
+  await sendMail({ to, subject: `✦ Mission Crucible 2026 — You're in! Team credentials inside`, html });
 }
 
 /**
@@ -135,7 +198,7 @@ async function sendMemberWelcomeEmail({ to, memberName, teamName, joinCode }) {
       <h1 class="title">Welcome to the team! ✦</h1>
     </div>
     <div class="body">
-      <p>Hi <strong>${memberName}</strong> — you've successfully joined <strong>${teamName}</strong> at Hackathon 2026.</p>
+      <p>Hi <strong>${memberName}</strong> — you've successfully joined <strong>${teamName}</strong> at Mission Crucible 2026.</p>
       <div class="card">
         <div class="row">
           <span class="label">TEAM</span>
@@ -151,24 +214,13 @@ async function sendMemberWelcomeEmail({ to, memberName, teamName, joinCode }) {
       </p>
     </div>
     <div class="footer">
-      CSI Student Chapter · Xavier Institute of Engineering · Hackathon 2026
+      CSI Student Chapter · Xavier Institute of Engineering · Mission Crucible 2026
     </div>
   </div>
 </body>
 </html>`;
 
-  const resend = getResend();
-  if (!resend) {
-    console.log('[Email] Would send member welcome email to:', to, { teamName, joinCode });
-    return;
-  }
-
-  await resend.emails.send({
-    from: FROM,
-    to: [to],
-    subject: `✦ You joined ${teamName} — Hackathon 2026`,
-    html,
-  });
+  await sendMail({ to, subject: `✦ You joined ${teamName} — Mission Crucible 2026`, html });
 }
 
 module.exports = { sendCredentialEmail, sendMemberWelcomeEmail };

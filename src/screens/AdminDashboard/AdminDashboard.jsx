@@ -289,7 +289,7 @@ export default function AdminDashboard() {
         <div className={styles.brand}>
           <div className={styles.brandLogo}>C</div>
           <div className={styles.brandText}>
-            <span className={styles.brandTitle}>Mission Crucible</span>
+            <span className={styles.brandTitle}>RepoForge</span>
             <span className={styles.brandSub}>ADMINISTRATION</span>
           </div>
         </div>

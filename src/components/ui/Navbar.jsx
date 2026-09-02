@@ -12,8 +12,10 @@ const NAV_ITEMS = [
   { id: 'contact', label: 'Contact' },
 ];
 
-const sponsorModules = import.meta.glob('/public/sponsors/*.{png,jpg,jpeg,svg,webp,PNG,JPG,JPEG,SVG,WEBP}', { eager: true });
-const sponsorLogos = Object.keys(sponsorModules).map((path) => path.replace('/public', ''));
+const sponsorModules = import.meta.glob('/sponsors/*.{png,jpg,jpeg,svg,webp,PNG,JPG,JPEG,SVG,WEBP}', { eager: true });
+const discoveredLogos = Object.keys(sponsorModules).map((path) => path.replace(/^\/public/, ''));
+const fallbackLogos = ['/sponsors/CSI-logo.png', '/sponsors/White-XIE.png'];
+const sponsorLogos = discoveredLogos.length > 0 ? discoveredLogos : fallbackLogos;
 
 export default function Navbar() {
   const { auth, logout } = useAuth();
@@ -67,11 +69,11 @@ export default function Navbar() {
       style={{ height: headerHeight, backdropFilter: `blur(${blurValue})`, WebkitBackdropFilter: `blur(${blurValue})` }}
     >
       <div className="container nav-shell">
-        <Link to="/" className="brand" aria-label="Crucible home">
-          <span className="brand-mark">C</span>
+        <Link to="/" className="brand" aria-label="RepoForge home">
+
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
             <span style={{ fontWeight: 800, fontSize: '1.02rem', color: '#ffffff', letterSpacing: '-0.01em' }}>
-              MISSION <br /> CRUCIBLE
+              REPO <br /> FORGE
             </span>
           </div>
         </Link>

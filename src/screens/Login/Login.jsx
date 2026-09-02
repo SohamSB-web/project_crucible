@@ -42,6 +42,7 @@ export default function Login() {
       const auth = {
         token: response.data.token,
         role: response.data.role,
+        teamId: response.data.teamId || response.data.user?.id || response.data.user?.teamId,
         user: response.data.user,
       };
       login(auth);

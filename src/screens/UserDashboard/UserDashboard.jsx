@@ -19,6 +19,7 @@ import {
   markNotificationsRead,
   updateTeamMembers,
 } from '../../lib/portalStorage';
+import { getMyTeam } from '../../lib/api';
 import qrCodeImg from '../../assets/upi_qr_code.jpg';
 import styles from './UserDashboard.module.css';
 
@@ -237,9 +238,97 @@ export default function UserDashboard() {
   const [notifications, setNotifications] = useState(getNotifications());
 
   // Current logged in team info
-  const teamId = auth?.teamId || 'PHX024';
-  const currentTeam = useMemo(() => teams.find((t) => t.id === teamId) || teams[0], [teams, teamId]);
-  const isLeader = auth?.role === 'user' || auth?.role === 'leader' || true; // Leader access for demo
+  const teamId = auth?.teamId || auth?.user?.id || 'PHX024';
+  const cacheKey = `crucible_live_team_${teamId}`;
+
+  // Live API team data (with instant cache on refresh)
+  const [liveTeam, setLiveTeam] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [teamLoading, setTeamLoading] = useState(!liveTeam);
+
+  // Prefer live API data; fall back strictly to neutral placeholder (Member 1, Member 2, Member 3)
+  const currentTeam = useMemo(() => {
+    if (liveTeam) {
+      // Map DB schema → shape the dashboard expects
+      return {
+        id: liveTeam.id,
+        name: liveTeam.name || 'Your Team',
+        teamName: liveTeam.name || 'Your Team',
+        college: liveTeam.college || '',
+        leadEmail: liveTeam.lead_email || '',
+        joinCode: liveTeam.join_code || '',
+        phone: liveTeam.phone || '',
+        year: liveTeam.year || '',
+        dept: liveTeam.dept || '',
+        themeTrack: liveTeam.theme_track || '',
+        problemId: liveTeam.problem_statement_id || '',
+        problemTitle: liveTeam.problem_statement || '',
+        shortlisted: liveTeam.result?.shortlisted ?? false,
+        submission: liveTeam.submission ?? null,
+        members: (liveTeam.members && liveTeam.members.length > 0 ? liveTeam.members : [
+          { name: 'Member 1', role: 'lead', custom_role: 'Team Leader' },
+          { name: 'Member 2', role: 'member', custom_role: 'Member' },
+          { name: 'Member 3', role: 'member', custom_role: 'Member' },
+        ]).map((m, idx) => ({
+          id: m.id || `temp-${idx}`,
+          name: m.name || `Member ${idx + 1}`,
+          email: m.email || '',
+          phone: m.phone || '',
+          role: m.custom_role || (m.role === 'lead' ? 'Team Leader' : m.role) || `Member`,
+          year: m.year || '',
+          dept: m.dept || '',
+          avatar: ((m.name || `M${idx + 1}`).trim().split(' ').map((w) => w[0]).slice(0, 2).join('') || `M${idx + 1}`).toUpperCase(),
+        })),
+      };
+    }
+
+    // Default neutral placeholder while live team is loading
+    return {
+      id: teamId,
+      name: 'Your Team',
+      teamName: 'Your Team',
+      college: '',
+      leadEmail: auth?.user?.email || '',
+      joinCode: '...',
+      members: [
+        { name: 'Member 1', role: 'Team Leader', avatar: 'M1' },
+        { name: 'Member 2', role: 'Member', avatar: 'M2' },
+        { name: 'Member 3', role: 'Member', avatar: 'M3' },
+      ],
+    };
+  }, [liveTeam, teamId, auth?.user?.email]);
+
+  const isLeader = auth?.role === 'user' || auth?.role === 'leader' || true;
+
+  // Fetch live team data from backend on mount
+  useEffect(() => {
+    let cancelled = false;
+    getMyTeam()
+      .then((res) => {
+        if (!cancelled && res?.data) {
+          setLiveTeam(res.data);
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
+          } catch {}
+          if (res.data.problem_statement_id || res.data.problem_statement) {
+            setSelectedProbState({
+              id: res.data.problem_statement_id || 'PS-REG',
+              title: res.data.problem_statement || res.data.theme_track || 'Selected Track',
+              description: 'Selected during team registration.',
+            });
+          }
+        }
+      })
+      .catch(() => { /* silently fall back to neutral placeholder */ })
+      .finally(() => { if (!cancelled) setTeamLoading(false); });
+    return () => { cancelled = true; };
+  }, [cacheKey]);
 
   // User selection & submission & payment state
   const [selectedProb, setSelectedProbState] = useState(getSelectedProblem(teamId) || (currentTeam ? { id: currentTeam.problemId, title: currentTeam.problemTitle } : null));
@@ -258,7 +347,7 @@ export default function UserDashboard() {
   const [isDragging, setIsDragging] = useState(false);
   const [toast, setToast] = useState('');
 
-  // Sync state
+  // Sync localStorage state
   useEffect(() => {
     const handleSync = () => {
       setSettings(getHackathonSettings());
@@ -312,7 +401,13 @@ export default function UserDashboard() {
   };
 
   const openEditTeamModal = () => {
-    const list = currentTeam?.members ? JSON.parse(JSON.stringify(currentTeam.members)) : [];
+    // Prefer live team members; fall back to local team members
+    const rawMembers = liveTeam?.members || currentTeam?.members || [];
+    const list = JSON.parse(JSON.stringify(rawMembers)).map((m) => ({
+      ...m,
+      role: m.custom_role || m.role || 'Member',
+      avatar: (m.name || 'TM').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase(),
+    }));
     setMembersForm(list);
     setShowEditTeamModal(true);
   };
@@ -458,7 +553,7 @@ export default function UserDashboard() {
         <div className={styles.brandGroup}>
           <div className={styles.brandLogo}>C</div>
           <div className={styles.brandInfo}>
-            <span className={styles.brandTitle}>Mission Crucible</span>
+            <span className={styles.brandTitle}>RepoForge</span>
             <span className={styles.brandSub}>{settings.name}</span>
           </div>
         </div>
@@ -946,10 +1041,10 @@ export default function UserDashboard() {
                         ? '#eab308'
                         : '#ff6b75',
                   border: `1px solid ${paymentRecord?.status === 'Verified'
-                      ? 'rgba(34, 197, 94, 0.3)'
-                      : paymentRecord?.status === 'Pending'
-                        ? 'rgba(234, 179, 8, 0.3)'
-                        : 'rgba(255, 107, 117, 0.3)'
+                    ? 'rgba(34, 197, 94, 0.3)'
+                    : paymentRecord?.status === 'Pending'
+                      ? 'rgba(234, 179, 8, 0.3)'
+                      : 'rgba(255, 107, 117, 0.3)'
                     }`,
                 }}
               >

@@ -105,9 +105,10 @@ export const DEFAULT_PROBLEMS = [
 export const DEFAULT_TEAMS = [
   {
     id: 'PHX024',
-    teamName: 'Team Phoenix',
-    leaderName: 'Rahul Sharma',
-    leaderEmail: 'rahul.sharma@crucible.dev',
+    name: 'Team 1',
+    teamName: 'Team 1',
+    leaderName: 'Member 1',
+    leaderEmail: 'lead@team.dev',
     problemId: 'PS002',
     problemTitle: 'Healthcare Innovation: AI Diagnostic Companion',
     submitted: false,
@@ -115,17 +116,18 @@ export const DEFAULT_TEAMS = [
     submissionDate: null,
     paymentStatus: 'Unpaid',
     members: [
-      { name: 'Rahul Sharma', role: 'Team Leader', avatar: 'RS' },
-      { name: 'Priya Verma', role: 'AI Researcher', avatar: 'PV' },
-      { name: 'Aman Gupta', role: 'Full Stack Dev', avatar: 'AG' },
-      { name: 'Sneha Patel', role: 'UI/UX Designer', avatar: 'SP' },
+      { name: 'Member 1', role: 'Team Leader', avatar: 'M1' },
+      { name: 'Member 2', role: 'Member', avatar: 'M2' },
+      { name: 'Member 3', role: 'Member', avatar: 'M3' },
+      { name: 'Member 4', role: 'Member', avatar: 'M4' },
     ],
   },
   {
     id: 'NOVA018',
-    teamName: 'Team Nova',
-    leaderName: 'Ananya Patel',
-    leaderEmail: 'ananya.patel@crucible.dev',
+    name: 'Team 2',
+    teamName: 'Team 2',
+    leaderName: 'Member 1',
+    leaderEmail: 'lead2@team.dev',
     problemId: 'PS001',
     problemTitle: 'Smart Campus: IoT & Energy Optimization',
     submitted: false,
@@ -134,16 +136,17 @@ export const DEFAULT_TEAMS = [
     shortlisted: true,
     paymentStatus: 'Unpaid',
     members: [
-      { name: 'Ananya Patel', role: 'Team Leader', avatar: 'AP' },
-      { name: 'Rohan Mehta', role: 'Embedded Systems Engineer', avatar: 'RM' },
-      { name: 'Kavya Singh', role: 'Backend Engineer', avatar: 'KS' },
+      { name: 'Member 1', role: 'Team Leader', avatar: 'M1' },
+      { name: 'Member 2', role: 'Member', avatar: 'M2' },
+      { name: 'Member 3', role: 'Member', avatar: 'M3' },
     ],
   },
   {
     id: 'TITAN031',
-    teamName: 'Team Titans',
-    leaderName: 'Vikram Shah',
-    leaderEmail: 'vikram.shah@crucible.dev',
+    name: 'Team 3',
+    teamName: 'Team 3',
+    leaderName: 'Member 1',
+    leaderEmail: 'lead3@team.dev',
     problemId: 'PS005',
     problemTitle: 'Smart Traffic Management & Emergency Response',
     submitted: false,
@@ -154,10 +157,10 @@ export const DEFAULT_TEAMS = [
     paymentTxnId: null,
     paymentDate: null,
     members: [
-      { name: 'Vikram Shah', role: 'Team Leader', avatar: 'VS' },
-      { name: 'Devika Nair', role: 'Computer Vision Dev', avatar: 'DN' },
-      { name: 'Arjun Reddy', role: 'Systems Architect', avatar: 'AR' },
-      { name: 'Tara Joshi', role: 'Product Manager', avatar: 'TJ' },
+      { name: 'Member 1', role: 'Team Leader', avatar: 'M1' },
+      { name: 'Member 2', role: 'Member', avatar: 'M2' },
+      { name: 'Member 3', role: 'Member', avatar: 'M3' },
+      { name: 'Member 4', role: 'Member', avatar: 'M4' },
     ],
   },
 ];
@@ -247,7 +250,18 @@ export function deleteProblemStatement(id) {
 }
 
 export function getTeamsData() {
-  return getItem(STORAGE_KEYS.TEAMS, DEFAULT_TEAMS);
+  const data = getItem(STORAGE_KEYS.TEAMS, DEFAULT_TEAMS);
+  // Sanitize: ensure no legacy hardcoded sample names linger in user localStorage
+  if (Array.isArray(data)) {
+    const hasLegacyNames = data.some((t) =>
+      t.members?.some((m) => ['Rahul Sharma', 'Priya Verma', 'Aditi Sharma', 'Vikram Shah'].includes(m.name))
+    );
+    if (hasLegacyNames) {
+      setItem(STORAGE_KEYS.TEAMS, DEFAULT_TEAMS);
+      return DEFAULT_TEAMS;
+    }
+  }
+  return data;
 }
 
 export function saveTeamsData(teams) {
