@@ -38,7 +38,7 @@ const sponsorRow1 = [
 const sponsorRow2 = [
   { name: 'Mumbai Tech Community', tier: 'COMMUNITY PARTNER', tierClass: 'tierBlue', bg: '#1a237e', logoimg: '/Mumbai_Tech_Community.jpeg' },
   { name: 'Third Wave Coffee', tier: 'DRINKS PARTNER', tierClass: 'tierBlue', bg: '#3b1a0d', logoimg: '/Third_Wave_Coffee.jpg' },
-  { name: 'Pizza Hut', tier: 'SNACKS PARTNER', tierClass: 'tierBlue', bg: '#1a237e', logoimg: '' },
+  { name: 'Pizza Hut', tier: 'SNACKS PARTNER', tierClass: 'tierBlue', bg: '#1a237e', logoimg: '/Pizza_Hut.jpg' },
 ];
 
 const stats = [
