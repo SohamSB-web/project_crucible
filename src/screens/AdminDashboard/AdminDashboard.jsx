@@ -303,26 +303,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleToggleShortlist = async (teamId) => {
+  const handleToggleShortlist = async (teamId, status) => {
+    // status is one of: 'Shortlisted' | 'Waitlisted' | 'Under-Review' | 'Eliminated'
     try {
-      // 1. Flip the shortlisted state for the targeted team locally
       const updatedTeams = teams.map((team) =>
-        team.id === teamId ? { ...team, shortlisted: !team.shortlisted } : team
+        team.id === teamId ? { ...team, shortlisted: status } : team
       );
 
-      // 2. Collect all team IDs that are currently marked as shortlisted
+      // Send only the IDs that are 'Shortlisted' to the backend
       const shortlistedIds = updatedTeams
-        .filter((team) => team.shortlisted)
+        .filter((team) => team.shortlisted === 'Shortlisted')
         .map((team) => team.id);
 
-      // 3. Send the updated array to the backend endpoint
       await stageShortlist(shortlistedIds);
-
-      // 4. Commit the new teams array to state to re-render the table
       setTeams(updatedTeams);
-      showToast('Shortlist status updated!');
+      showToast(`Status updated to: ${status}`);
     } catch (err) {
-      console.error('Error toggling shortlist:', err);
+      console.error('Error updating shortlist status:', err);
       showToast('Failed to update shortlist status.');
     }
   };
@@ -632,7 +629,7 @@ export default function AdminDashboard() {
         {activeTab === 'teams' && (
           <div className={styles.sectionCard}>
             <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>Registered Teams ({filteredTeams.length})</h3>
+              <h3 className={styles.sectionTitle}>Registered Teams({filteredTeams.length})</h3>
               <input
                 type="text"
                 placeholder="Search team name, ID, leader..."
@@ -651,7 +648,7 @@ export default function AdminDashboard() {
                     <th>Problem</th>
                     <th>Submission</th>
                     <th>Payment & Verification</th>
-                    <th>Shortlist Action</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -733,13 +730,28 @@ export default function AdminDashboard() {
 
                         {/* Merged Shortlist / Remove Action Column */}
                         <td style={{ whiteSpace: 'nowrap' }}>
-                          <SqBtn
-                            size="sm"
-                            lineColor={t.shortlisted ? '#ff6b75' : '#22c55e'}
-                            onClick={() => handleToggleShortlist(t.id)}
+                          <select
+                            value={t.shortlisted || 'Under-Review'}
+                            onChange={(e) => handleToggleShortlist(t.id, e.target.value)}
+                            style={{
+                              background: '#0a0e17',
+                              color:
+                                t.shortlisted === 'Shortlisted' ? '#22c55e' :
+                                t.shortlisted === 'Waitlisted'  ? '#eab308' :
+                                t.shortlisted === 'Eliminated'  ? '#ef4444' : '#94a3b8',
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              border: '1px solid rgba(113,167,255,0.25)',
+                              fontSize: '0.78rem',
+                              cursor: 'pointer',
+                              width: '100%',
+                            }}
                           >
-                            {t.shortlisted ? 'Remove' : 'Shortlist'}
-                          </SqBtn>
+                            <option value="Under-Review">Under Review</option>
+                            <option value="Shortlisted">Shortlisted</option>
+                            <option value="Waitlisted">Waitlisted</option>
+                            <option value="Eliminated">Eliminated</option>
+                          </select>
                         </td>
                       </tr>
                     );

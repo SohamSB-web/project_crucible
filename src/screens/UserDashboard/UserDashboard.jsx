@@ -816,13 +816,13 @@ export default function UserDashboard() {
                 <span className={styles.cardIcon}>{Icons.star}</span>
                 <span className={styles.cardLabel}>Shortlist Status</span>
                 <span className={styles.cardValue}>
-                  {currentTeam?.shortlisted === true || currentTeam?.shortlistStatus === 'Shortlisted' ? (
-                    <span style={{ color: '#22c55e' }}>Shortlisted</span>
-                  ) : currentTeam?.shortlistStatus === 'Rejected' ? (
-                    <span style={{ color: '#ef4444' }}>Not Shortlisted</span>
-                  ) : (
-                    'Under Review'
-                  )}
+                  {(() => {
+                    const s = currentTeam?.shortlisted || currentTeam?.shortlistStatus || 'Under-Review';
+                    if (s === 'Shortlisted') return <span style={{ color: '#22c55e' }}>✦ Shortlisted</span>;
+                    if (s === 'Waitlisted')  return <span style={{ color: '#eab308' }}>⧖ Waitlisted</span>;
+                    if (s === 'Eliminated')  return <span style={{ color: '#ef4444' }}>✕ Eliminated</span>;
+                    return <span style={{ color: '#94a3b8' }}>⊙ Under Review</span>;
+                  })()}
                 </span>
               </div>
 

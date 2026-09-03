@@ -127,13 +127,12 @@ export default function Landing() {
 
               {/* Hero Title with Shuffle animation */}
               <h1 className={styles.heroTitle} aria-label="RepoForge">
-                <GradientText
+                {/* <GradientText
                   colors={["#3794f8ff", "#8bbaff", "#ffffff"]}
                   animationSpeed={6}
                   showBorder={false}
                   className={styles.shuffleHeroProject}
                 >
-                  REPOFORGE
                 </GradientText>
                 <GradientText
                   colors={["#ffffff", "#8bbaff", "#3794f8ff"]}
@@ -142,7 +141,8 @@ export default function Landing() {
                   className={styles.shuffleHeroCrucible}
                 >
 
-                </GradientText>
+                </GradientText> */}
+                <img src="/title-logo.png" alt="" />
               </h1>
 
               {/* Subtitle & Description */}

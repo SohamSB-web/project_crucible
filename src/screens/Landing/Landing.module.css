@@ -43,6 +43,13 @@
   line-height: 0.88;
 }
 
+.heroTitle img {
+  max-height: 300px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
 .xiecsilogos {
   display: flex;
   flex-direction: row;
@@ -1332,6 +1339,7 @@
 }
 
 @media (max-width: 900px) {
+
   .hero-shell,
   .faq-wrap,
   .trackGrid,
@@ -1422,7 +1430,7 @@
     box-sizing: border-box;
   }
 
-  .heroActionsCenter > * {
+  .heroActionsCenter>* {
     width: 100% !important;
   }
 
