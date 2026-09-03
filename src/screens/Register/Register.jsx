@@ -18,7 +18,7 @@ const stepVariants = {
 };
 
 // Squircle SpecularButton wrapper for consistent styling
-const SqBtn = ({ children, onClick, type = 'button', lineColor = '#71a7ff', baseColor = '#142034', textColor = '#ffffff', intensity = 1, fullWidth = false, danger = false }) => (
+const SqBtn = ({ children, onClick, type = 'button', lineColor = '#FAB600', baseColor = '#261005', textColor = '#ffffff', intensity = 1, fullWidth = false, danger = false }) => (
   <SpecularButton
     size="md"
     radius={16}

@@ -1,5 +1,5 @@
 html {
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
 }
 
 html,
@@ -24,10 +24,10 @@ body {
 body {
   position: relative;
   background:
-    radial-gradient(circle at 15% 15%, rgba(97, 128, 255, 0.42), transparent 20%),
-    radial-gradient(circle at 80% 12%, rgba(78, 210, 255, 0.25), transparent 19%),
-    radial-gradient(circle at 50% 70%, rgba(164, 109, 255, 0.22), transparent 30%),
-    linear-gradient(180deg, #050b16 0%, #0d1424 28%, #090d17 100%);
+    radial-gradient(circle at 15% 15%, rgba(220, 80, 0, 0.35), transparent 20%),
+    radial-gradient(circle at 80% 12%, rgba(250, 182, 0, 0.18), transparent 19%),
+    radial-gradient(circle at 50% 70%, rgba(176, 37, 1, 0.22), transparent 30%),
+    linear-gradient(180deg, #0c0502 0%, #160803 28%, #0f0502 100%);
   cursor: none;
 }
 
@@ -37,7 +37,7 @@ body::before {
   inset: -18% -12%;
   pointer-events: none;
   background:
-    radial-gradient(circle at center, rgba(111, 170, 255, 0.2), transparent 32%),
+    radial-gradient(circle at center, rgba(250, 182, 0, 0.16), transparent 32%),
     linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.05) 48%, transparent 68%);
   filter: blur(80px);
   z-index: 0;
@@ -54,7 +54,7 @@ body::before {
 * {
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: rgba(113, 167, 255, 0.4) transparent;
+  scrollbar-color: rgba(250, 182, 0, 0.4) transparent;
 }
 
 /* Custom Dark Glass Scrollbars */
@@ -69,13 +69,13 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(113, 167, 255, 0.35);
+  background: rgba(250, 182, 0, 0.35);
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(113, 167, 255, 0.65);
+  background: rgba(250, 182, 0, 0.65);
 }
 
 img {
@@ -120,8 +120,8 @@ button {
   right: 0;
   width: 100%;
   z-index: 1000;
-  background: rgba(10, 14, 23, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 8, 3, 0.88);
+  border-bottom: 1px solid rgba(250, 182, 0, 0.15);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
@@ -149,11 +149,11 @@ button {
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #71a7ff, #3b82f6);
+  background: linear-gradient(135deg, #FAB600, #E07B00);
   color: white;
   font-size: 1.1rem;
   font-weight: 900;
-  box-shadow: 0 0 18px rgba(113, 167, 255, 0.4);
+  box-shadow: 0 0 18px rgba(250, 182, 0, 0.4);
 }
 
 /* ── Navbar Sponsor Carousel ──────────────────────────────────────────────── */
@@ -256,9 +256,9 @@ button {
   left: 0;
   right: 0;
   height: 2.5px;
-  background: #71a7ff;
+  background: #FAB600;
   border-radius: 999px;
-  box-shadow: 0 0 12px #71a7ff;
+  box-shadow: 0 0 12px #FAB600;
 }
 
 .nav-actions {
@@ -270,7 +270,7 @@ button {
 .nav-button,
 .primary-button,
 .secondary-button {
-  border: 1px solid rgba(135, 174, 255, 0.2);
+  border: 1px solid rgba(250, 182, 0, 0.2);
   border-radius: 14px;
   padding: 10px 20px;
   background: rgba(14, 20, 34, 0.6);
@@ -282,10 +282,10 @@ button {
 
 .primary-button,
 .primary {
-  background: linear-gradient(135deg, #8ec5ff, #5a83ff 32%, #8c6dff 100%);
+  background: linear-gradient(135deg, #FAB600, #E07B00 32%, #B02501 100%);
   color: white;
   border: 0;
-  box-shadow: 0 14px 30px rgba(93, 112, 255, 0.38);
+  box-shadow: 0 14px 30px rgba(176, 37, 1, 0.38);
 }
 
 .secondary-button {
@@ -298,7 +298,7 @@ button {
 .nav-button:hover,
 .primary-button:hover,
 .secondary-button:hover {
-  box-shadow: 0 10px 28px rgba(83, 116, 255, 0.22);
+  box-shadow: 0 10px 28px rgba(176, 37, 1, 0.22);
 }
 
 .small {
@@ -310,6 +310,7 @@ button {
   padding: 40px 0;
   position: relative;
   z-index: 1;
+  scroll-margin-top: 80px;
 }
 
 .section-heading {
@@ -369,9 +370,9 @@ button {
 .site-footer {
   position: relative;
   z-index: 10;
-  background: rgba(8, 12, 20, 0.92);
+  background: rgba(16, 7, 3, 0.94);
   color: rgba(255, 255, 255, 0.86);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(250, 182, 0, 0.12);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -408,10 +409,10 @@ button {
   display: inline-flex;
   align-items: center;
   font-size: 0.8rem;
-  color: #71a7ff;
+  color: #FAB600;
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(113, 167, 255, 0.08);
-  border: 1px solid rgba(113, 167, 255, 0.2);
+  background: rgba(250, 182, 0, 0.08);
+  border: 1px solid rgba(250, 182, 0, 0.2);
   padding: 6px 12px;
   border-radius: 8px;
   width: fit-content;
@@ -453,14 +454,14 @@ button {
 }
 
 .footer-links-list a:hover {
-  color: #71a7ff;
+  color: #FAB600;
   transform: translateX(3px);
 }
 
 .footer-bottom-bar {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   padding: 20px 0;
-  background: rgba(5, 8, 14, 0.6);
+  background: rgba(10, 4, 1, 0.7);
 }
 
 .footer-bottom-inner {
@@ -578,7 +579,7 @@ button {
   background: rgba(255, 255, 255, 0.07);
   backdrop-filter: blur(14px) saturate(180%);
   -webkit-backdrop-filter: blur(14px) saturate(180%);
-  border: 1px solid rgba(173, 206, 255, 0.28);
+  border: 1px solid rgba(250, 182, 0, 0.28);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
@@ -587,7 +588,7 @@ button {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 0 20px rgba(113, 167, 255, 0.12);
+    0 0 20px rgba(250, 182, 0, 0.12);
   position: relative;
   overflow: hidden;
 }
@@ -599,7 +600,7 @@ button {
   color: #ffffff;
   letter-spacing: 0.04em;
   line-height: 1;
-  text-shadow: 0 0 16px rgba(113, 167, 255, 0.5);
+  text-shadow: 0 0 16px rgba(250, 182, 0, 0.5);
 }
 
 .countdown-label {

@@ -125,9 +125,9 @@ void main() {
 const ctxMap = new WeakMap();
 
 const MoltenMetal = ({
-  color1 = '#5227FF',
-  color2 = '#FF9FFC',
-  color3 = '#FFFFFF',
+  color1 = '#140600',
+  color2 = '#B02501',
+  color3 = '#FAB600',
   speed = 0.35,
   scale = 4,
   detail = 3,

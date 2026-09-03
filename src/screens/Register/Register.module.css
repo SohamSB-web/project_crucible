@@ -43,7 +43,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, rgba(113, 167, 255, 0.06) 0%, transparent 50%);
+  background: linear-gradient(160deg, rgba(250, 182, 0, 0.06) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -56,7 +56,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #71a7ff;
+  color: #FAB600;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   margin: 0 0 10px;
 }
@@ -104,16 +104,16 @@
 }
 
 .stepDot.active {
-  background: #2d5bff;
-  border-color: #71a7ff;
+  background: #E07B00;
+  border-color: #FAB600;
   color: #ffffff;
-  box-shadow: 0 0 20px rgba(45, 91, 255, 0.5);
+  box-shadow: 0 0 20px rgba(224, 123, 0, 0.5);
 }
 
 .stepDot.done {
-  background: rgba(113, 167, 255, 0.15);
-  border-color: rgba(113, 167, 255, 0.4);
-  color: #71a7ff;
+  background: rgba(250, 182, 0, 0.15);
+  border-color: rgba(250, 182, 0, 0.4);
+  color: #FAB600;
 }
 
 .stepLabel {
@@ -133,7 +133,7 @@
 }
 
 .stepLine.doneLine {
-  background: rgba(113, 167, 255, 0.35);
+  background: rgba(250, 182, 0, 0.35);
 }
 
 /* ── Form ────────────────────────────────────────────────────────────────── */
@@ -213,8 +213,8 @@
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  border-color: rgba(113, 167, 255, 0.5);
-  background: rgba(113, 167, 255, 0.06);
+  border-color: rgba(250, 182, 0, 0.5);
+  background: rgba(250, 182, 0, 0.06);
 }
 
 .field select option {
@@ -267,7 +267,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #71a7ff;
+  color: #FAB600;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 600;
 }
@@ -358,7 +358,7 @@
 .successIcon {
   font-size: 2.5rem;
   margin-bottom: 12px;
-  color: #71a7ff;
+  color: #FAB600;
 }
 
 .successTitle {
@@ -379,8 +379,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: rgba(45, 91, 255, 0.1);
-  border: 1px solid rgba(45, 91, 255, 0.25);
+  background: rgba(176, 37, 1, 0.1);
+  border: 1px solid rgba(176, 37, 1, 0.25);
   border-radius: 14px;
   padding: 14px 18px;
   margin-bottom: 28px;

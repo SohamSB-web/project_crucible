@@ -99,16 +99,16 @@
 
 /* CSS Fallback (Only used if WebGL context creation fails or max context limit reached) */
 .specular-button--css-fallback {
-  border: 1px solid var(--sb-line-color, rgba(113, 167, 255, 0.4));
-  background: var(--sb-base-color, rgba(20, 32, 52, 0.85));
+  border: 1px solid var(--sb-line-color, rgba(250, 182, 0, 0.4));
+  background: var(--sb-base-color, rgba(26, 12, 5, 0.88));
   overflow: hidden;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .specular-button--css-fallback:hover {
   transform: translateY(-1px);
-  border-color: var(--sb-line-color, #71a7ff);
-  box-shadow: 0 6px 20px rgba(113, 167, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-color: var(--sb-line-color, #FAB600);
+  box-shadow: 0 6px 20px rgba(250, 182, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 @media (max-width: 480px) {

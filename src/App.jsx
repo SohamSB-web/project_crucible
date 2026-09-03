@@ -25,9 +25,9 @@ function AppShell() {
   return (
     <>
       <FixedBackground
-        color1="#0A0E17"
-        color2="#2D5BFF"
-        color3="#E8EEFF"
+        color1="#140600"
+        color2="#B02501"
+        color3="#FAB600"
         speed={0.25}
         scale={5}
         detail={4}

@@ -12,6 +12,7 @@ import TrackModal from '../../components/ui/TrackModal';
 import { mockTracks } from '../../data/mockTracks';
 import { mockAnnouncements } from '../../data/mockAnnouncements';
 import { useParallax } from '../../hooks/useParallax';
+import { smoothScrollTo } from '../../utils/smoothScroll';
 import styles from './Landing.module.css';
 
 const MotionGlareHover = motion.create ? motion.create(GlareHover) : motion(GlareHover);
@@ -31,9 +32,9 @@ const rewards = [
 ];
 
 const sponsorData = [
-  { name: 'HackerRank', tier: 'TITLE SPONSOR', tierClass: 'tierGreen', bg: '#1a5c35', letters: 'H≡' },
-  { name: 'CodeCrafters', tier: 'SPONSOR', tierClass: 'tierOrange', bg: '#7a2d00', letters: '/\\' },
-  { name: 'Devfolio', tier: 'PLATFORM PARTNER', tierClass: 'tierBlue', bg: '#1a237e', letters: 'D▶' },
+  { name: 'SATPrep1600', tier: 'TITLE SPONSOR', tierClass: 'tierGreen', bg: '#1a5c35', logoimg: '' },
+  { name: 'Infraon', tier: 'SPONSOR', tierClass: 'tierOrange', bg: '#7a2d00', logoimg: '' },
+  { name: 'Mumbai Tech Community', tier: 'PLATFORM PARTNER', tierClass: 'tierBlue', bg: '#1a237e', logoimg: '' },
 ];
 
 const stats = [
@@ -98,10 +99,11 @@ export default function Landing() {
   useEffect(() => {
     const id = location.hash.replace('#', '');
     if (id) {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        smoothScrollTo(id, { offset: 80, duration: 850 });
+      }, 100);
     }
-  }, [location]);
+  }, [location.hash]);
 
 
   return (
@@ -161,8 +163,8 @@ export default function Landing() {
                 <SpecularButton
                   size="md"
                   radius={14}
-                  lineColor="#ffffff"
-                  baseColor="#2d5bff"
+                  lineColor="#FAB600"
+                  baseColor="#B02501"
                   textColor="#ffffff"
                   intensity={1.2}
                   speed={0.4}
@@ -173,8 +175,8 @@ export default function Landing() {
                 <SpecularButton
                   size="md"
                   radius={14}
-                  lineColor="#71a7ff"
-                  baseColor="#142034"
+                  lineColor="#FAB600"
+                  baseColor="#261005"
                   textColor="#ffffff"
                   intensity={1}
                   speed={0.35}
@@ -289,9 +291,9 @@ export default function Landing() {
                     <SpecularButton
                       size="sm"
                       radius={12}
-                      lineColor="#71a7ff"
-                      baseColor="#080d14"
-                      textColor="#71a7ff"
+                      lineColor="#FAB600"
+                      baseColor="#261005"
+                      textColor="#FAB600"
                       intensity={1}
                       speed={0.35}
                       onClick={() => setSelectedTrack(track)}

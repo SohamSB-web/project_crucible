@@ -1,15 +1,15 @@
 :root {
-  --bg-canvas: #060b16;
-  --bg-deep: #080d18;
-  --blue-primary: #71a7ff;
-  --blue-deep: #12245c;
-  --blue-mist: #edf5ff;
+  --bg-canvas: #0c0502;
+  --bg-deep: #100703;
+  --blue-primary: #FAB600;
+  --blue-deep: #3D1A00;
+  --blue-mist: #FFF5E0;
   --ink: #f4f8ff;
   --ink-soft: rgba(244, 248, 255, 0.74);
-  --paper: rgba(13, 19, 31, 0.72);
-  --glass-dark: rgba(10, 16, 28, 0.7);
+  --paper: rgba(26, 12, 5, 0.72);
+  --glass-dark: rgba(20, 9, 4, 0.7);
   --white: #ffffff;
-  --border-light: rgba(173, 206, 255, 0.18);
+  --border-light: rgba(250, 182, 0, 0.18);
   --border-dark: rgba(255, 255, 255, 0.18);
   --error: #ff6b75;
   --success: #57d59b;

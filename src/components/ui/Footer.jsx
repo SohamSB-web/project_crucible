@@ -1,6 +1,21 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { smoothScrollTo } from '../../utils/smoothScroll';
 
 export default function Footer() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleNavClick = (e, targetId) => {
+    e.preventDefault();
+    if (location.pathname !== '/') {
+      navigate(`/#${targetId}`);
+      return;
+    }
+    smoothScrollTo(targetId, { offset: 80, duration: 850 });
+    if (window.history.pushState) {
+      window.history.pushState(null, '', targetId === 'home' ? '/' : `#${targetId}`);
+    }
+  };
   return (
     <footer className="site-footer">
       <div className="container footer-shell">
@@ -26,11 +41,11 @@ export default function Footer() {
         <div className="footer-col">
           <h4 className="footer-col-title">Navigation</h4>
           <div className="footer-links-list">
-            <Link to="/">Home</Link>
-            <a href="/#roadmap">Roadmap & Milestones</a>
-            <a href="/#rewards">Rewards & Perks</a>
-            <a href="/#faq">Frequently Asked Questions</a>
-            <a href="/#contact">Contact & Help</a>
+            <a href="/" onClick={(e) => handleNavClick(e, 'home')}>Home</a>
+            <a href="/#roadmap" onClick={(e) => handleNavClick(e, 'roadmap')}>Roadmap & Milestones</a>
+            <a href="/#rewards" onClick={(e) => handleNavClick(e, 'rewards')}>Rewards & Perks</a>
+            <a href="/#faq" onClick={(e) => handleNavClick(e, 'faq')}>Frequently Asked Questions</a>
+            <a href="/#contact" onClick={(e) => handleNavClick(e, 'contact')}>Contact & Help</a>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { smoothScrollTo } from '../../utils/smoothScroll';
 import SpecularButton from './SpecularButton';
 
 const NAV_ITEMS = [
@@ -57,9 +58,12 @@ export default function Navbar() {
       navigate(`/#${targetId}`);
       return;
     }
-    const el = document.getElementById(targetId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+
+    smoothScrollTo(targetId, { offset: 80, duration: 850 });
+
+    // Update URL hash without abrupt jumps
+    if (window.history.pushState) {
+      window.history.pushState(null, '', `#${targetId}`);
     }
   };
 
@@ -114,8 +118,8 @@ export default function Navbar() {
               <SpecularButton
                 size="sm"
                 radius={12}
-                lineColor="#71a7ff"
-                baseColor="#142034"
+                lineColor="#FAB600"
+                baseColor="#261005"
                 textColor="#ffffff"
                 intensity={1}
                 speed={0.35}
@@ -141,8 +145,8 @@ export default function Navbar() {
               <SpecularButton
                 size="sm"
                 radius={12}
-                lineColor="#71a7ff"
-                baseColor="#142034"
+                lineColor="#FAB600"
+                baseColor="#261005"
                 textColor="#ffffff"
                 intensity={1}
                 speed={0.35}
@@ -154,8 +158,8 @@ export default function Navbar() {
                 <SpecularButton
                   size="sm"
                   radius={12}
-                  lineColor="#71a7ff"
-                  baseColor="#3b74f6"
+                  lineColor="#FAB600"
+                  baseColor="#B02501"
                   textColor="#ffffff"
                   intensity={1.2}
                   speed={0.4}

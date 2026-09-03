@@ -212,7 +212,7 @@ const Icons = {
   ),
 };
 
-const SqBtn = ({ children, onClick, type = 'button', lineColor = '#71a7ff', baseColor = '#142034', textColor = '#ffffff', danger = false, size = 'sm', fullWidth = false }) => (
+const SqBtn = ({ children, onClick, type = 'button', lineColor = '#FAB600', baseColor = '#261005', textColor = '#ffffff', danger = false, size = 'sm', fullWidth = false }) => (
   <SpecularButton
     size={size}
     radius={10}
@@ -734,8 +734,8 @@ export default function UserDashboard() {
             <SpecularButton
               size="sm"
               radius={12}
-              lineColor="#71a7ff"
-              baseColor="#142034"
+              lineColor="#FAB600"
+              baseColor="#261005"
               textColor="#ffffff"
               intensity={1}
               speed={0.35}
@@ -801,9 +801,9 @@ export default function UserDashboard() {
                 <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-start' }}>
                   <StarBorder
                     as="button"
-                    color="#71a7ff"
-                    backgroundColor="#142034"
-                    borderColor="rgba(113, 167, 255, 0.4)"
+                    color="#FAB600"
+                    backgroundColor="#261005"
+                    borderColor="rgba(250, 182, 0, 0.4)"
                     onClick={() => setActiveTab('problems')}
                   >
                     {selectedProb ? 'Change / Explore Problems →' : 'Select a Problem Statement →'}
@@ -922,7 +922,7 @@ export default function UserDashboard() {
                       >
                         <strong style={{ fontSize: '0.92rem', color: '#ffffff' }}>{n.title}</strong>
                         <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)' }}>{n.detail}</p>
-                        <span style={{ fontSize: '0.7rem', color: '#71a7ff', fontFamily: 'JetBrains Mono' }}>{n.time}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#FAB600', fontFamily: 'JetBrains Mono' }}>{n.time}</span>
                       </div>
                     ))}
                   </div>
@@ -1005,7 +1005,7 @@ export default function UserDashboard() {
                         background: 'rgba(16,23,38,0.75)',
                         backdropFilter: 'blur(16px)',
                         WebkitBackdropFilter: 'blur(16px)',
-                        border: isSelected ? '1.5px solid #71a7ff' : '1px solid rgba(255,255,255,0.1)',
+                        border: isSelected ? '1.5px solid #FAB600' : '1px solid rgba(255,255,255,0.1)',
                         borderRadius: 20,
                         padding: 24,
                         display: 'flex',
@@ -1018,10 +1018,10 @@ export default function UserDashboard() {
                       {/* Card content mapping (Keep your existing card markup here) */}
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontWeight: 700, fontSize: '0.82rem' }}>
+                          <span style={{ fontFamily: 'JetBrains Mono', color: '#FAB600', fontWeight: 700, fontSize: '0.82rem' }}>
                             {prob.id}
                           </span>
-                          <span style={{ background: 'rgba(113,167,255,0.15)', color: '#71a7ff', padding: '4px 10px', borderRadius: 999, fontSize: '0.7rem', fontFamily: 'JetBrains Mono' }}>
+                          <span style={{ background: 'rgba(250,182,0,0.15)', color: '#FAB600', padding: '4px 10px', borderRadius: 999, fontSize: '0.7rem', fontFamily: 'JetBrains Mono' }}>
                             {prob.domain}
                           </span>
                         </div>
@@ -1040,10 +1040,10 @@ export default function UserDashboard() {
                         </div>
 
                         <div style={{ display: 'flex', gap: 10 }}>
-                          <StarBorder onClick={() => setViewProblemModal(prob)} color="#71a7ff" backgroundColor="#142034" borderColor="rgba(113, 167, 255, 0.4)" textColor="#ffffff" speed="5s">
+                          <StarBorder onClick={() => setViewProblemModal(prob)} color="#FAB600" backgroundColor="#261005" borderColor="rgba(250, 182, 0, 0.4)" textColor="#ffffff" speed="5s">
                             View Details
                           </StarBorder>
-                          <StarBorder onClick={() => handleSelectProblem(prob)} color={isSelected ? '#22c55e' : '#71a7ff'} backgroundColor={isSelected ? '#0a2a16' : '#142034'} borderColor={isSelected ? 'rgba(34, 197, 94, 0.5)' : 'rgba(113, 167, 255, 0.4)'} textColor={isSelected ? '#22c55e' : '#ffffff'} speed="4s">
+                          <StarBorder onClick={() => handleSelectProblem(prob)} color={isSelected ? '#22c55e' : '#FAB600'} backgroundColor={isSelected ? '#0a2a16' : '#261005'} borderColor={isSelected ? 'rgba(34, 197, 94, 0.5)' : 'rgba(250, 182, 0, 0.4)'} textColor={isSelected ? '#22c55e' : '#ffffff'} speed="4s">
                             {isSelected ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>{Icons.check} Selected</span> : 'Select Problem'}
                           </StarBorder>
                         </div>
@@ -1062,7 +1062,7 @@ export default function UserDashboard() {
             <div className={styles.panelHeader}>
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>{currentTeam?.teamName}</h2>
-                <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.85rem' }}>Team ID: {currentTeam?.id}</span>
+                <span style={{ fontFamily: 'JetBrains Mono', color: '#FAB600', fontSize: '0.85rem' }}>Team ID: {currentTeam?.id}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span className={styles.statusPill}>{Icons.statusDot} Registered & Active</span>
