@@ -44,7 +44,7 @@
 }
 
 .heroTitle img {
-  max-height: 300px;
+  max-height: 280px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -417,6 +417,13 @@
   position: relative;
 }
 
+.milestoneCard p {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0;
+}
+
 /* Card Variants */
 .cardActive {
   background: linear-gradient(135deg, #FAB600, #E07B00);
@@ -426,7 +433,7 @@
 }
 
 .cardActive h3 {
-  color: #ffffff !important;
+  color: #642602 !important;
   font-size: 1.15rem;
   font-weight: 800;
   margin: 18px 0 10px;
@@ -434,36 +441,17 @@
 }
 
 .cardActive p {
-  color: rgba(255, 255, 255, 0.9) !important;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  margin: 0;
+  color: rgba(91, 46, 0, 0.9) !important;
 }
 
-.cardLightGreen {
+.cardActive div.dateLabelDark {
   background: rgba(250, 182, 0, 0.12);
-  color: #ffffff;
+  color: #642602 !important;
   border: 1px solid rgba(255, 196, 80, 0.3);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
-.cardLightGreen h3 {
-  color: #ffffff !important;
-  font-size: 1.1rem;
-  font-weight: 800;
-  margin: 14px 0 8px;
-  line-height: 1.25;
-}
-
-.cardLightGreen p {
-  color: var(--ink-soft) !important;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  margin: 0;
-}
 
 .cardDark {
   background: rgba(255, 255, 255, 0.07);

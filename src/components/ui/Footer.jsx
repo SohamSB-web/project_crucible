@@ -61,17 +61,14 @@ export default function Footer() {
         <div className="footer-col">
           <h4 className="footer-col-title">Connect</h4>
           <div className="footer-links-list">
-            <a href="mailto:crucible@xavier.ac.in" target="_blank" rel="noopener noreferrer">
-              ✉ crucible@xavier.ac.in
+            <a href="mailto:admincsi26@gmail.com" target="_blank" rel="noopener noreferrer">
+              email: admincsi26@gmail.com
             </a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+            <a href="https://instagram.com/xie.csi" target="_blank" rel="noopener noreferrer">
               Instagram
             </a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
+            <a href="https://linkedin.com/company/xie-csi/" target="_blank" rel="noopener noreferrer">
               LinkedIn
-            </a>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-              GitHub
             </a>
           </div>
         </div>
