@@ -1240,7 +1240,7 @@ export default function UserDashboard() {
                     <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                       Official Registration Fee
                     </span>
-                    <h3 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>₹500 / Team</h3>
+                    <h3 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>₹300 / Team</h3>
                   </div>
 
                   {/* QR Code Container */}
@@ -1275,11 +1275,11 @@ export default function UserDashboard() {
                     }}
                   >
                     <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'JetBrains Mono' }}>UPI ID</span>
-                    <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#71a7ff', fontFamily: 'JetBrains Mono' }}>crucible.hackathon@upi</div>
+                    <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#71a7ff', fontFamily: 'JetBrains Mono' }}>parabkesarp20@okhdfcbank</div>
                   </div>
 
                   <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.5 }}>
-                    Scan using GPay, PhonePe, Paytm, or BHIM to pay ₹500. Upload your payment screenshot for verification.
+                    Scan using GPay, PhonePe, Paytm, or BHIM to pay ₹300. Upload your payment screenshot for verification.
                   </p>
                 </div>
               </div>
