@@ -16,7 +16,7 @@ import {
   saveUserPayment,
   getNotifications,
   markNotificationsRead,
- 
+
 } from '../../lib/portalStorage';
 
 import {
@@ -30,7 +30,7 @@ import {
   getHackathonSettings, getTeamDashboardSettings
 } from '../../lib/api';
 
-import qrCodeImg from '../../assets/upi_qr_code.jpg';
+import qrCodeImg from '../../assets/kesar-300-qr-code.png';
 import styles from './UserDashboard.module.css';
 
 /* ── SVG Icons ── */
@@ -240,7 +240,7 @@ const NAV_TABS = [
 export default function UserDashboard() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
- 
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [settings, setSettings] = useState(getHackathonSettings());
   const [problems, setProblems] = useState([]);
@@ -248,7 +248,7 @@ export default function UserDashboard() {
   const [teams, setTeams] = useState(getTeamsData());
   const [notifications, setNotifications] = useState(getNotifications());
 
-  
+
   // Current logged in team info
   const teamId = auth?.teamId || auth?.user?.id || 'PHX024';
   const cacheKey = `crucible_live_team_${teamId}`;
@@ -344,8 +344,8 @@ export default function UserDashboard() {
           }
           try {
             sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
-          } catch {}
-          
+          } catch { }
+
         }
       })
       .catch(() => { /* silently fall back to neutral placeholder */ })
@@ -354,8 +354,8 @@ export default function UserDashboard() {
   }, [cacheKey]);
 
   // User selection & submission & payment state
- // Inside your UserDashboard component function:
-const [selectedProb, setSelectedProb] = useState(null);
+  // Inside your UserDashboard component function:
+  const [selectedProb, setSelectedProb] = useState(null);
   const [submission, setSubmissionState] = useState(null);
   const [paymentRecord, setPaymentRecord] = useState(null);
 
@@ -409,7 +409,7 @@ const [selectedProb, setSelectedProb] = useState(null);
       .finally(() => {
         if (!cancelled) setLoadingProblems(false);
       });
-      
+
 
     // 2. Fetch live data from the backend on mount
     Promise.all([
@@ -429,7 +429,7 @@ const [selectedProb, setSelectedProb] = useState(null);
           setPaymentRecord(paymentData);
         }
       }
-      
+
 
       if (subRes?.data) {
         setSubmissionState({
@@ -442,7 +442,7 @@ const [selectedProb, setSelectedProb] = useState(null);
 
     // 3. Keep the event listener for local storage updates
     window.addEventListener('crucible_storage_update', handleSync);
-   
+
     return () => {
       cancelled = true;
       window.removeEventListener('crucible_storage_update', handleSync);
@@ -521,28 +521,28 @@ const [selectedProb, setSelectedProb] = useState(null);
   };
 
   const handleSaveTeamMembers = async (e) => {
-  e.preventDefault();
-  if (!membersForm.length) {
-    alert('Team must have at least one member.');
-    return;
-  }
+    e.preventDefault();
+    if (!membersForm.length) {
+      alert('Team must have at least one member.');
+      return;
+    }
 
-  try {
-    // Call your update API function here (await it)
-    await updateTeamMembers(currentTeam?.id || teamId, membersForm);
+    try {
+      // Call your update API function here (await it)
+      await updateTeamMembers(currentTeam?.id || teamId, membersForm);
 
-    // Refresh local/cached state if needed
-    setTeams(getTeamsData());
-    setShowEditTeamModal(false);
-    showToast('Team member details updated successfully!');
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  } catch (error) {
-    console.error('Failed to update members:', error);
-    alert('Failed to update team members. Please try again.');
-  }
-};
+      // Refresh local/cached state if needed
+      setTeams(getTeamsData());
+      setShowEditTeamModal(false);
+      showToast('Team member details updated successfully!');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to update members:', error);
+      alert('Failed to update team members. Please try again.');
+    }
+  };
 
   const handleAddMemberForm = () => {
     if (membersForm.length >= 4) {
@@ -897,7 +897,7 @@ const [selectedProb, setSelectedProb] = useState(null);
                   </span>
                 </div>
               )}
-              
+
             </div>
 
             <div className={styles.panelsLayout}>
