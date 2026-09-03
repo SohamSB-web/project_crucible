@@ -220,6 +220,10 @@ button {
     height: 24px;
     max-width: 60px;
   }
+
+  .nav-sponsors-container {
+    display: none;
+  }
 }
 
 .main-nav {
