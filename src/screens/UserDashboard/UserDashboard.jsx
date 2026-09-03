@@ -317,7 +317,7 @@ export default function UserDashboard() {
     };
   }, [liveTeam, teamId, auth?.user?.email]);
 
-  const isShortlisted = currentTeam?.shortlisted === true;
+  const isShortlisted = currentTeam?.shortlisted === true || teamResult?.shortlisted === true;
   const isLeader = auth?.role === 'user' || auth?.role === 'leader' || true;
 
   useEffect(() => {
