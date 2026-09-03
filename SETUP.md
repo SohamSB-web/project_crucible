@@ -23,12 +23,11 @@ This guide covers getting all free API keys, setting up environment variables, s
 
 ---
 
-### 1.3 Supabase (File Storage)
-1. Go to [supabase.com](https://supabase.com) and create a free project.
-2. Go to **Storage** → Click **New Bucket** → Name it `hackathon-submissions` → Keep it **Private**.
-3. Go to **Project Settings** → **API**:
-   - Copy **Project URL** as `SUPABASE_URL`.
-   - Copy **`service_role` secret key** (bypasses RLS server-side) as `SUPABASE_SERVICE_KEY`.
+### 1.3 Cloudflare R2 (Submission File Storage)
+1. In the Cloudflare dashboard, open **R2** -> **Manage R2 API Tokens** and create an API token with access to the submissions bucket.
+2. Copy the account ID as `CLOUDFLARE_ACCOUNT_ID`.
+3. Copy the token's access key and secret as `CLOUDFLARE_R2_ACCESS_KEY_ID` and `CLOUDFLARE_R2_SECRET_ACCESS_KEY`.
+4. Set `CLOUDFLARE_R2_BUCKET` to the private bucket name, usually `hackathon-submissions`.
 
 ---
 
@@ -64,9 +63,10 @@ JWT_EXPIRES_IN="7d"
 RESEND_API_KEY="re_xxxxxxxxxxxxxxxx"
 EMAIL_FROM="Hackathon 2026 <noreply@yourdomain.com>"
 
-SUPABASE_URL="https://xxxxxxxx.supabase.co"
-SUPABASE_SERVICE_KEY="eyJhbGci..."
-SUPABASE_BUCKET="hackathon-submissions"
+CLOUDFLARE_ACCOUNT_ID="your-cloudflare-account-id"
+CLOUDFLARE_R2_ACCESS_KEY_ID="your-32-character-r2-access-key-id"
+CLOUDFLARE_R2_SECRET_ACCESS_KEY="your-64-character-r2-secret-access-key"
+CLOUDFLARE_R2_BUCKET="hackathon-submissions"
 
 UPSTASH_REDIS_REST_URL="https://xxxx.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="AXxxxx..."

@@ -1,80 +1,106 @@
-const { createClient } = require('@supabase/supabase-js');
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl: awsGetSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-const BUCKET = process.env.SUPABASE_BUCKET || 'hackathon-submissions';
+const BUCKET = process.env.CLOUDFLARE_R2_BUCKET || 'hackathon-submissions';
 
-// Lazy-init Supabase client — allows server to start without env vars (local dev)
-let _supabase;
-function getSupabase() {
-  if (!_supabase) {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-      console.warn('[Storage] SUPABASE_URL / SUPABASE_SERVICE_KEY not set — file operations will fail.');
+// Lazy-init S3 client configured for Cloudflare R2
+let _r2Client;
+function getR2Client() {
+  if (!_r2Client) {
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
+
+    if (!accountId || !accessKeyId || !secretAccessKey) {
+      console.warn('[Storage] Cloudflare R2 environment variables not set — file operations will fail.');
       return null;
     }
-    // Use service role key — this bypasses RLS and is only used server-side
-    _supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY,
-      { auth: { persistSession: false } }
-    );
+
+    if (accessKeyId.length !== 32 || secretAccessKey.length !== 64) {
+      throw new Error(
+        'Invalid Cloudflare R2 credentials. Access keys must be 32 characters and secrets must be 64 characters. ' +
+          'Create an R2 API token and update server/.env.'
+      );
+    }
+
+    _r2Client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
   }
-  return _supabase;
+  return _r2Client;
 }
 
 /**
- * Upload a file buffer to the private Supabase storage bucket.
+ * Upload a file buffer to the private Cloudflare R2 bucket.
  * @param {string} filePath - storage path, e.g. "team-xyz/abstract-v2.pdf"
  * @param {Buffer} buffer   - file contents
  * @param {string} mimeType - validated MIME type
  * @returns {Promise<{ path: string }>}
  */
 async function uploadFile(filePath, buffer, mimeType) {
-  const supabase = getSupabase();
-  if (!supabase) throw new Error('Storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_KEY.');
-
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filePath, buffer, {
-      contentType: mimeType,
-      upsert: true, // allow re-submission (versioned path handles uniqueness)
-    });
-
-  if (error) {
-    throw new Error(`Storage upload failed: ${error.message}`);
+  const client = getR2Client();
+  if (!client) {
+    throw new Error('Storage is not configured. Check Cloudflare R2 environment variables.');
   }
 
-  return { path: data.path };
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: filePath,
+    Body: buffer,
+    ContentType: mimeType,
+  });
+
+  try {
+    await client.send(command);
+    return { path: filePath };
+  } catch (error) {
+    throw new Error(`Cloudflare R2 upload failed: ${error.message}`);
+  }
 }
 
 /**
- * Generate a short-lived signed URL for a file in the private bucket.
+ * Generate a short-lived signed URL for a file in Cloudflare R2.
  * @param {string} filePath  - storage path (from Submission.file_path)
  * @param {number} expiresIn - seconds until expiry (default 15 minutes)
  * @returns {Promise<string>} - signed URL
  */
 async function getSignedUrl(filePath, expiresIn = 900) {
-  const supabase = getSupabase();
-  if (!supabase) throw new Error('Storage is not configured.');
+  const client = getR2Client();
+  if (!client) throw new Error('Storage is not configured.');
 
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(filePath, expiresIn);
+  const command = new GetObjectCommand({
+    Bucket: BUCKET,
+    Key: filePath,
+  });
 
-  if (error) {
+  try {
+    const signedUrl = await awsGetSignedUrl(client, command, { expiresIn });
+    return signedUrl;
+  } catch (error) {
     throw new Error(`Signed URL generation failed: ${error.message}`);
   }
-
-  return data.signedUrl;
 }
 
 /**
  * Delete a file from the bucket (used when overwriting a submission).
  */
 async function deleteFile(filePath) {
-  const supabase = getSupabase();
-  if (!supabase) return;
+  const client = getR2Client();
+  if (!client) return;
 
-  const { error } = await supabase.storage.from(BUCKET).remove([filePath]);
-  if (error) {
+  const command = new DeleteObjectCommand({
+    Bucket: BUCKET,
+    Key: filePath,
+  });
+
+  try {
+    await client.send(command);
+  } catch (error) {
     console.error('Storage delete warning:', error.message);
   }
 }
