@@ -226,7 +226,8 @@ export async function getParticipantTracks() {
 export async function getTracks() {
   try {
     return await apiFetch('/api/admin/tracks');
-  } catch {
+  } catch (err) {
+    if (err?.message && !err.message.includes('Failed to fetch')) throw err;
     const problems = getProblemStatements();
     return { success: true, data: problems };
   }
@@ -238,7 +239,8 @@ export async function createTrack(track) {
       method: 'POST',
       body: JSON.stringify(track),
     });
-  } catch {
+  } catch (err) {
+    if (err?.message && !err.message.includes('Failed to fetch')) throw err;
     const newProb = addProblemStatement(track);
     return { success: true, data: newProb };
   }
@@ -250,7 +252,8 @@ export async function updateTrack(id, changes) {
       method: 'PATCH',
       body: JSON.stringify(changes),
     });
-  } catch {
+  } catch (err) {
+    if (err?.message && !err.message.includes('Failed to fetch')) throw err;
     const updated = updateProblemStatement({ id, ...changes });
     return { success: true, data: updated };
   }
@@ -259,7 +262,8 @@ export async function updateTrack(id, changes) {
 export async function deleteTrack(id) {
   try {
     return await apiFetch(`/api/admin/tracks/${id}`, { method: 'DELETE' });
-  } catch {
+  } catch (err) {
+    if (err?.message && !err.message.includes('Failed to fetch')) throw err;
     deleteProblemStatement(id);
     return { success: true, data: { id } };
   }

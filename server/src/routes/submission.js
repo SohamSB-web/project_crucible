@@ -47,7 +47,7 @@ router.post(
       const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
       const storagePath = `${teamId}/abstract-v${version}${ext}`;
 
-      // Upload buffer to Supabase
+      // Upload buffer to Cloudflare R2
       await uploadFile(storagePath, file.buffer, file.detectedMime || file.mimetype);
 
       // Upsert submission row in DB

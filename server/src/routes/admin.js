@@ -25,6 +25,7 @@ const announcementSchema = z.object({
 const trackSchema = z.object({
   title: z.string().min(1),
   category: z.string().default('General'),
+  domain: z.string().optional(),
   short_description: z.string().default(''),
   description: z.string().default(''),
   difficulty: z.string().default('Intermediate'),
@@ -35,7 +36,8 @@ const trackSchema = z.object({
     }
     if (Array.isArray(val)) return val;
     return [];
-  }, z.array(z.string())).optional(),
+  }, z.array(z.string())).default([]),
+  published: z.boolean().default(false),
 });
 
 // ─── Registration window ──────────────────────────────────────────────────────

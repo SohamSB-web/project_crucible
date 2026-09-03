@@ -149,8 +149,13 @@ export default function AdminDashboard() {
   const [editingProblem, setEditingProblem] = useState(null);
   const [viewProblem, setViewProblem] = useState(null);
 
+<<<<<<< HEAD
+    // Form states
+    const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '', tags: '', published: false });
+=======
   // Form states
   const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '' });
+>>>>>>> f8a93d6692f1bc62bd77fc9321d2d56fbd6461d4
   const [settings, setSettings] = useState({
     name: 'RepoForge Hackathon',
     year: 2026,
@@ -170,7 +175,12 @@ export default function AdminDashboard() {
         getAdminSubmissions(),
       ]);
 
-      if (tracksRes.success) setProblems(tracksRes.data);
+      if (tracksRes.success) {
+        setProblems(tracksRes.data.map((track) => ({
+          ...track,
+          domain: track.domain || track.category || 'General',
+        })));
+      }
       if (teamsRes.success) setTeams(teamsRes.data);
       if (subsRes.success) setSubmissions(subsRes.data);
 
@@ -271,8 +281,21 @@ export default function AdminDashboard() {
   const handleDeleteProblem = async (id) => {
     if (window.confirm('Are you sure you want to delete this Problem Statement?')) {
       try {
+<<<<<<< HEAD
+        if (editingProblem) {
+          await updateTrack(editingProblem.id, probForm);
+          showToast('Problem Statement updated in DB!');
+        } else {
+          await createTrack(probForm);
+          showToast('New Problem Statement added to DB!');
+        }
+        setShowAddModal(false);
+        setEditingProblem(null);
+        setProbForm({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '', tags: '', published: false });
+=======
         await deleteTrack(id);
         showToast('Problem Statement removed from DB');
+>>>>>>> f8a93d6692f1bc62bd77fc9321d2d56fbd6461d4
         fetchData();
       } catch (err) {
         showToast('Delete failed');
@@ -284,10 +307,13 @@ export default function AdminDashboard() {
     setProbForm({
       id: prob.id || '',
       title: prob.title || '',
-      domain: prob.domain || '',
+      category: prob.category || prob.domain || 'General',
+      short_description: prob.short_description || '',
       tags: Array.isArray(prob.tags) ? prob.tags.join(', ') : (prob.tags || ''),
       description: prob.description || '',
       difficulty: prob.difficulty || 'Intermediate',
+      reward: prob.reward || '',
+      published: Boolean(prob.published),
     });
     setShowAddModal(true);
   };
@@ -1021,8 +1047,8 @@ export default function AdminDashboard() {
                   type="text"
                   required
                   placeholder="e.g. Healthcare, AI, Smart City"
-                  value={probForm.domain}
-                  onChange={(e) => setProbForm({ ...probForm, domain: e.target.value })}
+                  value={probForm.category}
+                  onChange={(e) => setProbForm({ ...probForm, category: e.target.value })}
                 />
               </div>
               <div className={styles.field}>
