@@ -23,8 +23,8 @@ function createRateLimiter(requests, window, prefix) {
   });
 
   return async (req, res, next) => {
-    // Gracefully bypass if Redis is not configured (local dev without Upstash)
-    if (!process.env.UPSTASH_REDIS_REST_URL) {
+    // Keep local development usable while retaining Redis protection in production.
+    if (process.env.NODE_ENV !== 'production' || !process.env.UPSTASH_REDIS_REST_URL) {
       return next();
     }
 
