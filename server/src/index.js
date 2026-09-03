@@ -53,6 +53,11 @@ app.use('/api/team', teamRouter);
 app.use('/api/submission', submissionRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payment', paymentRoutes);
+app.use((err, req, res, next) => {
+  console.error("EXPRESS CAUGHT ERROR:", err.stack);
+  res.status(500).json({ error: err.message });
+});
+
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((_req, res) => {

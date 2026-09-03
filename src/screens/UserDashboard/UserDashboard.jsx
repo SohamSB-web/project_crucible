@@ -6,7 +6,7 @@ import StarBorder from '../../components/ui/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useLenis } from '../../context/LenisContext.jsx';
 import {
-  getHackathonSettings,
+
   getProblemStatements,
   getTeamsData,
   getSelectedProblem,
@@ -16,10 +16,20 @@ import {
   saveUserPayment,
   getNotifications,
   markNotificationsRead,
-  updateTeamMembers,
+ 
 } from '../../lib/portalStorage';
-import { uploadSubmission, getMySubmission, uploadPaymentProof } from '../../lib/api';
-import { getMyTeam } from '../../lib/api';
+
+import {
+  getParticipantTracks,
+  uploadSubmission,
+  getMySubmission,
+  uploadPaymentProof,
+  getMyTeam,
+  apiFetch,
+  updateTeamMembers,
+  getHackathonSettings, getTeamDashboardSettings
+} from '../../lib/api';
+
 import qrCodeImg from '../../assets/upi_qr_code.jpg';
 import styles from './UserDashboard.module.css';
 
@@ -230,13 +240,15 @@ const NAV_TABS = [
 export default function UserDashboard() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
-
+ 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [settings, setSettings] = useState(getHackathonSettings());
-  const [problems, setProblems] = useState(getProblemStatements());
+  const [problems, setProblems] = useState([]);
+  const [loadingProblems, setLoadingProblems] = useState(true);
   const [teams, setTeams] = useState(getTeamsData());
   const [notifications, setNotifications] = useState(getNotifications());
 
+  
   // Current logged in team info
   const teamId = auth?.teamId || auth?.user?.id || 'PHX024';
   const cacheKey = `crucible_live_team_${teamId}`;
@@ -251,7 +263,8 @@ export default function UserDashboard() {
     }
   });
   const [teamLoading, setTeamLoading] = useState(!liveTeam);
-
+  const [dynamicSettings, setDynamicSettings] = useState(getHackathonSettings());
+  const [teamResult, setTeamResult] = useState(null);
   // Prefer live API data; fall back strictly to neutral placeholder (Member 1, Member 2, Member 3)
   const currentTeam = useMemo(() => {
     if (liveTeam) {
@@ -309,20 +322,30 @@ export default function UserDashboard() {
   // Fetch live team data from backend on mount
   useEffect(() => {
     let cancelled = false;
+
+    getTeamDashboardSettings()
+      .then((res) => {
+        if (!cancelled && res?.data) {
+          if (res.data.settings) setDynamicSettings(res.data.settings);
+          if (res.data.result) setTeamResult(res.data.result);
+        }
+      })
+      .catch(() => { });
     getMyTeam()
       .then((res) => {
         if (!cancelled && res?.data) {
           setLiveTeam(res.data);
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
-          } catch {}
           if (res.data.problem_statement_id || res.data.problem_statement) {
-            setSelectedProbState({
+            setSelectedProb({
               id: res.data.problem_statement_id || 'PS-REG',
               title: res.data.problem_statement || res.data.theme_track || 'Selected Track',
               description: 'Selected during team registration.',
             });
           }
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
+          } catch {}
+          
         }
       })
       .catch(() => { /* silently fall back to neutral placeholder */ })
@@ -331,7 +354,8 @@ export default function UserDashboard() {
   }, [cacheKey]);
 
   // User selection & submission & payment state
-  const [selectedProb, setSelectedProbState] = useState(getSelectedProblem(teamId) || (currentTeam ? { id: currentTeam.problemId, title: currentTeam.problemTitle } : null));
+ // Inside your UserDashboard component function:
+const [selectedProb, setSelectedProb] = useState(null);
   const [submission, setSubmissionState] = useState(null);
   const [paymentRecord, setPaymentRecord] = useState(null);
 
@@ -358,10 +382,34 @@ export default function UserDashboard() {
       setProblems(getProblemStatements());
       setTeams(getTeamsData());
       setNotifications(getNotifications());
-      setSelectedProbState(getSelectedProblem(teamId));
+      setSelectedProb(getSelectedProblem(teamId));
       setSubmissionState(getUserSubmission(teamId));
       setPaymentRecord(getUserPayment(teamId));
     };
+    getParticipantTracks()
+      .then((res) => {
+        if (!cancelled && res?.data) {
+          // Map backend track/problem response structure if necessary 
+          // (Ensures it matches id, title, description, domain, tags shape)
+          const mappedProblems = res.data.map(track => ({
+            id: track.id || track.track_id,
+            title: track.title || track.name,
+            description: track.description,
+            domain: track.domain || track.category || track.theme || 'General',
+            tags: track.tags || []
+          }));
+          setProblems(mappedProblems);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch backend tracks, falling back to local storage:', err);
+        // Fallback to local storage helper if backend is offline
+        setProblems(getProblemStatements());
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingProblems(false);
+      });
+      
 
     // 2. Fetch live data from the backend on mount
     Promise.all([
@@ -381,6 +429,7 @@ export default function UserDashboard() {
           setPaymentRecord(paymentData);
         }
       }
+      
 
       if (subRes?.data) {
         setSubmissionState({
@@ -393,7 +442,7 @@ export default function UserDashboard() {
 
     // 3. Keep the event listener for local storage updates
     window.addEventListener('crucible_storage_update', handleSync);
-
+   
     return () => {
       cancelled = true;
       window.removeEventListener('crucible_storage_update', handleSync);
@@ -471,17 +520,29 @@ export default function UserDashboard() {
     setShowEditTeamModal(true);
   };
 
-  const handleSaveTeamMembers = (e) => {
-    e.preventDefault();
-    if (!membersForm.length) {
-      alert('Team must have at least one member.');
-      return;
-    }
-    updateTeamMembers(currentTeam?.id || teamId, membersForm);
+  const handleSaveTeamMembers = async (e) => {
+  e.preventDefault();
+  if (!membersForm.length) {
+    alert('Team must have at least one member.');
+    return;
+  }
+
+  try {
+    // Call your update API function here (await it)
+    await updateTeamMembers(currentTeam?.id || teamId, membersForm);
+
+    // Refresh local/cached state if needed
     setTeams(getTeamsData());
     setShowEditTeamModal(false);
     showToast('Team member details updated successfully!');
-  };
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (error) {
+    console.error('Failed to update members:', error);
+    alert('Failed to update team members. Please try again.');
+  }
+};
 
   const handleAddMemberForm = () => {
     if (membersForm.length >= 4) {
@@ -510,12 +571,35 @@ export default function UserDashboard() {
     setMembersForm(updated);
   };
 
-  const handleSelectProblem = (prob) => {
-    if (!isLeader) {
-      alert('Access Restricted - Only the Team Leader can select a Problem Statement.');
-      return;
+  // Inside UserDashboard.jsx
+
+  const handleSelectProblem = async (prob) => {
+    try {
+      // Call your API helper to save selection on the backend
+      const response = await apiFetch('/api/team/select-track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackId: prob.id })
+      });
+
+      if (response.success) {
+        // Update local state so UI instantly highlights it as selected
+        setSelectedProb(prob);
+
+        // If you maintain a live team state object in the dashboard, update it too:
+        setLiveTeam(prev => ({
+          ...prev,
+          problem_statement_id: prob.id,
+          problem_statement: prob.title,
+          theme_track: prob.category || prob.domain
+        }));
+
+        alert('Problem statement selected successfully!');
+      }
+    } catch (err) {
+      console.error('Failed to select problem statement:', err);
+      alert(err.message || 'Failed to select problem statement.');
     }
-    setConfirmSelectModal(prob);
   };
 
   const confirmProblemSelection = () => {
@@ -727,25 +811,37 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              {/* Col 3, Row 1 */}
+              {/* Col 3, Row 1: Shortlist Status */}
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.star}</span>
                 <span className={styles.cardLabel}>Shortlist Status</span>
                 <span className={styles.cardValue}>
-                  {currentTeam?.shortlisted ? 'Shortlisted' : 'Under Review'}
+                  {currentTeam?.shortlisted === true || currentTeam?.shortlistStatus === 'Shortlisted' ? (
+                    <span style={{ color: '#22c55e' }}>Shortlisted</span>
+                  ) : currentTeam?.shortlistStatus === 'Rejected' ? (
+                    <span style={{ color: '#ef4444' }}>Not Shortlisted</span>
+                  ) : (
+                    'Under Review'
+                  )}
                 </span>
               </div>
 
-              {/* Col 4, Row 1 */}
+              {/* Col 4, Row 1: Submission Status */}
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.folder}</span>
                 <span className={styles.cardLabel}>Submission Status</span>
                 <span className={styles.cardValue}>
-                  {submission ? 'Submitted' : 'Pending Upload'}
+                  {submission?.status === 'Submitted' || currentTeam?.submissionStatus === 'Submitted' || submission ? (
+                    <span style={{ color: '#22c55e' }}>Submitted</span>
+                  ) : submission?.status === 'Draft' ? (
+                    <span style={{ color: '#eab308' }}>Draft Saved</span>
+                  ) : (
+                    'Pending Upload'
+                  )}
                 </span>
               </div>
 
-              {/* Col 3, Row 2 */}
+              {/* Col 3, Row 2: Submission Deadline */}
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.clock}</span>
                 <span className={styles.cardLabel}>Submission Deadline</span>
@@ -754,7 +850,7 @@ export default function UserDashboard() {
                 </span>
               </div>
 
-              {/* Col 4, Row 2 */}
+              {/* Col 4, Row 2: Offline Round Eligibility / Payment */}
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.creditCard}</span>
                 <span className={styles.cardLabel}>Offline Round Eligibility</span>
@@ -766,6 +862,10 @@ export default function UserDashboard() {
                   ) : paymentRecord?.status === 'Pending' || currentTeam?.paymentStatus === 'Pending' ? (
                     <span style={{ color: '#eab308', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
                       {Icons.clock} Pending Verification
+                    </span>
+                  ) : paymentRecord?.status === 'Rejected' || currentTeam?.paymentStatus === 'Rejected' ? (
+                    <span style={{ color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                      {Icons.alertTriangle} Payment Rejected
                     </span>
                   ) : (
                     <StarBorder
@@ -783,6 +883,21 @@ export default function UserDashboard() {
                   )}
                 </span>
               </div>
+              {/* Col: Result Announcement Card */}
+              {teamResult?.published && (
+                <div className={styles.statusCard} style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg, rgba(234,179,8,0.15), rgba(217,119,6,0.05))', border: '1px solid rgba(234,179,8,0.4)' }}>
+                  <span className={styles.cardIcon} style={{ color: '#eab308' }}>{Icons.award}</span>
+                  <span className={styles.cardLabel}>Final Hackathon Verdict</span>
+                  <span className={styles.cardValue} style={{ fontSize: '1.1rem', color: '#eab308', fontWeight: 800 }}>
+                    {teamResult.rank
+                      ? `🎉 Winner! Secured Rank #${teamResult.rank}`
+                      : teamResult.shortlisted
+                        ? '🌟 Shortlisted for Final Pitches!'
+                        : '💡 Don’t give up! Keep building and try again for the next hackathon.'}
+                  </span>
+                </div>
+              )}
+              
             </div>
 
             <div className={styles.panelsLayout}>
@@ -851,7 +966,7 @@ export default function UserDashboard() {
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800 }}>Explore Problem Statements</h2>
                 <p style={{ color: 'rgba(255,255,255,0.6)', margin: '4px 0 0', fontSize: '0.9rem' }}>
-                  Browse available hackathon challenges (PS001–PS010) and select your official track.
+                  Browse available hackathon challenges and select your official track.
                 </p>
               </div>
               <input
@@ -871,101 +986,73 @@ export default function UserDashboard() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
-              {filteredProblems.map((prob) => {
-                const isSelected = selectedProb?.id === prob.id;
-                return (
-                  <div
-                    key={prob.id}
-                    style={{
-                      background: 'rgba(16,23,38,0.75)',
-                      backdropFilter: 'blur(16px)',
-                      WebkitBackdropFilter: 'blur(16px)',
-                      border: isSelected ? '1.5px solid #71a7ff' : '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 20,
-                      padding: 24,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      gap: 16,
-                      boxShadow: isSelected ? '0 0 20px rgba(113,167,255,0.25)' : '0 8px 32px rgba(0,0,0,0.3)',
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontWeight: 700, fontSize: '0.82rem' }}>
-                          {prob.id}
-                        </span>
-                        <span
-                          style={{
-                            background: 'rgba(113,167,255,0.15)',
-                            color: '#71a7ff',
-                            padding: '4px 10px',
-                            borderRadius: 999,
-                            fontSize: '0.7rem',
-                            fontFamily: 'JetBrains Mono',
-                          }}
-                        >
-                          {prob.domain}
-                        </span>
-                      </div>
-
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '12px 0 8px' }}>{prob.title}</h3>
-                      <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{prob.description}</p>
-                    </div>
-
-                    <div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                        {(Array.isArray(prob.tags) ? prob.tags : prob.tags.split(',')).map((t) => (
-                          <span
-                            key={t}
-                            style={{
-                              background: 'rgba(255,255,255,0.06)',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              borderRadius: 6,
-                              padding: '2px 8px',
-                              fontSize: '0.72rem',
-                              color: 'rgba(255,255,255,0.75)',
-                            }}
-                          >
-                            #{t.trim()}
+            {loadingProblems ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.6)', fontFamily: 'JetBrains Mono' }}>
+                Loading tracks from backend...
+              </div>
+            ) : filteredProblems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.6)' }}>
+                No problem statements found.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+                {filteredProblems.map((prob) => {
+                  const isSelected = selectedProb?.id === prob.id;
+                  return (
+                    <div
+                      key={prob.id}
+                      style={{
+                        background: 'rgba(16,23,38,0.75)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: isSelected ? '1.5px solid #71a7ff' : '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 20,
+                        padding: 24,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: 16,
+                        boxShadow: isSelected ? '0 0 20px rgba(113,167,255,0.25)' : '0 8px 32px rgba(0,0,0,0.3)',
+                      }}
+                    >
+                      {/* Card content mapping (Keep your existing card markup here) */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontWeight: 700, fontSize: '0.82rem' }}>
+                            {prob.id}
                           </span>
-                        ))}
+                          <span style={{ background: 'rgba(113,167,255,0.15)', color: '#71a7ff', padding: '4px 10px', borderRadius: 999, fontSize: '0.7rem', fontFamily: 'JetBrains Mono' }}>
+                            {prob.domain}
+                          </span>
+                        </div>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '12px 0 8px' }}>{prob.title}</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{prob.description}</p>
                       </div>
 
-                      <div style={{ display: 'flex', gap: 10 }}>
-                        <StarBorder
-                          onClick={() => setViewProblemModal(prob)}
-                          color="#71a7ff"
-                          backgroundColor="#142034"
-                          borderColor="rgba(113, 167, 255, 0.4)"
-                          textColor="#ffffff"
-                          speed="5s"
-                        >
-                          View Details
-                        </StarBorder>
-                        <StarBorder
-                          onClick={() => handleSelectProblem(prob)}
-                          color={isSelected ? '#22c55e' : '#71a7ff'}
-                          backgroundColor={isSelected ? '#0a2a16' : '#142034'}
-                          borderColor={isSelected ? 'rgba(34, 197, 94, 0.5)' : 'rgba(113, 167, 255, 0.4)'}
-                          textColor={isSelected ? '#22c55e' : '#ffffff'}
-                          speed="4s"
-                        >
-                          {isSelected ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              {Icons.check} Selected
+                      <div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                          {/* Safe handling if tags is string or array */}
+                          {(Array.isArray(prob.tags) ? prob.tags : (prob.tags ? prob.tags.split(',') : [])).map((t) => (
+                            <span key={t} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '2px 8px', fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)' }}>
+                              #{typeof t === 'string' ? t.trim() : t}
                             </span>
-                          ) : (
-                            'Select Problem'
-                          )}
-                        </StarBorder>
+                          ))}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 10 }}>
+                          <StarBorder onClick={() => setViewProblemModal(prob)} color="#71a7ff" backgroundColor="#142034" borderColor="rgba(113, 167, 255, 0.4)" textColor="#ffffff" speed="5s">
+                            View Details
+                          </StarBorder>
+                          <StarBorder onClick={() => handleSelectProblem(prob)} color={isSelected ? '#22c55e' : '#71a7ff'} backgroundColor={isSelected ? '#0a2a16' : '#142034'} borderColor={isSelected ? 'rgba(34, 197, 94, 0.5)' : 'rgba(113, 167, 255, 0.4)'} textColor={isSelected ? '#22c55e' : '#ffffff'} speed="4s">
+                            {isSelected ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>{Icons.check} Selected</span> : 'Select Problem'}
+                          </StarBorder>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

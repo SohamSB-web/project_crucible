@@ -1,20 +1,27 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLenis } from '../../context/LenisContext.jsx';
 import {
+  getTracks,
+  createTrack,
+  updateTrack,
+  deleteTrack,
+  getAdminTeams,
+  stageShortlist,
+  getAdminSubmissions,
+  assignAdminWinner,
   getHackathonSettings,
-  saveHackathonSettings,
-  getProblemStatements,
-  addProblemStatement,
-  updateProblemStatement,
-  deleteProblemStatement,
-  getTeamsData,
-  toggleTeamShortlist,
-  getWinnerAssignments,
-  assignWinner,
-} from '../../lib/portalStorage';
+  updateHackathonSettings,
+  publishHackathonResults,
+  verifyTeamPayment,
+  updatePaymentStatus
+
+
+
+} from '../../lib/api'; // <--- Switch from portalStorage to real api.js
+
 import styles from './AdminDashboard.module.css';
 
 /* ── SVG Nav Icons ── */
@@ -129,10 +136,11 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [settings, setSettings] = useState(getHackathonSettings());
-  const [problems, setProblems] = useState(getProblemStatements());
-  const [teams, setTeams] = useState(getTeamsData());
-  const [winners, setWinners] = useState(getWinnerAssignments());
+
+  const [problems, setProblems] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [winners, setWinners] = useState({ first: null, second: null, third: null });
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState('');
 
@@ -142,35 +150,44 @@ export default function AdminDashboard() {
   const [viewProblem, setViewProblem] = useState(null);
 
   // Form states
-  const [probForm, setProbForm] = useState({ id: '', title: '', domain: '', tags: '', description: '', difficulty: 'Intermediate' });
+  const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '' });
+  const [settings, setSettings] = useState({
+    name: 'RepoForge Hackathon',
+    year: 2026,
+    deadline: '',
+    hackathonStatus: 'Live',
+    registrationStatus: 'Open',
+    acceptingSubmissions: true,
+  });
+  // Fetch Database Data on Mount & Tab Change
+  // Inside fetchData() in AdminDashboard.jsx
+  // Inside fetchData() in AdminDashboard.jsx
+  const fetchData = async () => {
+    try {
+      const [tracksRes, teamsRes, subsRes] = await Promise.all([
+        getTracks(),
+        getAdminTeams(),
+        getAdminSubmissions(),
+      ]);
 
-  const lenis = useLenis();
-  const isAnyModalOpen = Boolean(showAddModal || viewProblem);
+      if (tracksRes.success) setProblems(tracksRes.data);
+      if (teamsRes.success) setTeams(teamsRes.data);
+      if (subsRes.success) setSubmissions(subsRes.data);
 
-  useEffect(() => {
-    if (isAnyModalOpen) {
-      document.body.style.overflow = 'hidden';
-      lenis?.stop();
-    } else {
-      document.body.style.overflow = '';
-      lenis?.start();
+      // Map existing ranks from team result objects to the winners state
+      const winnerMap = { first: null, second: null, third: null };
+      teamsRes.data.forEach(t => {
+        if (t.result?.rank === 1) winnerMap.first = t.id;
+        if (t.result?.rank === 2) winnerMap.second = t.id;
+        if (t.result?.rank === 3) winnerMap.third = t.id;
+      });
+      setWinners(winnerMap);
+    } catch (err) {
+      showToast('Failed to sync data from database.');
     }
-    return () => {
-      document.body.style.overflow = '';
-      lenis?.start();
-    };
-  }, [isAnyModalOpen, lenis]);
-
-  // Sync state
+  };
   useEffect(() => {
-    const handleSync = () => {
-      setSettings(getHackathonSettings());
-      setProblems(getProblemStatements());
-      setTeams(getTeamsData());
-      setWinners(getWinnerAssignments());
-    };
-    window.addEventListener('crucible_storage_update', handleSync);
-    return () => window.removeEventListener('crucible_storage_update', handleSync);
+    fetchData();
   }, []);
 
   const showToast = (msg) => {
@@ -178,74 +195,169 @@ export default function AdminDashboard() {
     setTimeout(() => setToast(''), 3000);
   };
 
-  // Analytics
+  // Analytics computed from real database state
   const metrics = useMemo(() => {
     const totalTeams = teams.length;
-    const submittedTeams = teams.filter((t) => t.submitted).length;
-    const pendingReviews = teams.filter((t) => t.submitted && !t.shortlisted).length;
+    const submittedTeams = teams.filter((t) => t.submissionStatus === 'submitted').length;
+    const pendingReviews = teams.filter((t) => t.submissionStatus === 'submitted' && !t.shortlisted).length;
     const shortlistedCount = teams.filter((t) => t.shortlisted).length;
     return { totalTeams, submittedTeams, pendingReviews, shortlistedCount, problemsCount: problems.length };
   }, [teams, problems]);
 
-  // Handlers
-  const handleSaveSettings = (e) => {
+  // Handlers connected to Backend APIs
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
-    saveHackathonSettings(settings);
-    showToast('Settings saved successfully!');
+    try {
+      await updateHackathonSettings(settings);
+      showToast('Settings saved & submission rules updated!');
+    } catch (err) {
+      showToast('Error saving settings');
+    }
+  };
+  const handleVerify = async (teamId) => {
+    try {
+      const res = await verifyTeamPayment(teamId);
+      if (res?.success) {
+        alert("✅ Payment successfully verified!");
+        // Refresh your teams list state here if needed
+      } else {
+        alert(res?.error || "Failed to verify payment.");
+      }
+    } catch (error) {
+      alert("An error occurred while verifying.");
+    }
+  };
+  const handleStatusChange = async (teamId, newStatus) => {
+    try {
+      // Call the imported function directly
+      const res = await updatePaymentStatus(teamId, newStatus);
+
+      if (res?.success) {
+        setTeams((prevTeams) =>
+          prevTeams.map((t) =>
+            t.id === teamId
+              ? { ...t, payment: { ...t.payment, status: newStatus } }
+              : t
+          )
+        );
+        alert(`Payment status updated to ${newStatus}`);
+      } else {
+        alert(res?.error || "Failed to update status.");
+      }
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      alert(error.message || "An error occurred.");
+    }
+  };
+  const handleCreateProblem = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingProblem) {
+        await updateTrack(editingProblem.id, probForm);
+        showToast('Problem Statement updated in DB!');
+      } else {
+        await createTrack(probForm);
+        showToast('New Problem Statement added to DB!');
+      }
+      setShowAddModal(false);
+      setEditingProblem(null);
+      setProbForm({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '' });
+      fetchData();
+    } catch (err) {
+      showToast('Operation failed');
+    }
   };
 
-  const handleCreateProblem = (e) => {
-    e.preventDefault();
-    if (!probForm.title || !probForm.domain) {
-      alert('Please fill title and domain');
-      return;
-    }
-    if (editingProblem) {
-      updateProblemStatement({
-        ...editingProblem,
-        ...probForm,
-        tags: typeof probForm.tags === 'string' ? probForm.tags.split(',').map((t) => t.trim()) : probForm.tags,
-      });
-      showToast('Problem Statement updated!');
-    } else {
-      addProblemStatement(probForm);
-      showToast('New Problem Statement added!');
-    }
-    setShowAddModal(false);
-    setEditingProblem(null);
-    setProbForm({ id: '', title: '', domain: '', tags: '', description: '', difficulty: 'Intermediate' });
-  };
-
-  const handleDeleteProblem = (id) => {
+  const handleDeleteProblem = async (id) => {
     if (window.confirm('Are you sure you want to delete this Problem Statement?')) {
-      deleteProblemStatement(id);
-      showToast('Problem Statement removed');
+      try {
+        await deleteTrack(id);
+        showToast('Problem Statement removed from DB');
+        fetchData();
+      } catch (err) {
+        showToast('Delete failed');
+      }
     }
   };
-
   const openEditModal = (prob) => {
     setEditingProblem(prob);
     setProbForm({
-      id: prob.id,
-      title: prob.title,
-      domain: prob.domain,
-      tags: Array.isArray(prob.tags) ? prob.tags.join(', ') : prob.tags,
-      description: prob.description,
-      difficulty: prob.difficulty,
+      id: prob.id || '',
+      title: prob.title || '',
+      domain: prob.domain || '',
+      tags: Array.isArray(prob.tags) ? prob.tags.join(', ') : (prob.tags || ''),
+      description: prob.description || '',
+      difficulty: prob.difficulty || 'Intermediate',
     });
     setShowAddModal(true);
   };
-
-  const handleToggleShortlist = (teamId) => {
-    toggleTeamShortlist(teamId);
-    showToast('Updated team shortlist status');
+  const handleTogglePublish = async (prob) => {
+    try {
+      const newStatus = !prob.published;
+      await updateTrack(prob.id, { ...prob, published: newStatus });
+      showToast(`Problem ${prob.id} is now ${newStatus ? 'Published' : 'Hidden'} for participants!`);
+      fetchData();
+    } catch (err) {
+      showToast('Failed to update publication status.');
+      console.error(err);
+    }
   };
 
-  const handleAssignWinner = (position, teamId) => {
-    assignWinner(position, teamId);
-    showToast(`Assigned ${position} place winner`);
-  };
+  const handleToggleShortlist = async (teamId) => {
+    try {
+      // 1. Flip the shortlisted state for the targeted team locally
+      const updatedTeams = teams.map((team) =>
+        team.id === teamId ? { ...team, shortlisted: !team.shortlisted } : team
+      );
 
+      // 2. Collect all team IDs that are currently marked as shortlisted
+      const shortlistedIds = updatedTeams
+        .filter((team) => team.shortlisted)
+        .map((team) => team.id);
+
+      // 3. Send the updated array to the backend endpoint
+      await stageShortlist(shortlistedIds);
+
+      // 4. Commit the new teams array to state to re-render the table
+      setTeams(updatedTeams);
+      showToast('Shortlist status updated!');
+    } catch (err) {
+      console.error('Error toggling shortlist:', err);
+      showToast('Failed to update shortlist status.');
+    }
+  };
+  const handleAssignWinner = async (position, teamId) => {
+    try {
+      await assignAdminWinner(position, teamId);
+      showToast(`Assigned ${position} place winner`);
+      setWinners({ ...winners, [position]: teamId });
+      fetchData();
+    } catch (err) {
+      showToast('Failed to assign winner');
+    }
+  };
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handlePublishResults = async () => {
+    if (!window.confirm("Are you sure you want to publish all results?")) return;
+
+    // Extract all team IDs from your loaded teams state
+    const allTeamIds = teams.map((t) => t.id);
+
+    setIsPublishing(true);
+    try {
+      const res = await publishHackathonResults(allTeamIds);
+      if (res?.success) {
+        alert("🎉 Results are now live and published to all teams!");
+      } else {
+        alert(res?.error || "Failed to publish results.");
+      }
+    } catch (error) {
+      alert("An error occurred while publishing.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -258,8 +370,7 @@ export default function AdminDashboard() {
       (p) =>
         p.id.toLowerCase().includes(q) ||
         p.title.toLowerCase().includes(q) ||
-        p.domain.toLowerCase().includes(q) ||
-        (Array.isArray(p.tags) && p.tags.some((t) => t.toLowerCase().includes(q))),
+        p.category?.toLowerCase().includes(q)
     );
   }, [problems, searchQuery]);
 
@@ -267,10 +378,9 @@ export default function AdminDashboard() {
     const q = searchQuery.toLowerCase();
     return teams.filter(
       (t) =>
-        t.teamName.toLowerCase().includes(q) ||
+        t.name.toLowerCase().includes(q) ||
         t.id.toLowerCase().includes(q) ||
-        t.leaderName.toLowerCase().includes(q) ||
-        (t.problemTitle && t.problemTitle.toLowerCase().includes(q)),
+        t.college.toLowerCase().includes(q)
     );
   }, [teams, searchQuery]);
 
@@ -382,6 +492,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+
             <div className={styles.sectionCard}>
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>Recent Team Registrations</h3>
@@ -411,13 +522,13 @@ export default function AdminDashboard() {
                       <tr key={t.id}>
                         <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', whiteSpace: 'nowrap' }}>{t.id}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
-                          <strong>{t.teamName}</strong>
+                          <strong>{t.name}</strong>
                         </td>
-                        <td style={{ whiteSpace: 'nowrap' }}>{t.leaderName}</td>
-                        <td style={{ minWidth: 180, maxWidth: 280, lineHeight: 1.4 }}>{t.problemTitle || 'Pending Selection'}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{t.members?.find((m) => m.role === 'leader')?.name || t.members?.[0]?.name || ''}</td>
+                        <td style={{ minWidth: 180, maxWidth: 280, lineHeight: 1.4 }}>{t.problemStatementId || 'Pending Selection'}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            {t.submitted ? <>{NavIcons.checkCircle} Submitted</> : <>{NavIcons.clock} Pending</>}
+                            {t.submission ? <>{NavIcons.checkCircle} Submitted</> : <>{NavIcons.clock} Pending</>}
                           </span>
                         </td>
                       </tr>
@@ -452,45 +563,70 @@ export default function AdminDashboard() {
             </div>
 
             <div className={styles.problemsGrid}>
-              {filteredProblems.map((prob) => (
-                <div key={prob.id} className={styles.probCard}>
-                  <div>
-                    <div className={styles.probHeader}>
-                      <span className={styles.probId}>{prob.id}</span>
-                      <span className={`${styles.badge} ${styles.badgeBlue}`}>{prob.domain}</span>
+              {filteredProblems.map((prob) => {
+                // Put console.log safely here inside the function block
+                console.log("print log ", prob);
+
+                return (
+                  <div key={prob.id} className={styles.probCard}>
+                    <div>
+                      <div className={styles.probHeader}>
+                        <span className={styles.probId}>{prob.id}</span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span className={`${styles.badge} ${prob.published ? styles.badgeGreen : styles.badgeYellow}`}>
+                            {prob.published ? 'Published' : 'Draft'}
+                          </span>
+                          <span className={`${styles.badge} ${styles.badgeBlue}`}>{prob.domain}</span>
+                        </div>
+                      </div>
+                      <h3 className={styles.probTitle} style={{ marginTop: 12 }}>
+                        {prob.title}
+                      </h3>
+                      <p className={styles.probDesc} style={{ marginTop: 8 }}>
+                        {prob.description}
+                      </p>
                     </div>
-                    <h3 className={styles.probTitle} style={{ marginTop: 12 }}>
-                      {prob.title}
-                    </h3>
-                    <p className={styles.probDesc} style={{ marginTop: 8 }}>
-                      {prob.description}
-                    </p>
+
+                    <div>
+                      <div className={styles.tagGroup}>
+                        {(Array.isArray(prob?.tags)
+                          ? prob.tags
+                          : typeof prob?.tags === 'string'
+                            ? prob.tags.split(',')
+                            : []
+                        ).map((tag, idx) => (
+                          <span key={idx} className={styles.tag}>
+                            #{typeof tag === 'string' ? tag.trim() : tag}
+                          </span>
+                        ))}
+                      </div>
+                      <div className={styles.probActions} style={{ marginTop: '1rem', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <SqBtn
+                          onClick={() => handleTogglePublish(prob)}
+                          size="sm"
+                          lineColor={prob.published ? '#ff6b75' : '#22c55e'}
+                          baseColor={prob.published ? '#2a1215' : '#0a2a16'}
+                        >
+                          {prob.published ? 'Unpublish' : 'Publish PS'}
+                        </SqBtn>
+                        <SqBtn onClick={() => setViewProblem(prob)} size="sm">
+                          View
+                        </SqBtn>
+                        <SqBtn onClick={() => openEditModal(prob)} size="sm" lineColor="#eab308">
+                          Edit
+                        </SqBtn>
+                        <SqBtn onClick={() => handleDeleteProblem(prob.id)} size="sm" danger>
+                          Delete
+                        </SqBtn>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className={styles.tagGroup}>
-                      {(Array.isArray(prob.tags) ? prob.tags : prob.tags.split(',')).map((tag) => (
-                        <span key={tag} className={styles.tag}>
-                          #{tag.trim()}
-                        </span>
-                      ))}
-                    </div>
-                    <div className={styles.probActions}>
-                      <SqBtn onClick={() => setViewProblem(prob)} size="sm">
-                        View
-                      </SqBtn>
-                      <SqBtn onClick={() => openEditModal(prob)} size="sm" lineColor="#eab308">
-                        Edit
-                      </SqBtn>
-                      <SqBtn onClick={() => handleDeleteProblem(prob.id)} size="sm" danger>
-                        Delete
-                      </SqBtn>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
+
 
         {/* ── 3. TEAMS MANAGEMENT TAB ── */}
         {activeTab === 'teams' && (
@@ -512,48 +648,107 @@ export default function AdminDashboard() {
                     <th>Team ID</th>
                     <th>Team Name</th>
                     <th>Leader Email</th>
-                    <th>Selected Problem</th>
-                    <th>Submission Status</th>
-                    <th>Shortlist Status</th>
-                    <th>Action</th>
+                    <th>Problem</th>
+                    <th>Submission</th>
+                    <th>Payment & Verification</th>
+                    <th>Shortlist Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTeams.map((t) => (
-                    <tr key={t.id}>
-                      <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', whiteSpace: 'nowrap' }}>{t.id}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <strong>{t.teamName}</strong>
-                      </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>{t.leaderEmail}</td>
-                      <td style={{ minWidth: 180, maxWidth: 300, lineHeight: 1.4 }}>{t.problemTitle || 'None Selected'}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`}>
-                          {t.submitted ? 'Submitted' : 'Pending'}
-                        </span>
-                      </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <span className={`${styles.badge} ${t.shortlisted ? styles.badgeGreen : styles.badgeYellow}`}>
-                          {t.shortlisted ? 'Shortlisted' : 'Under Review'}
-                        </span>
-                      </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <SqBtn
-                          size="sm"
-                          lineColor={t.shortlisted ? '#ff6b75' : '#22c55e'}
-                          onClick={() => handleToggleShortlist(t.id)}
-                        >
-                          {t.shortlisted ? 'Remove Shortlist' : 'Shortlist'}
-                        </SqBtn>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredTeams.map((t) => {
+                    const isSubmitted = Boolean(t.submitted || t.submission || t.submissionFile || t.submissionStatus === 'submitted');
+                    const hasPayment = t.payment !== null && t.payment !== undefined;
+                    const paymentStatus = t.payment?.status || 'Not Uploaded';
+
+                    return (
+                      <tr key={t.id}>
+                        <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', whiteSpace: 'nowrap' }}>{t.id}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <strong>{t.name || t.teamName}</strong>
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{t.members?.find((m) => m.role === 'leader')?.email || t.members?.[0]?.email || 'No Email'}</td>
+                        <td style={{ minWidth: 180, maxWidth: 300, lineHeight: 1.4 }}>{t.problemStatementId || t.problem_statement_id || 'None'}</td>
+
+                        {/* Submission Status */}
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <span className={`${styles.badge} ${isSubmitted ? styles.badgeGreen : styles.badgeYellow}`}>
+                            {isSubmitted ? 'Submitted' : 'Pending'}
+                          </span>
+                        </td>
+
+                        {/* Payment Proof & Status Column */}
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {!hasPayment ? (
+                            <span className={`${styles.badge} ${styles.badgeYellow}`} style={{ fontSize: '0.75rem' }}>
+                              Not Uploaded
+                            </span>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span className={`${styles.badge} ${styles.badgeGreen}`} style={{ fontSize: '0.75rem' }}>
+                                  Uploaded
+                                </span>
+
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '0.8rem', color: paymentStatus === 'Verified' ? '#22c55e' : '#eab308' }}>
+                                  {paymentStatus}
+                                </span>
+                                {paymentStatus !== 'Verified' ? (
+                                  <button
+                                    onClick={() => handleStatusChange(t.id, 'Verified')}
+                                    style={{
+                                      padding: '0.2rem 0.4rem',
+                                      backgroundColor: '#16a34a',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    Verify
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleStatusChange(t.id, 'Pending')}
+                                    style={{
+                                      padding: '0.2rem 0.4rem',
+                                      backgroundColor: '#6b7280',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer',
+                                      fontSize: '0.7rem'
+                                    }}
+                                  >
+                                    Revert
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Merged Shortlist / Remove Action Column */}
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <SqBtn
+                            size="sm"
+                            lineColor={t.shortlisted ? '#ff6b75' : '#22c55e'}
+                            onClick={() => handleToggleShortlist(t.id)}
+                          >
+                            {t.shortlisted ? 'Remove' : 'Shortlist'}
+                          </SqBtn>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
-
         {/* ── 4. SUBMISSIONS REVIEW TAB ── */}
         {activeTab === 'submissions' && (
           <div className={styles.sectionCard}>
@@ -571,20 +766,27 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {teams.map((t) => (
-                    <tr key={t.id}>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <strong>{t.teamName}</strong> <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>({t.id})</span>
-                      </td>
-                      <td style={{ minWidth: 160 }}>{t.submissionFile || '—'}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>{t.submissionDate || 'Not Submitted'}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <span className={`${styles.badge} ${t.submitted ? styles.badgeGreen : styles.badgeYellow}`}>
-                          {t.submitted ? 'File Ready' : 'Pending Submission'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {teams.map((t) => {
+                    console.log("Team object t:", t); // <-- Inspect t here
+                    return (
+                      <tr key={t.id}>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <strong>{t.teamName || t.name}</strong> <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>({t.id})</span>
+                        </td>
+                        <td style={{ minWidth: 160 }}>
+                          {t.submission?.original_name || t.submissionFile || '—'}
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {t.submission?.submitted_at ? new Date(t.submission.submitted_at).toLocaleString() : (t.submissionDate || 'Not Submitted')}
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <span className={`${styles.badge} ${(t.submission || t.submitted) ? styles.badgeGreen : styles.badgeYellow}`}>
+                            {(t.submission || t.submitted) ? 'Submitted' : 'Pending Submission'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -620,10 +822,11 @@ export default function AdminDashboard() {
                     <option value="">Select Team</option>
                     {teams.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.teamName} ({t.id})
+                        {t.name || t.teamName} ({t.id})
                       </option>
                     ))}
                   </select>
+
                 </div>
 
                 {/* 2nd Place */}
@@ -668,6 +871,33 @@ export default function AdminDashboard() {
                   </select>
                 </div>
               </div>
+
+              {/* ─── ADD THIS BELOW YOUR RESULTS SECTION ─── */}
+              <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem' }}>Publish Hackathon Results</h3>
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    This will update all team dashboards to display their final verdict, rank, or shortlist status.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handlePublishResults}
+                  disabled={isPublishing}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: isPublishing ? '#93c5fd' : '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: '600',
+                    cursor: isPublishing ? 'not-allowed' : 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  {isPublishing ? 'Publishing...' : '🚀 Publish All Results'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -696,7 +926,16 @@ export default function AdminDashboard() {
                   onChange={(e) => setSettings({ ...settings, year: Number(e.target.value) })}
                 />
               </div>
-
+              <div className={styles.field}>
+                <label>Accept PPT Submissions</label>
+                <select
+                  value={settings.acceptingSubmissions ? 'Yes' : 'No'}
+                  onChange={(e) => setSettings({ ...settings, acceptingSubmissions: e.target.value === 'Yes' })}
+                >
+                  <option value="Yes">Enabled (Accepting PPTs)</option>
+                  <option value="No">Disabled (Stopped)</option>
+                </select>
+              </div>
               <div className={styles.field}>
                 <label>Submission Deadline</label>
                 <input

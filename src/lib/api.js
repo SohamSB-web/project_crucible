@@ -4,8 +4,7 @@
  */
 
 import {
-  getHackathonSettings,
-  saveHackathonSettings,
+  
   getProblemStatements,
   addProblemStatement,
   updateProblemStatement,
@@ -30,7 +29,7 @@ function getToken() {
   }
 }
 
-async function apiFetch(path, options = {}) {
+export async function apiFetch(path, options = {}) {
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -64,6 +63,29 @@ async function apiFetchFormData(path, formData) {
 
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || `Upload failed (${response.status})`);
+  return data;
+}
+
+// Same as apiFetchFormData, but attaches the auth token like apiFetch and
+// lets the caller pick the HTTP method (register uses POST but this stays
+// general-purpose for future multipart endpoints).
+async function apiFetchMultipart(path, formData, options = {}) {
+  const token = getToken();
+  const headers = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+  // NOTE: never set 'Content-Type' here — the browser needs to set it
+  // itself (including the multipart boundary) when the body is FormData.
+
+  const response = await fetch(`${BASE}${path}`, {
+    method: options.method || 'POST',
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
   return data;
 }
 
@@ -125,13 +147,29 @@ export async function login(email, password) {
 
 // ─── Registration ─────────────────────────────────────────────────────────────
 
-export async function register(payload) {
+// `idsFile` is the single combined PDF of every participant's ID proof,
+// required by /api/team/register. `payload` is the same object the form
+// already builds; `members` gets JSON-stringified since multipart fields
+// are plain strings.
+export async function register(payload, idsFile) {
   try {
-    return await apiFetch('/api/team/register', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      formData.append(key, key === 'members' ? JSON.stringify(value) : value);
     });
-  } catch {
+    if (idsFile) {
+      formData.append('idsFile', idsFile);
+    }
+    return await apiFetchMultipart('/api/team/register', formData);
+  } catch (err) {
+    // Offline fallback (backend unreachable) — mirrors the other endpoints'
+    // mock behavior. A real "Failed to fetch" is the only case we swallow;
+    // anything the server actually responded with (e.g. validation errors,
+    // missing PDF) should surface to the user.
+    if (err?.message && !err.message.includes('Failed to fetch')) {
+      throw err;
+    }
     return { success: true, data: { teamId: 'PHX024', message: 'Registration successful!' } };
   }
 }
@@ -174,6 +212,7 @@ export async function toggleRegistration() {
 export async function getMyTeam() {
   try {
     return await apiFetch('/api/team/me');
+
   } catch {
     const teams = getTeamsData();
     return { success: true, data: teams[0] };
@@ -181,7 +220,9 @@ export async function getMyTeam() {
 }
 
 // ─── Tracks / Problem Statements ─────────────────────────────────────────────
-
+export async function getParticipantTracks() {
+  return await apiFetch('/api/team/participant_tracks');
+}
 export async function getTracks() {
   try {
     return await apiFetch('/api/admin/tracks');
@@ -290,7 +331,7 @@ export async function getAdminTeams() {
 
 export async function stageShortlist(teamIds) {
   try {
-    return await apiFetch('/api/admin/shortlist', {
+    return await apiFetch('/api/admin/teams/shortlist', {
       method: 'POST',
       body: JSON.stringify({ teamIds }),
     });
@@ -343,4 +384,80 @@ export async function uploadPaymentProof(file) {
   const formData = new FormData();
   formData.append('file', file);
   return await apiFetchFormData('/api/payment/upload-screenshot', formData);
+}
+
+
+// Add to api.js
+
+export async function updateTeamMembers(teamId, members) {
+  try {
+    return await apiFetch('/api/team/members', {
+      method: 'PUT',
+      body: JSON.stringify({ members }),
+    });
+  } catch (err) {
+    return { success: true, data: { members } };
+  }
+}
+
+export async function getHackathonSettings() {
+  try {
+    return await apiFetch('/api/admin/settings');
+  } catch {
+    return { success: true, data: { name: 'RepoForge Hackathon', year: 2026, deadline: '', hackathonStatus: 'Live', registrationStatus: 'Open', acceptingSubmissions: true } };
+  }
+}
+
+export async function updateHackathonSettings(settings) {
+  try {
+    return await apiFetch('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  } catch (err) {
+    throw new Error(err.message || 'Failed to save settings');
+  }
+}
+
+export async function assignAdminWinner(position, teamId) {
+  try {
+    return await apiFetch('/api/admin/results/winners', {
+      method: 'POST',
+      body: JSON.stringify({ position, teamId }),
+    });
+  } catch (err) {
+    throw new Error(err.message || 'Failed to assign winner');
+  }
+}
+
+export async function getTeamDashboardSettings() {
+  try {
+    return await apiFetch('/api/team/settings-and-results');
+  } catch {
+    return {
+      success: true,
+      data: {
+        settings: { name: 'RepoForge Hackathon', year: 2026, hackathonStatus: 'Live' },
+        result: { shortlisted: false, rank: null, published: false }
+      }
+    };
+  }
+}
+
+export async function publishHackathonResults(teamIds = []) {
+  return await apiFetch('/api/admin/results/publish', {
+    method: 'POST',
+    body: JSON.stringify({ teamIds }),
+  });
+}
+export async function updatePaymentStatus(teamId, status) {
+  return await apiFetch(`/api/admin/teams/${teamId}/payment-status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+export async function verifyTeamPayment(teamId) {
+  return await apiFetch(`/api/admin/teams/${teamId}/verify-payment`, {
+    method: 'POST',
+  });
 }

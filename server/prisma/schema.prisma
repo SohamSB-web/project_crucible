@@ -31,6 +31,7 @@ model Team {
   credential  Credential?
   submission  Submission?
   payment  Payment?
+  participantId ParticipantId?
   result      Result?
 
   @@map("teams")
@@ -165,7 +166,9 @@ model Track {
   description       String @db.Text @default("")
   difficulty        String @default("Intermediate")
   reward            String @default("")
+  tags        String[] @default([])
   teams             Int    @default(0)
+  published   Boolean  @default(false) // <--- Add this line
 
   @@map("tracks")
 }
@@ -190,4 +193,41 @@ model Payment {
   uploaded_at   DateTime @default(now())
 
   @@map("payments")
+}
+
+
+
+model Notification {
+  id         String   @id @default(cuid())
+  title      String
+  time       String   @default("")
+  unread     Boolean  @default(true)
+  detail     String   @db.Text
+  created_at DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model ParticipantId {
+  id            String   @id @default(uuid())
+  team_id       String   @unique
+  team          Team     @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  file_path     String
+  original_name String
+  uploaded_at   DateTime @default(now())
+
+  @@map("participant_ids")
+}
+
+model HackathonSetting {
+  id                   Int      @id @default(1)
+  name                 String   @default("CRUCIBLE Hackathon 2026")
+  year                 Int      @default(2026)
+  deadline             String   @default("2026-08-30")
+  hackathonStatus      String   @default("Live") // 'Live' | 'Paused' | 'Closed'
+  registrationStatus   String   @default("Open") // 'Open' | 'Closed'
+  acceptingSubmissions Boolean  @default(true)   // <--- Controls PPT submissions
+  updated_at           DateTime @updatedAt
+
+  @@map("hackathon_settings")
 }

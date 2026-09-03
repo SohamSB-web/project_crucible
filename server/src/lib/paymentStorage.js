@@ -34,4 +34,24 @@ async function uploadPaymentScreenshot(filePath, buffer, mimeType) {
     return { path: data.path };
 }
 
-module.exports = { uploadPaymentScreenshot };
+
+const ID_BUCKET = process.env.IDS_SUPABASE_BUCKET || 'IDS';
+
+async function uploadParticipantId(filePath, buffer, mimeType) {
+    const supabase = getPaymentsSupabase();
+
+    const { data, error } = await supabase.storage
+        .from(ID_BUCKET)
+        .upload(filePath, buffer, {
+            contentType: mimeType,
+            upsert: true,
+        });
+
+    if (error) {
+        throw new Error(`ID card storage upload failed: ${error.message}`);
+    }
+
+    return { path: data.path };
+}
+
+module.exports = { uploadPaymentScreenshot, uploadParticipantId };
