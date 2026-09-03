@@ -33,7 +33,7 @@ export default function Login() {
 
   const form = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: 'admin@crucible.dev', password: 'admin123' },
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -59,7 +59,7 @@ export default function Login() {
       <main className={styles.shell}>
         {/* Back to home button */}
         <div className={styles.backRow}>
-          <SqBtn onClick={() => navigate('/')} lineColor="#71a7ff" baseColor="#0d1625" textColor="#71a7ff">
+          <SqBtn onClick={() => navigate('/')} lineColor="#FAB600" baseColor="#261005" textColor="#ffffff">
             ← Back
           </SqBtn>
         </div>
@@ -69,7 +69,7 @@ export default function Login() {
           <form onSubmit={onSubmit} className={styles.form}>
             <label>
               Email
-              <input type="email" {...form.register('email')} />
+              <input type="email" placeholder="example@gmail.com" {...form.register('email')} />
               {form.formState.errors.email && <small>{form.formState.errors.email.message}</small>}
             </label>
 

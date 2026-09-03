@@ -22,11 +22,9 @@ export default function Footer() {
         {/* Brand & Mission Info */}
         <div className="footer-brand-block">
           <Link to="/" className="brand brand-footer" aria-label="RepoForge">
-            <span className="brand-mark">C</span>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-              <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#ffffff', letterSpacing: '-0.01em' }}>
-                MISSION <br /> CRUCIBLE
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'row', lineHeight: 1.2, gap: '20px' }}>
+              <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/logo.png" alt="RepoForge" />
+              <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/title-logo.png" alt="RepoForge" />
             </div>
           </Link>
           <p className="footer-desc">

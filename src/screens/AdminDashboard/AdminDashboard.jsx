@@ -419,12 +419,12 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <div className={styles.brandLogo}>C</div>
-          <div className={styles.brandText}>
-            <span className={styles.brandTitle}>RepoForge</span>
-            <span className={styles.brandSub}>ADMINISTRATION</span>
+        <div className={styles.brand} style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flexDirection: 'row', lineHeight: 1.2, gap: '20px' }}>
+            <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/logo.png" alt="RepoForge" />
+            <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/title-logo.png" alt="RepoForge" />
           </div>
+          <span className={styles.brandSub}>ADMINISTRATION</span>
         </div>
 
         <nav className={styles.nav}>

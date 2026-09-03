@@ -28,13 +28,17 @@ const rewards = [
   { title: '₹15k+ payouts', text: 'For the top teams across tracks and the grand prize.' },
   { title: 'Mentor access', text: 'Direct sessions with founders, operators, and product leaders.' },
   { title: 'Career network', text: 'Introductions to hiring partners and startup communities.' },
-  { title: 'Funding opportunities', text: 'Open doors to incubation programs and prototype grants.' },
+  { title: 'Internship Opportunities', text: 'Confirm Internship to one top team' },
 ];
 
-const sponsorData = [
-  { name: 'SATPrep1600', tier: 'TITLE SPONSOR', tierClass: 'tierGreen', bg: '#1a5c35', logoimg: '' },
-  { name: 'Infraon', tier: 'SPONSOR', tierClass: 'tierOrange', bg: '#7a2d00', logoimg: '' },
-  { name: 'Mumbai Tech Community', tier: 'PLATFORM PARTNER', tierClass: 'tierBlue', bg: '#1a237e', logoimg: '' },
+const sponsorRow1 = [
+  { name: 'SATPrep1600', tier: 'TITLE SPONSOR', tierClass: 'tierGreen', bg: '#1a5c35', logoimg: '/SAT_Prep.jpeg' },
+  { name: 'Infraon', tier: 'SPONSOR', tierClass: 'tierOrange', bg: '#7a2d00', logoimg: '/infraon_logo.svg' },
+];
+const sponsorRow2 = [
+  { name: 'Mumbai Tech Community', tier: 'COMMUNITY PARTNER', tierClass: 'tierBlue', bg: '#1a237e', logoimg: '/Mumbai_Tech_Community.jpeg' },
+  { name: 'Third Wave Coffee', tier: 'DRINKS PARTNER', tierClass: 'tierBlue', bg: '#3b1a0d', logoimg: '/Third_Wave_Coffee.jpg' },
+  { name: 'Pizza Hut', tier: 'SNACKS PARTNER', tierClass: 'tierBlue', bg: '#1a237e', logoimg: '' },
 ];
 
 const stats = [
@@ -212,32 +216,69 @@ export default function Landing() {
               <p className={styles.sponsorsEyebrow}>BACKED BY THE BEST</p>
               <h2 className={styles.sponsorsTitle}>Our <span>Sponsors</span></h2>
             </div>
-            <motion.div
-              className={styles.sponsorCardsRow}
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
-            >
-              {sponsorData.map((sponsor) => (
-                <MotionGlareHover
-                  key={sponsor.name}
-                  className={styles.sponsorCard}
-                  variants={cardReveal}
-                  whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
-                  glareColor="#ffffff"
-                  glareOpacity={0.15}
-                  glareSize={250}
-                  transitionDuration={600}
-                >
-                  <div className={styles.sponsorLogoBox} style={{ background: sponsor.bg }}>
-                    {sponsor.letters}
-                  </div>
-                  <h3 className={styles.sponsorName}>{sponsor.name}</h3>
-                  <p className={`${styles.sponsorTier} ${styles[sponsor.tierClass]}`}>{sponsor.tier}</p>
-                </MotionGlareHover>
-              ))}
-            </motion.div>
+            <div className={styles.sponsorsContainer}>
+              {/* Row 1 – Title Sponsor & Sponsor */}
+              <motion.div
+                className={styles.sponsorCardsRow}
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                {sponsorRow1.map((sponsor) => (
+                  <MotionGlareHover
+                    key={sponsor.name}
+                    className={styles.sponsorCard}
+                    variants={cardReveal}
+                    whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
+                    glareColor="#ffffff"
+                    glareOpacity={0.15}
+                    glareSize={250}
+                    transitionDuration={600}
+                  >
+                    <div className={styles.sponsorLogoBox} style={{ background: sponsor.logoimg ? 'rgba(255,255,255,0.1)' : sponsor.bg }}>
+                      {sponsor.logoimg
+                        ? <img src={sponsor.logoimg} alt={sponsor.name} className={styles.sponsorLogoImg} />
+                        : <span className={styles.sponsorFallbackLetters}>{sponsor.name.slice(0, 2).toUpperCase()}</span>
+                      }
+                    </div>
+                    <h3 className={styles.sponsorName}>{sponsor.name}</h3>
+                    <p className={`${styles.sponsorTier} ${styles[sponsor.tierClass]}`}>{sponsor.tier}</p>
+                  </MotionGlareHover>
+                ))}
+              </motion.div>
+
+              {/* Row 2 – Community & Drinks Partners */}
+              <motion.div
+                className={styles.sponsorCardsRow}
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                {sponsorRow2.map((sponsor) => (
+                  <MotionGlareHover
+                    key={sponsor.name}
+                    className={styles.sponsorCard}
+                    variants={cardReveal}
+                    whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
+                    glareColor="#ffffff"
+                    glareOpacity={0.12}
+                    glareSize={200}
+                    transitionDuration={600}
+                  >
+                    <div className={styles.sponsorLogoBox} style={{ background: sponsor.logoimg ? 'rgba(255,255,255,0.1)' : sponsor.bg }}>
+                      {sponsor.logoimg
+                        ? <img src={sponsor.logoimg} alt={sponsor.name} className={styles.sponsorLogoImg} />
+                        : <span className={styles.sponsorFallbackLetters}>{sponsor.name.slice(0, 2).toUpperCase()}</span>
+                      }
+                    </div>
+                    <h3 className={styles.sponsorName}>{sponsor.name}</h3>
+                    <p className={`${styles.sponsorTier} ${styles[sponsor.tierClass]}`}>{sponsor.tier}</p>
+                  </MotionGlareHover>
+                ))}
+              </motion.div>
+            </div>
           </div>
         </motion.section>
 

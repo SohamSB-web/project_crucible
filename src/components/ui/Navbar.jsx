@@ -13,9 +13,9 @@ const NAV_ITEMS = [
   { id: 'contact', label: 'Contact' },
 ];
 
-const sponsorModules = import.meta.glob('/sponsors/*.{png,jpg,jpeg,svg,webp,PNG,JPG,JPEG,SVG,WEBP}', { eager: true });
-const discoveredLogos = Object.keys(sponsorModules).map((path) => path.replace(/^\/public/, ''));
-const fallbackLogos = ['/sponsors/CSI-logo.png', '/sponsors/White-XIE.png'];
+const sponsorModules = import.meta.glob('../../assets/sponsors/*.{png,jpg,jpeg,svg,webp,PNG,JPG,JPEG,SVG,WEBP}', { eager: true });
+const discoveredLogos = Object.values(sponsorModules).map((mod) => mod.default);
+const fallbackLogos = []; // We shouldn't need fallbacks if they are statically imported, but kept for safety
 const sponsorLogos = discoveredLogos.length > 0 ? discoveredLogos : fallbackLogos;
 
 export default function Navbar() {
@@ -74,7 +74,6 @@ export default function Navbar() {
     >
       <div className="container nav-shell">
         <Link to="/" className="brand" aria-label="RepoForge home">
-
           <div style={{ display: 'flex', flexDirection: 'row', lineHeight: 1.2, gap: '20px' }}>
             <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/logo.png" alt="RepoForge" />
             <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/title-logo.png" alt="RepoForge" />

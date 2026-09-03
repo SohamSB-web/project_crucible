@@ -251,7 +251,7 @@ export default function UserDashboard() {
 
   // Current logged in team info
   const teamId = auth?.teamId || auth?.user?.id || 'PHX024';
-  const cacheKey = `crucible_live_team_${teamId}`;
+  const cacheKey = `repoforge_live_team_${teamId}`;
 
   // Live API team data (with instant cache on refresh)
   const [liveTeam, setLiveTeam] = useState(() => {
@@ -448,11 +448,11 @@ export default function UserDashboard() {
     });
 
     // 3. Keep the event listener for local storage updates
-    window.addEventListener('crucible_storage_update', handleSync);
+    window.addEventListener('repoforge_storage_update', handleSync);
 
     return () => {
       cancelled = true;
-      window.removeEventListener('crucible_storage_update', handleSync);
+      window.removeEventListener('repoforge_storage_update', handleSync);
     };
   }, [teamId]);
   const lenis = useLenis();
@@ -705,12 +705,12 @@ export default function UserDashboard() {
 
       {/* Left Side Navbar */}
       <aside className={styles.sidebar}>
-        <div className={styles.brandGroup}>
-          <div className={styles.brandLogo}>C</div>
-          <div className={styles.brandInfo}>
-            <span className={styles.brandTitle}>RepoForge</span>
-            <span className={styles.brandSub}>{settings.name}</span>
+        <div className={styles.brandGroup} style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flexDirection: 'row', lineHeight: 1.2, gap: '20px' }}>
+            <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/logo.png" alt="RepoForge" />
+            <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/title-logo.png" alt="RepoForge" />
           </div>
+          <span className={styles.brandSub}>PARTICIPANT</span>
         </div>
 
         <nav className={styles.tabs}>
@@ -826,8 +826,8 @@ export default function UserDashboard() {
                   {(() => {
                     const s = currentTeam?.shortlisted || currentTeam?.shortlistStatus || 'Under-Review';
                     if (s === 'Shortlisted') return <span style={{ color: '#22c55e' }}>✦ Shortlisted</span>;
-                    if (s === 'Waitlisted')  return <span style={{ color: '#eab308' }}>⧖ Waitlisted</span>;
-                    if (s === 'Eliminated')  return <span style={{ color: '#ef4444' }}>✕ Eliminated</span>;
+                    if (s === 'Waitlisted') return <span style={{ color: '#eab308' }}>⧖ Waitlisted</span>;
+                    if (s === 'Eliminated') return <span style={{ color: '#ef4444' }}>✕ Eliminated</span>;
                     return <span style={{ color: '#94a3b8' }}>⊙ Under Review</span>;
                   })()}
                 </span>
@@ -859,38 +859,38 @@ export default function UserDashboard() {
 
               {/* Col 4, Row 2: Offline Round Eligibility / Payment */}
               {isShortlisted && (
-              <div className={styles.statusCard}>
-                <span className={styles.cardIcon}>{Icons.creditCard}</span>
-                <span className={styles.cardLabel}>Offline Round Eligibility</span>
-                <span className={styles.cardValue} style={{ fontSize: '0.88rem' }}>
-                  {paymentRecord?.status === 'Verified' || currentTeam?.paymentStatus === 'Verified' ? (
-                    <span style={{ color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
-                      {Icons.checkCircle} Verified & Eligible
-                    </span>
-                  ) : paymentRecord?.status === 'Pending' || currentTeam?.paymentStatus === 'Pending' ? (
-                    <span style={{ color: '#eab308', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
-                      {Icons.clock} Pending Verification
-                    </span>
-                  ) : paymentRecord?.status === 'Rejected' || currentTeam?.paymentStatus === 'Rejected' ? (
-                    <span style={{ color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
-                      {Icons.alertTriangle} Payment Rejected
-                    </span>
-                  ) : (
-                    <StarBorder
-                      as="button"
-                      color="#ff6b75"
-                      backgroundColor="#2a1215"
-                      borderColor="rgba(255, 107, 117, 0.4)"
-                      textColor="#ff6b75"
-                      onClick={() => setActiveTab('payment')}
-                    >
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        {Icons.alertTriangle} Pay Fee Now {Icons.arrowRight}
+                <div className={styles.statusCard}>
+                  <span className={styles.cardIcon}>{Icons.creditCard}</span>
+                  <span className={styles.cardLabel}>Offline Round Eligibility</span>
+                  <span className={styles.cardValue} style={{ fontSize: '0.88rem' }}>
+                    {paymentRecord?.status === 'Verified' || currentTeam?.paymentStatus === 'Verified' ? (
+                      <span style={{ color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                        {Icons.checkCircle} Verified & Eligible
                       </span>
-                    </StarBorder>
-                  )}
-                </span>
-              </div>
+                    ) : paymentRecord?.status === 'Pending' || currentTeam?.paymentStatus === 'Pending' ? (
+                      <span style={{ color: '#eab308', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                        {Icons.clock} Pending Verification
+                      </span>
+                    ) : paymentRecord?.status === 'Rejected' || currentTeam?.paymentStatus === 'Rejected' ? (
+                      <span style={{ color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+                        {Icons.alertTriangle} Payment Rejected
+                      </span>
+                    ) : (
+                      <StarBorder
+                        as="button"
+                        color="#ff6b75"
+                        backgroundColor="#2a1215"
+                        borderColor="rgba(255, 107, 117, 0.4)"
+                        textColor="#ff6b75"
+                        onClick={() => setActiveTab('payment')}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          {Icons.alertTriangle} Pay Fee Now {Icons.arrowRight}
+                        </span>
+                      </StarBorder>
+                    )}
+                  </span>
+                </div>
               )}
               {/* Col: Result Announcement Card */}
               {teamResult?.published && (
