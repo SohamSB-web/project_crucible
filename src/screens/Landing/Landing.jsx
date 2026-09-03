@@ -142,7 +142,7 @@ export default function Landing() {
                 >
 
                 </GradientText> */}
-                <img src="/title-logo.png" alt="" />
+                <img src="/title-logo.png" alt="RepoForge" />
               </h1>
 
               {/* Subtitle & Description */}

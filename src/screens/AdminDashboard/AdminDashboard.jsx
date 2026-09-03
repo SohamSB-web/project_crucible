@@ -149,13 +149,8 @@ export default function AdminDashboard() {
   const [editingProblem, setEditingProblem] = useState(null);
   const [viewProblem, setViewProblem] = useState(null);
 
-<<<<<<< HEAD
-    // Form states
-    const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '', tags: '', published: false });
-=======
   // Form states
-  const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '' });
->>>>>>> f8a93d6692f1bc62bd77fc9321d2d56fbd6461d4
+  const [probForm, setProbForm] = useState({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '', tags: '', published: false });
   const [settings, setSettings] = useState({
     name: 'RepoForge Hackathon',
     year: 2026,
@@ -281,21 +276,8 @@ export default function AdminDashboard() {
   const handleDeleteProblem = async (id) => {
     if (window.confirm('Are you sure you want to delete this Problem Statement?')) {
       try {
-<<<<<<< HEAD
-        if (editingProblem) {
-          await updateTrack(editingProblem.id, probForm);
-          showToast('Problem Statement updated in DB!');
-        } else {
-          await createTrack(probForm);
-          showToast('New Problem Statement added to DB!');
-        }
-        setShowAddModal(false);
-        setEditingProblem(null);
-        setProbForm({ title: '', category: 'General', short_description: '', description: '', difficulty: 'Intermediate', reward: '', tags: '', published: false });
-=======
         await deleteTrack(id);
         showToast('Problem Statement removed from DB');
->>>>>>> f8a93d6692f1bc62bd77fc9321d2d56fbd6461d4
         fetchData();
       } catch (err) {
         showToast('Delete failed');
@@ -763,8 +745,8 @@ export default function AdminDashboard() {
                               background: '#0a0e17',
                               color:
                                 t.shortlisted === 'Shortlisted' ? '#22c55e' :
-                                t.shortlisted === 'Waitlisted'  ? '#eab308' :
-                                t.shortlisted === 'Eliminated'  ? '#ef4444' : '#94a3b8',
+                                  t.shortlisted === 'Waitlisted' ? '#eab308' :
+                                    t.shortlisted === 'Eliminated' ? '#ef4444' : '#94a3b8',
                               padding: '6px 10px',
                               borderRadius: '8px',
                               border: '1px solid rgba(113,167,255,0.25)',

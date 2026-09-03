@@ -71,10 +71,9 @@ export default function Navbar() {
       <div className="container nav-shell">
         <Link to="/" className="brand" aria-label="RepoForge home">
 
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-            <span style={{ fontWeight: 800, fontSize: '1.02rem', color: '#ffffff', letterSpacing: '-0.01em' }}>
-              REPO <br /> FORGE
-            </span>
+          <div style={{ display: 'flex', flexDirection: 'row', lineHeight: 1.2, gap: '20px' }}>
+            <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/logo.png" alt="RepoForge" />
+            <img style={{ maxHeight: '50px', width: 'auto', height: 'auto', objectFit: 'contain' }} src="/title-logo.png" alt="RepoForge" />
           </div>
         </Link>
 
