@@ -317,7 +317,14 @@ export default function UserDashboard() {
     };
   }, [liveTeam, teamId, auth?.user?.email]);
 
+  const isShortlisted = currentTeam?.shortlisted === true || teamResult?.shortlisted === true;
   const isLeader = auth?.role === 'user' || auth?.role === 'leader' || true;
+
+  useEffect(() => {
+    if (!isShortlisted && activeTab === 'payment') {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, isShortlisted]);
 
   // Fetch live team data from backend on mount
   useEffect(() => {
@@ -707,7 +714,7 @@ export default function UserDashboard() {
         </div>
 
         <nav className={styles.tabs}>
-          {NAV_TABS.map((tab) => (
+          {NAV_TABS.filter((tab) => tab.id !== 'payment' || isShortlisted).map((tab) => (
             <button
               key={tab.id}
               className={`${styles.tabItem} ${activeTab === tab.id ? styles.active : ''}`}
@@ -851,6 +858,7 @@ export default function UserDashboard() {
               </div>
 
               {/* Col 4, Row 2: Offline Round Eligibility / Payment */}
+              {isShortlisted && (
               <div className={styles.statusCard}>
                 <span className={styles.cardIcon}>{Icons.creditCard}</span>
                 <span className={styles.cardLabel}>Offline Round Eligibility</span>
@@ -883,6 +891,7 @@ export default function UserDashboard() {
                   )}
                 </span>
               </div>
+              )}
               {/* Col: Result Announcement Card */}
               {teamResult?.published && (
                 <div className={styles.statusCard} style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg, rgba(234,179,8,0.15), rgba(217,119,6,0.05))', border: '1px solid rgba(234,179,8,0.4)' }}>
@@ -1161,7 +1170,7 @@ export default function UserDashboard() {
         )}
 
         {/* ── 5. OFFLINE ROUND PAYMENT TAB ── */}
-        {activeTab === 'payment' && (
+        {activeTab === 'payment' && isShortlisted && (
           <div className={styles.panel} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', marginBottom: 0, padding: 24, boxSizing: 'border-box' }}>
             <div className={styles.panelHeader} style={{ marginBottom: 16 }}>
               <div>
@@ -1231,7 +1240,7 @@ export default function UserDashboard() {
                     <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                       Official Registration Fee
                     </span>
-                    <h3 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>₹500 / Team</h3>
+                    <h3 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>₹300 / Team</h3>
                   </div>
 
                   {/* QR Code Container */}
@@ -1266,11 +1275,11 @@ export default function UserDashboard() {
                     }}
                   >
                     <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'JetBrains Mono' }}>UPI ID</span>
-                    <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#71a7ff', fontFamily: 'JetBrains Mono' }}>crucible.hackathon@upi</div>
+                    <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#71a7ff', fontFamily: 'JetBrains Mono' }}>parabkesarp20@okhdfcbank</div>
                   </div>
 
                   <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.5 }}>
-                    Scan using GPay, PhonePe, Paytm, or BHIM to pay ₹500. Upload your payment screenshot for verification.
+                    Scan using GPay, PhonePe, Paytm, or BHIM to pay ₹300. Upload your payment screenshot for verification.
                   </p>
                 </div>
               </div>
