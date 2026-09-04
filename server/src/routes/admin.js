@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
+const { getSubmissionSettings } = require('../lib/submissionSettings');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = Router();
@@ -91,7 +92,8 @@ router.get('/teams', requireAuth, requireRole('admin', 'judge'), async (_req, re
       dept: t.dept,
       status: 'registered',
       submissionStatus: t.submission ? 'submitted' : 'pending',
-      shortlisted: t.result?.shortlisted ?? false,
+      shortlisted: t.result?.shortlist_status === 'Shortlisted' || (t.result?.shortlisted ?? false),
+      shortlistStatus: t.result?.shortlist_status || (t.result?.shortlisted ? 'Shortlisted' : 'Under-Review'),
       members: t.members,
       submission: t.submission,
       result: t.result,
@@ -217,6 +219,7 @@ router.get('/results', requireAuth, requireRole('admin', 'judge'), async (_req, 
         teamName: r.team.name,
         rank: r.rank,
         shortlisted: r.shortlisted,
+        shortlistStatus: r.shortlist_status || (r.shortlisted ? 'Shortlisted' : 'Under-Review'),
         published: r.published,
         averageScore: avg,
         judgeCount: evals.length,
@@ -236,25 +239,27 @@ router.get('/results', requireAuth, requireRole('admin', 'judge'), async (_req, 
 // ─── Shortlist teams ──────────────────────────────────────────────────────────
 
 router.post('/teams/shortlist', requireAuth, requireRole('admin'), async (req, res) => {
-  const { teamIds } = req.body;
-  if (!Array.isArray(teamIds)) {
-    return res.status(400).json({ success: false, error: 'teamIds must be an array.' });
+  const { teamStatuses, teamIds } = req.body;
+  const updates = Array.isArray(teamStatuses)
+    ? teamStatuses
+    : Array.isArray(teamIds) ? teamIds.map((teamId) => ({ teamId, status: 'Shortlisted' })) : null;
+  const validStatuses = new Set(['Shortlisted', 'Waitlisted', 'Under-Review', 'Eliminated']);
+  if (!updates || updates.some(({ teamId, status }) => !teamId || !validStatuses.has(status))) {
+    return res.status(400).json({ success: false, error: 'Provide team statuses using a valid shortlist status.' });
   }
 
   try {
-    // Reset all shortlists, then set the selected ones
-    await prisma.$transaction([
-      prisma.result.updateMany({ data: { shortlisted: false } }),
-      ...teamIds.map((id) =>
+    await prisma.$transaction(
+      updates.map(({ teamId, status }) =>
         prisma.result.upsert({
-          where: { team_id: id },
-          create: { team_id: id, shortlisted: true },
-          update: { shortlisted: true },
+          where: { team_id: teamId },
+          create: { team_id: teamId, shortlisted: status === 'Shortlisted', shortlist_status: status },
+          update: { shortlisted: status === 'Shortlisted', shortlist_status: status },
         })
-      ),
-    ]);
+      )
+    );
 
-    return res.json({ success: true, data: { shortlisted: teamIds } });
+    return res.json({ success: true, data: { teamStatuses: updates } });
   } catch (err) {
     console.error('[Admin/Shortlist]', err);
     return res.status(500).json({ success: false, error: 'Failed to update shortlist.' });
@@ -276,11 +281,16 @@ router.post('/results/publish', requireAuth, requireRole('admin'), async (req, r
       teamIds.map((id, idx) =>
         prisma.result.upsert({
           where: { team_id: id },
-          create: { team_id: id, shortlisted: true, published: true, rank: idx + 1 },
-          update: { published: true, rank: idx + 1 },
+          create: { team_id: id, shortlisted: true, shortlist_status: 'Shortlisted', published: true, rank: idx + 1 },
+          update: { published: true, rank: idx + 1, shortlisted: true, shortlist_status: 'Shortlisted' },
         })
       )
     );
+    await prisma.hackathonSetting.upsert({
+      where: { id: 1 },
+      create: { id: 1, acceptingSubmissions: false },
+      update: { acceptingSubmissions: false },
+    });
 
     return res.json({ success: true, data: { published: teamIds } });
   } catch (err) {
@@ -335,7 +345,13 @@ router.post('/tracks', requireAuth, requireRole('admin'), async (req, res) => {
   }
 
   try {
-    const track = await prisma.track.create({ data: parsed.data });
+    const { domain, ...trackData } = parsed.data;
+    const track = await prisma.track.create({
+      data: {
+        ...trackData,
+        ...(domain && { category: domain }),
+      },
+    });
     return res.status(201).json({ success: true, data: track });
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Failed to create track.' });
@@ -402,10 +418,7 @@ const settingsSchema = z.object({
 
 router.get('/settings', async (_req, res) => {
   try {
-    let settings = await prisma.hackathonSetting.findUnique({ where: { id: 1 } });
-    if (!settings) {
-      settings = await prisma.hackathonSetting.create({ data: { id: 1 } });
-    }
+    const settings = await getSubmissionSettings(prisma);
     return res.json({ success: true, data: settings });
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Failed to fetch settings.' });
@@ -419,11 +432,12 @@ router.put('/settings', requireAuth, requireRole('admin'), async (req, res) => {
   }
 
   try {
-    const settings = await prisma.hackathonSetting.upsert({
+    await prisma.hackathonSetting.upsert({
       where: { id: 1 },
       create: { id: 1, ...parsed.data },
       update: parsed.data,
     });
+    const settings = await getSubmissionSettings(prisma);
     return res.json({ success: true, data: settings });
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Failed to update settings.' });
@@ -455,8 +469,8 @@ router.post('/results/winners', requireAuth, requireRole('admin'), async (req, r
     // Assign the rank to the newly selected team
     const result = await prisma.result.upsert({
       where: { team_id: teamId },
-      create: { team_id: teamId, rank: targetRank, shortlisted: true },
-      update: { rank: targetRank, shortlisted: true },
+      create: { team_id: teamId, rank: targetRank, shortlisted: true, shortlist_status: 'Shortlisted' },
+      update: { rank: targetRank, shortlisted: true, shortlist_status: 'Shortlisted' },
     });
 
     return res.json({ success: true, data: result });

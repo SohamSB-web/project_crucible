@@ -1,8 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const BUCKET = process.env.PAYMENTS_SUPABASE_BUCKET || 'PAYMENT';
+const ID_BUCKET = process.env.IDS_SUPABASE_BUCKET || 'hackathon-submissions';
 
 let _paymentsSupabase;
+let _idsSupabase;
 function getPaymentsSupabase() {
     if (!_paymentsSupabase) {
         if (!process.env.PAYMENTS_SUPABASE_URL || !process.env.PAYMENTS_SUPABASE_SERVICE_KEY) {
@@ -15,6 +17,20 @@ function getPaymentsSupabase() {
         );
     }
     return _paymentsSupabase;
+}
+
+function getIdsSupabase() {
+    if (!_idsSupabase) {
+        if (!process.env.IDS_SUPABASE_URL || !process.env.IDS_SUPABASE_SERVICE_KEY) {
+            throw new Error('ID Supabase environment variables are not configured.');
+        }
+        _idsSupabase = createClient(
+            process.env.IDS_SUPABASE_URL,
+            process.env.IDS_SUPABASE_SERVICE_KEY,
+            { auth: { persistSession: false } }
+        );
+    }
+    return _idsSupabase;
 }
 
 async function uploadPaymentScreenshot(filePath, buffer, mimeType) {
@@ -35,10 +51,8 @@ async function uploadPaymentScreenshot(filePath, buffer, mimeType) {
 }
 
 
-const ID_BUCKET = process.env.IDS_SUPABASE_BUCKET || 'IDS';
-
 async function uploadParticipantId(filePath, buffer, mimeType) {
-    const supabase = getPaymentsSupabase();
+    const supabase = getIdsSupabase();
 
     const { data, error } = await supabase.storage
         .from(ID_BUCKET)

@@ -4,6 +4,7 @@ const { uploadFile, getSignedUrl } = require('../lib/storage');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { uploadLimiter } = require('../middleware/ratelimit');
 const { upload, validateMimeType, handleMulterError } = require('../middleware/upload');
+const { getSubmissionSettings } = require('../lib/submissionSettings');
 
 const router = Router();
 
@@ -21,6 +22,16 @@ router.post(
   handleMulterError,
   validateMimeType,
   async (req, res) => {
+    const settings = await getSubmissionSettings(prisma);
+    if (!settings.acceptingSubmissions) {
+      return res.status(403).json({
+        success: false,
+        error: settings.submissionCount >= settings.submissionLimit
+          ? 'Presentation submissions are closed because the 800-submission limit has been reached.'
+          : 'Presentation submissions are currently closed by the hackathon organizers.',
+      });
+    }
+
     // Check deadline lock
     if (new Date() > SUBMISSION_DEADLINE) {
       return res.status(403).json({

@@ -1,25 +1,42 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
-const { uploadPaymentScreenshot } = require('../lib/paymentStorage');
+const { uploadPaymentScreenshot: storePaymentScreenshot } = require('../lib/paymentStorage');
 const { uploadParticipantId } = require('../lib/paymentStorage');
 const { requireAuth, requireRole } = require('../middleware/auth');
-const { uploadPayment, validatePaymentMimeType } = require('../middleware/upload');
+const { uploadPayment, uploadPaymentScreenshot, validatePaymentMimeType } = require('../middleware/upload');
 
 const router = Router();
+
+async function requireShortlistedTeam(req, res, next) {
+    try {
+        const result = await prisma.result.findUnique({ where: { team_id: req.user.teamId } });
+        if (result?.shortlist_status !== 'Shortlisted' && !result?.shortlisted) {
+            return res.status(403).json({ success: false, error: 'Payment screenshot upload is available only to shortlisted teams.' });
+        }
+        next();
+    } catch (err) {
+        console.error('[Payment Eligibility]', err);
+        return res.status(500).json({ success: false, error: 'Unable to verify payment upload eligibility.' });
+    }
+}
 
 router.post(
     '/upload-screenshot',
     requireAuth,
     requireRole('team'),
+    requireShortlistedTeam,
     (req, res, next) => {
         console.log('[Payment Route] Hit /upload-screenshot endpoint');
         next();
     },
     (req, res, next) => {
-        uploadPayment.single('file')(req, res, function (err) {
+        uploadPaymentScreenshot.single('file')(req, res, function (err) {
             if (err) {
                 console.error('[Multer Error Caught]:', err);
-                return res.status(400).json({ success: false, error: err.message || 'File upload error' });
+                const error = err.code === 'LIMIT_FILE_SIZE'
+                    ? 'Payment screenshot must be 1 MB or smaller.'
+                    : (err.message || 'File upload error');
+                return res.status(400).json({ success: false, error });
             }
             next();
         });
@@ -49,7 +66,7 @@ router.post(
             console.log(`[Payment Route] Attempting Supabase upload to path: ${storagePath}`);
 
             // 1. Upload to Supabase
-            const uploadResult = await uploadPaymentScreenshot(storagePath, file.buffer, file.mimetype);
+            const uploadResult = await storePaymentScreenshot(storagePath, file.buffer, file.mimetype);
             console.log('[Payment Route] Supabase upload successful:', uploadResult);
 
             // 2. Update Database via Prisma

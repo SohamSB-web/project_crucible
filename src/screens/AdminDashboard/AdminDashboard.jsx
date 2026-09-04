@@ -193,6 +193,11 @@ export default function AdminDashboard() {
   };
   useEffect(() => {
     fetchData();
+    getHackathonSettings().then((res) => {
+      if (res?.success && res.data) setSettings(res.data);
+    }).catch(() => {
+      showToast('Failed to load hackathon settings.');
+    });
   }, []);
 
   const showToast = (msg) => {
@@ -213,7 +218,8 @@ export default function AdminDashboard() {
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      await updateHackathonSettings(settings);
+      const response = await updateHackathonSettings(settings);
+      if (response?.data) setSettings(response.data);
       showToast('Settings saved & submission rules updated!');
     } catch (err) {
       showToast('Error saving settings');
@@ -315,15 +321,15 @@ export default function AdminDashboard() {
     // status is one of: 'Shortlisted' | 'Waitlisted' | 'Under-Review' | 'Eliminated'
     try {
       const updatedTeams = teams.map((team) =>
-        team.id === teamId ? { ...team, shortlisted: status } : team
+        team.id === teamId ? { ...team, shortlisted: status === 'Shortlisted', shortlistStatus: status } : team
       );
 
-      // Send only the IDs that are 'Shortlisted' to the backend
-      const shortlistedIds = updatedTeams
-        .filter((team) => team.shortlisted === 'Shortlisted')
-        .map((team) => team.id);
+      const teamStatuses = updatedTeams.map((team) => ({
+        teamId: team.id,
+        status: team.shortlistStatus || (team.shortlisted ? 'Shortlisted' : 'Under-Review'),
+      }));
 
-      await stageShortlist(shortlistedIds);
+      await stageShortlist(teamStatuses);
       setTeams(updatedTeams);
       showToast(`Status updated to: ${status}`);
     } catch (err) {
@@ -739,14 +745,14 @@ export default function AdminDashboard() {
                         {/* Merged Shortlist / Remove Action Column */}
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <select
-                            value={t.shortlisted || 'Under-Review'}
+                            value={t.shortlistStatus || (t.shortlisted ? 'Shortlisted' : 'Under-Review')}
                             onChange={(e) => handleToggleShortlist(t.id, e.target.value)}
                             style={{
                               background: '#0a0e17',
                               color:
-                                t.shortlisted === 'Shortlisted' ? '#22c55e' :
-                                  t.shortlisted === 'Waitlisted' ? '#eab308' :
-                                    t.shortlisted === 'Eliminated' ? '#ef4444' : '#94a3b8',
+                                (t.shortlistStatus || (t.shortlisted ? 'Shortlisted' : 'Under-Review')) === 'Shortlisted' ? '#22c55e' :
+                                  (t.shortlistStatus || '') === 'Waitlisted' ? '#eab308' :
+                                    (t.shortlistStatus || '') === 'Eliminated' ? '#ef4444' : '#94a3b8',
                               padding: '6px 10px',
                               borderRadius: '8px',
                               border: '1px solid rgba(113,167,255,0.25)',
@@ -947,13 +953,13 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className={styles.field}>
-                <label>Accept PPT Submissions</label>
+                <label>Hackathon PPT Uploads</label>
                 <select
                   value={settings.acceptingSubmissions ? 'Yes' : 'No'}
                   onChange={(e) => setSettings({ ...settings, acceptingSubmissions: e.target.value === 'Yes' })}
                 >
-                  <option value="Yes">Enabled (Accepting PPTs)</option>
-                  <option value="No">Disabled (Stopped)</option>
+                  <option value="Yes">Open (Accepting PPTs)</option>
+                  <option value="No">Closed (PPT uploads stopped)</option>
                 </select>
               </div>
               <div className={styles.field}>

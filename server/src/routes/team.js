@@ -8,8 +8,9 @@ const { sendCredentialEmail, sendMemberWelcomeEmail } = require('../lib/email');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { publicWriteLimiter } = require('../middleware/ratelimit');
 const { verifyTurnstile } = require('../middleware/turnstile');
-const { uploadPayment, validatePaymentMimeType } = require('../middleware/upload');
+const { uploadParticipantIds, validatePaymentMimeType } = require('../middleware/upload');
 const { uploadParticipantId } = require('../lib/paymentStorage');
+const { getSubmissionSettings } = require('../lib/submissionSettings');
 
 const router = Router();
 
@@ -75,10 +76,13 @@ router.post(
   // Registration is now submitted as multipart/form-data: text fields + the
   // combined participant-IDs PDF under the field name "idsFile".
   (req, res, next) => {
-    uploadPayment.single('idsFile')(req, res, function (err) {
+    uploadParticipantIds.single('idsFile')(req, res, function (err) {
       if (err) {
         console.error('[Team/Register] Multer error:', err);
-        return res.status(400).json({ success: false, error: err.message || 'File upload error' });
+        const message = err.code === 'LIMIT_FILE_SIZE'
+          ? 'Participant ID proofs PDF must be 1 MB or smaller.'
+          : (err.message || 'File upload error');
+        return res.status(400).json({ success: false, error: message });
       }
       next();
     });
@@ -509,9 +513,7 @@ router.put('/members', requireAuth, requireRole('team'), async (req, res) => {
 // ─── GET /api/team/settings-and-results ──────────────────────────────────────
 router.get('/settings-and-results', requireAuth, requireRole('team'), async (req, res) => {
   try {
-    const settings = await prisma.hackathonSetting.findFirst({
-      where: { id: 1 }
-    });
+    const settings = await getSubmissionSettings(prisma);
 
     const result = await prisma.result.findUnique({
       where: { team_id: req.user.teamId }
@@ -520,8 +522,8 @@ router.get('/settings-and-results', requireAuth, requireRole('team'), async (req
     return res.json({
       success: true,
       data: {
-        settings: settings || { name: 'RepoForge Hackathon', year: 2026, hackathonStatus: 'Live' },
-        result: result || { shortlisted: false, rank: null, published: false }
+        settings,
+        result: result || { shortlisted: false, shortlist_status: 'Under-Review', rank: null, published: false }
       }
     });
   } catch (err) {

@@ -133,12 +133,13 @@ model Evaluation {
 // ─── Results (shortlist + rankings) ──────────────────────────────────────────
 
 model Result {
-  id          String   @id @default(cuid())
-  team_id     String   @unique
-  rank        Int?
-  shortlisted Boolean  @default(false)
-  published   Boolean  @default(false)
-  updated_at  DateTime @updatedAt
+  id              String   @id @default(cuid())
+  team_id         String   @unique
+  rank            Int?
+  shortlisted     Boolean  @default(false)
+  shortlist_status String  @default("Under-Review")
+  published       Boolean  @default(false)
+  updated_at      DateTime @updatedAt
 
   team Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
 
