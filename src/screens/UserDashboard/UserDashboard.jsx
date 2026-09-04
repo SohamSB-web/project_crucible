@@ -282,7 +282,8 @@ export default function UserDashboard() {
         themeTrack: liveTeam.theme_track || '',
         problemId: liveTeam.problem_statement_id || '',
         problemTitle: liveTeam.problem_statement || '',
-        shortlisted: liveTeam.result?.shortlisted ?? false,
+        shortlisted: liveTeam.result?.shortlist_status === 'Shortlisted' || (liveTeam.result?.shortlisted ?? false),
+        shortlistStatus: liveTeam.result?.shortlist_status || (liveTeam.result?.shortlisted ? 'Shortlisted' : 'Under-Review'),
         submission: liveTeam.submission ?? null,
         members: (liveTeam.members && liveTeam.members.length > 0 ? liveTeam.members : [
           { name: 'Member 1', role: 'lead', custom_role: 'Team Leader' },
@@ -317,7 +318,8 @@ export default function UserDashboard() {
     };
   }, [liveTeam, teamId, auth?.user?.email]);
 
-  const isShortlisted = currentTeam?.shortlisted === true || teamResult?.shortlisted === true;
+  const shortlistStatus = currentTeam?.shortlistStatus || teamResult?.shortlist_status || (currentTeam?.shortlisted || teamResult?.shortlisted ? 'Shortlisted' : 'Under-Review');
+  const isShortlisted = shortlistStatus === 'Shortlisted';
   const isLeader = auth?.role === 'user' || auth?.role === 'leader' || true;
 
   useEffect(() => {
@@ -330,14 +332,20 @@ export default function UserDashboard() {
   useEffect(() => {
     let cancelled = false;
 
-    getTeamDashboardSettings()
+    const refreshDashboardSettings = () => getTeamDashboardSettings()
       .then((res) => {
         if (!cancelled && res?.data) {
-          if (res.data.settings) setDynamicSettings(res.data.settings);
+          if (res.data.settings) {
+            setSettings(res.data.settings);
+            setDynamicSettings(res.data.settings);
+          }
           if (res.data.result) setTeamResult(res.data.result);
         }
       })
       .catch(() => { });
+
+    refreshDashboardSettings();
+    const settingsRefresh = window.setInterval(refreshDashboardSettings, 15000);
     getMyTeam()
       .then((res) => {
         if (!cancelled && res?.data) {
@@ -357,7 +365,10 @@ export default function UserDashboard() {
       })
       .catch(() => { /* silently fall back to neutral placeholder */ })
       .finally(() => { if (!cancelled) setTeamLoading(false); });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearInterval(settingsRefresh);
+    };
   }, [cacheKey]);
 
   // User selection & submission & payment state
@@ -491,12 +502,12 @@ export default function UserDashboard() {
 
     // Basic validation for image formats
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file (PNG, JPG, JPEG).');
+      alert('Please upload an image file (PNG, JPG, JPEG, or WEBP).');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size exceeds 5MB limit.');
+    if (file.size > 1 * 1024 * 1024) {
+      alert('Payment screenshot must be 1 MB or smaller.');
       return;
     }
 
@@ -624,15 +635,21 @@ export default function UserDashboard() {
       alert('Invalid file format. Please upload a .pdf, .ppt, or .pptx file.');
       return;
     }
-    if (file.size > 20 * 1024 * 1024) { // Match backend limit (20MB)
-      alert('File size exceeds 20 MB limit.');
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Presentation file must be 10 MB or smaller.');
       return;
     }
 
     try {
       const res = await uploadSubmission(file);
       if (res.success) {
-        setSubmissionState(res.data);
+        setSubmissionState({
+          ...res.data,
+          fileName: res.data.fileName || res.data.filename,
+          fileSize: res.data.fileSize || `${Math.round((res.data.size || file.size) / 1024 / 1024 * 100) / 100} MB`,
+          date: res.data.date || new Date(res.data.uploadedAt || Date.now()).toLocaleDateString(),
+          status: 'Submitted',
+        });
         showToast('Presentation submitted successfully to Supabase & Neon!');
       }
     } catch (err) {
@@ -645,6 +662,8 @@ export default function UserDashboard() {
     const file = e.dataTransfer.files?.[0];
     if (file) handleFileUpload(file);
   };
+
+  const acceptingSubmissions = dynamicSettings?.acceptingSubmissions !== false;
 
   const handleLogout = () => {
     logout();
@@ -779,7 +798,7 @@ export default function UserDashboard() {
                 <p>Track your team progress, selected problem statement, and presentation deadline.</p>
               </div>
               <div className={styles.statusPill}>
-                {Icons.statusDot} Hackathon Status: {settings.hackathonStatus}
+                {Icons.statusDot} Hackathon Status: {dynamicSettings.acceptingSubmissions === false ? 'Submissions Closed' : settings.hackathonStatus}
               </div>
             </div>
 
@@ -824,7 +843,7 @@ export default function UserDashboard() {
                 <span className={styles.cardLabel}>Shortlist Status</span>
                 <span className={styles.cardValue}>
                   {(() => {
-                    const s = currentTeam?.shortlisted || currentTeam?.shortlistStatus || 'Under-Review';
+                    const s = currentTeam?.shortlistStatus || (currentTeam?.shortlisted ? 'Shortlisted' : null) || teamResult?.shortlist_status || (teamResult?.shortlisted ? 'Shortlisted' : 'Under-Review');
                     if (s === 'Shortlisted') return <span style={{ color: '#22c55e' }}>✦ Shortlisted</span>;
                     if (s === 'Waitlisted') return <span style={{ color: '#eab308' }}>⧖ Waitlisted</span>;
                     if (s === 'Eliminated') return <span style={{ color: '#ef4444' }}>✕ Eliminated</span>;
@@ -1140,6 +1159,13 @@ export default function UserDashboard() {
                   ✓ Final Submission Locked
                 </div>
               </div>
+            ) : !acceptingSubmissions ? (
+              <div style={{ padding: 24, background: 'rgba(255,107,117,0.08)', border: '1px solid rgba(255,107,117,0.3)', borderRadius: 20, marginTop: 20 }}>
+                <h3 style={{ margin: 0, color: '#ff6b75', fontSize: '1.2rem' }}>Presentation Submissions Closed</h3>
+                <p style={{ color: 'rgba(255,255,255,0.7)', margin: '10px 0 0', lineHeight: 1.5 }}>
+                  The organizers are no longer accepting presentation uploads.
+                </p>
+              </div>
             ) : (
               <div
                 className={`${styles.dropzone} ${isDragging ? styles.dragging : ''}`}
@@ -1357,7 +1383,7 @@ export default function UserDashboard() {
                       </span>
                       <strong style={{ fontSize: '1.02rem', color: '#ffffff' }}>Click or Drag & Drop Payment Screenshot</strong>
                       <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginTop: 4 }}>
-                        Supports PNG, JPG, JPEG (Max 5MB)
+                        Supports PNG, JPG, JPEG, WEBP (Max 1MB)
                       </span>
                       <input
                         id="payment-screenshot-input"

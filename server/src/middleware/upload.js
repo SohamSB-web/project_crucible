@@ -1,6 +1,8 @@
 const multer = require('multer');
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_PAYMENT_SCREENSHOT_SIZE = 1 * 1024 * 1024; // 1 MB
+const MAX_PARTICIPANT_IDS_SIZE = 1 * 1024 * 1024; // 1 MB
 
 const ALLOWED_DOCUMENT_MIMES = new Set([
   'application/pdf',
@@ -43,6 +45,30 @@ const uploadPayment = multer({
     const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
     if (!ALLOWED_PAYMENT_EXTENSIONS.has(ext)) {
       return cb(new Error(`Invalid file type. Allowed: PDF, JPG, PNG, WEBP.`));
+    }
+    cb(null, true);
+  },
+});
+
+const uploadPaymentScreenshot = multer({
+  storage,
+  limits: { fileSize: MAX_PAYMENT_SCREENSHOT_SIZE },
+  fileFilter: (_req, file, cb) => {
+    const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
+    if (!ALLOWED_PAYMENT_EXTENSIONS.has(ext)) {
+      return cb(new Error(`Invalid file type. Allowed: PDF, JPG, PNG, WEBP.`));
+    }
+    cb(null, true);
+  },
+});
+
+const uploadParticipantIds = multer({
+  storage,
+  limits: { fileSize: MAX_PARTICIPANT_IDS_SIZE },
+  fileFilter: (_req, file, cb) => {
+    const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.pdf') {
+      return cb(new Error('Invalid file type. Allowed: PDF.'));
     }
     cb(null, true);
   },
@@ -114,7 +140,13 @@ async function validatePaymentMimeType(req, res, next) {
 function handleMulterError(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ success: false, error: 'File exceeds the 20MB size limit.' });
+      const isParticipantIdsUpload = req.path === '/register';
+      return res.status(400).json({
+        success: false,
+        error: isParticipantIdsUpload
+          ? 'Participant ID proofs PDF must be 1 MB or smaller.'
+          : 'Presentation file must be 10 MB or smaller.',
+      });
     }
     return res.status(400).json({ success: false, error: `Upload error: ${err.message}` });
   }
@@ -124,10 +156,4 @@ function handleMulterError(err, req, res, next) {
   next();
 }
 
-module.exports = {
-  upload,
-  uploadPayment,
-  validateMimeType,
-  validatePaymentMimeType,
-  handleMulterError
-};
+module.exports = { upload, uploadPayment, uploadPaymentScreenshot, uploadParticipantIds, validateMimeType, validatePaymentMimeType, handleMulterError };

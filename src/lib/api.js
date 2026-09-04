@@ -153,6 +153,9 @@ export async function login(email, password) {
 // are plain strings.
 export async function register(payload, idsFile) {
   try {
+    if (idsFile?.size > 1 * 1024 * 1024) {
+      throw new Error('Participant ID proofs PDF must be 1 MB or smaller.');
+    }
     const formData = new FormData();
     Object.entries(payload).forEach(([key, value]) => {
       if (value === undefined || value === null) return;
@@ -333,14 +336,14 @@ export async function getAdminTeams() {
   }
 }
 
-export async function stageShortlist(teamIds) {
+export async function stageShortlist(teamStatuses) {
   try {
     return await apiFetch('/api/admin/teams/shortlist', {
       method: 'POST',
-      body: JSON.stringify({ teamIds }),
+      body: JSON.stringify({ teamStatuses }),
     });
   } catch {
-    return { success: true, data: { shortlisted: teamIds } };
+    return { success: true, data: { teamStatuses } };
   }
 }
 
@@ -442,7 +445,7 @@ export async function getTeamDashboardSettings() {
       success: true,
       data: {
         settings: { name: 'RepoForge Hackathon', year: 2026, hackathonStatus: 'Live' },
-        result: { shortlisted: false, rank: null, published: false }
+        result: { shortlisted: false, shortlist_status: 'Under-Review', rank: null, published: false }
       }
     };
   }
