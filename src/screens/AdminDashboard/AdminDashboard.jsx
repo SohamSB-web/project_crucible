@@ -561,15 +561,6 @@ export default function AdminDashboard() {
             <div className={styles.sectionCard}>
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>Recent Team Registrations</h3>
-                <SqBtn
-                  onClick={() => {
-                    setProbForm({ id: '', title: '', domain: '', tags: '', description: '', difficulty: 'Intermediate' });
-                    setEditingProblem(null);
-                    setShowAddModal(true);
-                  }}
-                >
-                  + Add Problem Statement
-                </SqBtn>
               </div>
               <div className={styles.tableWrapper}>
                 <table className={styles.table}>

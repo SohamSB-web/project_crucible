@@ -702,10 +702,15 @@ export default function Landing() {
                 <MotionGlareHover
                   key={item.q}
                   className={`${styles.faqItem} ${openFaq === index ? styles.open : ''}`}
+                  layout
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.07, duration: 0.5 }}
+                  transition={{
+                    delay: index * 0.07,
+                    duration: 0.5,
+                    layout: { type: 'spring', stiffness: 220, damping: 28, mass: 0.8 },
+                  }}
                   glareColor="#ffffff"
                   glareOpacity={0.15}
                   glareSize={250}
@@ -713,14 +718,24 @@ export default function Landing() {
                 >
                   <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>
                     <span>{item.q}</span>
-                    <strong>{openFaq === index ? '-' : '+'}</strong>
+                    <motion.strong
+                      animate={{ rotate: openFaq === index ? 180 : 0 }}
+                      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      {openFaq === index ? '-' : '+'}
+                    </motion.strong>
                   </button>
                   <AnimatePresence>
                     {openFaq === index && (
                       <motion.div
+                        layout
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
+                        transition={{
+                          height: { type: 'spring', stiffness: 260, damping: 30, mass: 0.8 },
+                          opacity: { duration: 0.28, ease: 'easeOut' },
+                        }}
                         className={styles.faqAnswer}
                       >
                         <p>{item.a}</p>
