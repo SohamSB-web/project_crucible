@@ -25,11 +25,18 @@ function getSmtpTransport() {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SECURE } = process.env;
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return null;
 
+  const port = Number(SMTP_PORT) || 587;
+  // Port 465 uses direct SSL (secure: true). Port 587 uses STARTTLS (secure: false).
+  const isSecure = SMTP_SECURE !== undefined ? (SMTP_SECURE === 'true' || SMTP_SECURE === true) : port === 465;
+
   _smtpTransport = nodemailer.createTransport({
     host: SMTP_HOST,
-    port: Number(SMTP_PORT) || 465,
-    secure: SMTP_SECURE !== 'false',
+    port,
+    secure: isSecure,
     auth: { user: SMTP_USER, pass: SMTP_PASS.replace(/\s+/g, '') },
+    connectionTimeout: 8000, // 8s timeout to avoid hanging if host blocks SMTP ports
+    greetingTimeout: 8000,
+    socketTimeout: 10000,
     tls: { rejectUnauthorized: false },
   });
 
@@ -46,44 +53,76 @@ function getResend() {
   return _resend;
 }
 
-// ─── FROM address ─────────────────────────────────────────────────────────────
+// ─── FROM address resolution ──────────────────────────────────────────────────
 
-const FROM = process.env.EMAIL_FROM || 'Mission Crucible <noreply@example.com>';
+function getFromAddress() {
+  const isGmail = (process.env.SMTP_HOST || '').includes('gmail.com') || (process.env.SMTP_USER || '').endsWith('@gmail.com');
+  // Gmail rejects emails if the From address doesn't match the authenticated user
+  if (isGmail && process.env.SMTP_USER) {
+    const rawFrom = process.env.EMAIL_FROM || 'Mission Crucible';
+    const match = rawFrom.match(/^([^<]+)/);
+    const displayName = match ? match[1].trim() : 'Mission Crucible';
+    return `"${displayName}" <${process.env.SMTP_USER}>`;
+  }
+  return process.env.EMAIL_FROM || 'Mission Crucible <noreply@example.com>';
+}
 
 // ─── Unified send function ─────────────────────────────────────────────────────
 
 async function sendMail({ to, subject, html }) {
   const configuredTransport = String(process.env.EMAIL_TRANSPORT || '').toLowerCase();
+  const from = getFromAddress();
 
-  // 1. Try SMTP (Nodemailer)
+  // 1. If explicitly set to resend, use Resend API (HTTP port 443 — works everywhere including Render Free Tier)
+  if (configuredTransport === 'resend') {
+    const resend = getResend();
+    if (resend) {
+      try {
+        const resendFrom = process.env.EMAIL_FROM || 'Mission Crucible <onboarding@resend.dev>';
+        await resend.emails.send({ from: resendFrom, to: [to], subject, html });
+        console.log('[Email/Resend] Sent to:', to, '| Subject:', subject);
+        return;
+      } catch (resendErr) {
+        console.error('[Email/Resend] Failed:', resendErr.message);
+        throw new Error(`Resend send failed: ${resendErr.message}`);
+      }
+    } else {
+      throw new Error('EMAIL_TRANSPORT is set to resend but RESEND_API_KEY is missing.');
+    }
+  }
+
+  // 2. Try SMTP (Nodemailer)
   const smtp = getSmtpTransport();
   if (smtp) {
     try {
-      await smtp.sendMail({ from: FROM, to, subject, html });
+      await smtp.sendMail({ from, to, subject, html });
       console.log('[Email/SMTP] Sent to:', to, '| Subject:', subject);
       return;
     } catch (smtpErr) {
+      console.warn('[Email/SMTP] Failed (' + smtpErr.message + ')');
+
+      // Attempt Resend fallback if API key is provided
+      const resend = getResend();
+      if (resend) {
+        try {
+          console.log('[Email] Falling back to Resend API...');
+          const resendFrom = process.env.EMAIL_FROM || 'Mission Crucible <onboarding@resend.dev>';
+          await resend.emails.send({ from: resendFrom, to: [to], subject, html });
+          console.log('[Email/Resend fallback] Sent to:', to, '| Subject:', subject);
+          return;
+        } catch (resendErr) {
+          console.warn('[Email/Resend fallback] Failed (' + resendErr.message + ')');
+        }
+      }
+
       if (configuredTransport === 'smtp') {
         throw new Error(`SMTP send failed: ${smtpErr.message}`);
       }
-      console.warn('[Email/SMTP] Failed (' + smtpErr.message + '), falling back to Resend/console...');
     }
   }
 
   if (configuredTransport === 'smtp') {
     throw new Error('SMTP is selected but SMTP_HOST, SMTP_USER, or SMTP_PASS is missing.');
-  }
-
-  // 2. Try Resend
-  const resend = getResend();
-  if (resend) {
-    try {
-      await resend.emails.send({ from: FROM, to: [to], subject, html });
-      console.log('[Email/Resend] Sent to:', to, '| Subject:', subject);
-      return;
-    } catch (resendErr) {
-      console.warn('[Email/Resend] Failed (' + resendErr.message + '), logging to console...');
-    }
   }
 
   // 3. Fallback: log to console
