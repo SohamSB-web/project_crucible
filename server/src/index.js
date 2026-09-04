@@ -17,15 +17,24 @@ const app = express();
 app.use(helmet());
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+const configuredOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
   .split(',')
-  .map((o) => o.trim());
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, curl)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (mobile apps, Postman, curl, internal calls)
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/$/, '');
+      const isAllowed =
+        configuredOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith('.vercel.app') ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(cleanOrigin);
+
+      if (isAllowed) {
         return callback(null, true);
       }
       callback(new Error(`CORS blocked: ${origin} is not allowed.`));
@@ -76,18 +85,13 @@ app.use('/api/team', teamRouter);
 app.use('/api/submission', submissionRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/payment', paymentRoutes);
-app.use((err, req, res, next) => {
-  console.error("EXPRESS CAUGHT ERROR:", err.stack);
-  res.status(500).json({ error: err.message });
-});
 
-
-// ─── 404 handler ─────────────────────────────────────────────────────────────
+// ─── 404 handler — must come AFTER all routes ─────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ success: false, error: 'Route not found.' });
 });
 
-// ─── Global error handler ─────────────────────────────────────────────────────
+// ─── Global error handler — must be LAST (4-arg signature) ────────────────────
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error('[UnhandledError]', err);
@@ -96,10 +100,23 @@ app.use((err, _req, res, _next) => {
     return res.status(403).json({ success: false, error: err.message });
   }
 
+  if (res.headersSent) return;
+
   res.status(500).json({
     success: false,
     error: process.env.NODE_ENV === 'production' ? 'Internal server error.' : err.message,
   });
+});
+
+// ─── Process-level crash guards (prevents Render restart loops) ───────────────
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process] Unhandled promise rejection:', reason);
+  // Log but do NOT exit — keep the server alive
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Process] Uncaught exception:', err);
+  // Log but do NOT exit — keep the server alive
 });
 
 // ─── Start server ─────────────────────────────────────────────────────────────

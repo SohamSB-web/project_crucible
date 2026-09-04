@@ -44,8 +44,13 @@ const trackSchema = z.object({
 // ─── Registration window ──────────────────────────────────────────────────────
 
 router.get('/registration-status', async (_req, res) => {
-  const window = await prisma.registrationWindow.findFirst();
-  return res.json({ success: true, data: { open: window?.open ?? true } });
+  try {
+    const window = await prisma.registrationWindow.findFirst();
+    return res.json({ success: true, data: { open: window?.open ?? true } });
+  } catch (err) {
+    console.error('[Admin/RegistrationStatus]', err);
+    return res.status(500).json({ success: false, error: 'Failed to fetch registration status.' });
+  }
 });
 
 router.post('/registration-toggle', requireAuth, requireRole('admin'), async (_req, res) => {
@@ -269,35 +274,38 @@ router.post('/teams/shortlist', requireAuth, requireRole('admin'), async (req, r
 // ─── Publish results ──────────────────────────────────────────────────────────
 
 router.post('/results/publish', requireAuth, requireRole('admin'), async (req, res) => {
-  const parsed = publishSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ success: false, error: 'Provide an array of teamIds to publish.' });
-  }
-
-  const { teamIds } = parsed.data;
-
   try {
-    await prisma.$transaction(
-      teamIds.map((id, idx) =>
-        prisma.result.upsert({
-          where: { team_id: id },
-          create: { team_id: id, shortlisted: true, shortlist_status: 'Shortlisted', published: true, rank: idx + 1 },
-          update: { published: true, rank: idx + 1, shortlisted: true, shortlist_status: 'Shortlisted' },
-        })
-      )
-    );
+    const { teamIds } = req.body || {};
+
+    let updated;
+    if (Array.isArray(teamIds) && teamIds.length > 0) {
+      updated = await prisma.result.updateMany({
+        where: { team_id: { in: teamIds } },
+        data: { published: true },
+      });
+    } else {
+      updated = await prisma.result.updateMany({
+        data: { published: true },
+      });
+    }
+
     await prisma.hackathonSetting.upsert({
       where: { id: 1 },
       create: { id: 1, acceptingSubmissions: false },
       update: { acceptingSubmissions: false },
     });
 
-    return res.json({ success: true, data: { published: teamIds } });
+    return res.json({
+      success: true,
+      message: `Successfully published ${updated.count} results.`,
+      data: { count: updated.count },
+    });
   } catch (err) {
-    console.error('[Admin/Publish]', err);
+    console.error('[Admin/PublishResults]', err);
     return res.status(500).json({ success: false, error: 'Failed to publish results.' });
   }
 });
+
 
 // ─── Announcements ────────────────────────────────────────────────────────────
 
@@ -480,34 +488,6 @@ router.post('/results/winners', requireAuth, requireRole('admin'), async (req, r
   }
 });
 
-// ─── POST /api/admin/results/publish ──────────────────────────────────────
-router.post('/results/publish', requireAuth, requireRole('admin'), async (req, res) => {
-  try {
-    const { teamIds } = req.body;
-
-    let updated;
-    if (Array.isArray(teamIds) && teamIds.length > 0) {
-      // Publish only the specified teams
-      updated = await prisma.result.updateMany({
-        where: { team_id: { in: teamIds } },
-        data: { published: true }
-      });
-    } else {
-      // Fallback: Publish ALL results if no specific array was sent
-      updated = await prisma.result.updateMany({
-        data: { published: true }
-      });
-    }
-
-    return res.json({
-      success: true,
-      message: `Successfully published ${updated.count} results.`
-    });
-  } catch (err) {
-    console.error('[Admin/PublishResults]', err);
-    return res.status(500).json({ success: false, error: 'Failed to publish results.' });
-  }
-});
 
 // ─── POST /api/admin/teams/:teamId/verify-payment ─────────────────────────────
 router.post('/teams/:teamId/verify-payment', requireAuth, requireRole('admin'), async (req, res) => {
