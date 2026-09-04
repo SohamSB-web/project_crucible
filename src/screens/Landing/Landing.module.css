@@ -560,7 +560,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.9rem;
   letter-spacing: 0.25em;
-  color: #8f9bba;
+  color: #ffffff;
   text-transform: uppercase;
 }
 
@@ -688,6 +688,7 @@
   flex-direction: column;
   height: 100%;
   box-sizing: border-box;
+  text-align: left;
 }
 
 .cardHeaderTop {
@@ -700,8 +701,10 @@
 .valueHeader {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 12px;
   margin-bottom: 14px;
+  text-align: left;
 }
 
 .valueHeader h3 {
@@ -711,6 +714,7 @@
   color: #ffffff;
   line-height: 1.3;
   letter-spacing: -0.02em;
+  text-align: left;
 }
 
 

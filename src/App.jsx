@@ -1,16 +1,18 @@
 import { AnimatePresence } from 'framer-motion';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import FixedBackground from './components/background/MoltenMetal';
 import CustomCursor from './components/cursor/CustomCursor.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CursorProvider } from './context/CursorContext.jsx';
 import { LenisProvider } from './context/LenisContext.jsx';
-import Landing from './screens/Landing/Landing';
-import Login from './screens/Login/Login';
-import Register from './screens/Register/Register';
-import AdminDashboard from './screens/AdminDashboard/AdminDashboard';
-import UserDashboard from './screens/UserDashboard/UserDashboard';
 import './styles/tokens.css';
+
+const Landing = lazy(() => import('./screens/Landing/Landing'));
+const Login = lazy(() => import('./screens/Login/Login'));
+const Register = lazy(() => import('./screens/Register/Register'));
+const AdminDashboard = lazy(() => import('./screens/AdminDashboard/AdminDashboard'));
+const UserDashboard = lazy(() => import('./screens/UserDashboard/UserDashboard'));
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { auth } = useAuth();
@@ -23,7 +25,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 
 function AppShell() {
   return (
-    <>
+    <Suspense fallback={<div className="app-loading" aria-label="Loading" />}>
       <FixedBackground
         color1="#140600"
         color2="#B02501"
@@ -56,7 +58,7 @@ function AppShell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
-    </>
+    </Suspense>
   );
 }
 

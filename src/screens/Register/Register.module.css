@@ -97,7 +97,7 @@
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #8f9bba;
+  color: #957474;
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
@@ -118,7 +118,7 @@
 
 .stepLabel {
   font-size: 0.72rem;
-  color: #8f9bba;
+  color: #fab600;
   margin-left: 8px;
   white-space: nowrap;
   font-weight: 500;
@@ -165,7 +165,7 @@
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8f9bba;
+  color: #fab600;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -174,7 +174,7 @@
   text-transform: none;
   letter-spacing: 0;
   font-weight: 400;
-  color: #5a6a8a;
+  color: #c99a2e;
 }
 
 .field input,
@@ -207,7 +207,7 @@
 
 .field input::placeholder,
 .field textarea::placeholder {
-  color: #3a4a6a;
+  color: #9a7628;
 }
 
 .field input:focus,

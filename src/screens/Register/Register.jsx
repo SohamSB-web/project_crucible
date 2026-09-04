@@ -63,7 +63,6 @@ export default function Register() {
       members: [
         { name: '', email: '', phone: '', role: 'Developer', year: '1st Year', dept: '' },
         { name: '', email: '', phone: '', role: 'Designer', year: '1st Year', dept: '' },
-        { name: '', email: '', phone: '', role: '', year: '1st Year', dept: '' },
       ],
     },
   });
@@ -92,16 +91,16 @@ export default function Register() {
 
   const addMember = () => {
     const members = form.getValues('members') || [];
-    const teamSize = Number(form.getValues('teamSize')) || 4;
-    // max additional members = teamSize - 1 (since lead is member 1), capped at 3 additional members
-    if (members.length >= Math.min(teamSize - 1, 3)) return;
+    if (members.length >= 3) return;
+    form.setValue('teamSize', 4);
     form.setValue('members', [...members, { name: '', email: '', phone: '', role: '', year: '1st Year', dept: '' }]);
   };
 
   const removeMember = (index) => {
     const members = form.getValues('members');
-    if (members.length <= 1) return;
+    if (members.length !== 3) return;
     form.setValue('members', members.filter((_, i) => i !== index));
+    form.setValue('teamSize', 3);
   };
 
   const handleIdsFileChange = (e) => {
@@ -168,8 +167,8 @@ export default function Register() {
               <strong>{successData.email || form.getValues('leadEmail') || '—'}</strong>
             </div>
             <div className={styles.actions}>
-              <SqBtn onClick={() => navigate('/login')} lineColor="#71a7ff" baseColor="#142034" intensity={1.2}>Go to Login</SqBtn>
-              <SqBtn onClick={() => navigate('/')} lineColor="#ffffff" baseColor="#0a0f1a">Back Home</SqBtn>
+              <SqBtn onClick={() => navigate('/login')} lineColor="#FAB600" baseColor="#261005" intensity={1.2}>Go to Login</SqBtn>
+              <SqBtn onClick={() => navigate('/')} lineColor="#FAB600" baseColor="#261005">Back Home</SqBtn>
             </div>
           </motion.div>
         </main>
@@ -199,7 +198,7 @@ export default function Register() {
       <main className={styles.shell}>
         {/* Back to home button */}
         <div className={styles.backRow}>
-          <SqBtn onClick={() => navigate('/')} lineColor="#71a7ff" baseColor="#0d1625" textColor="#71a7ff">
+            <SqBtn onClick={() => navigate('/')}>
             ← Back
           </SqBtn>
         </div>
@@ -257,7 +256,7 @@ export default function Register() {
                           data-callback={(token) => setTurnstileToken(token)}
                           data-theme="dark"
                         /> */}
-                        <small style={{ color: '#506080' }}>Verification your details before submission.</small>
+                        <small style={{ color: '#c99a2e' }}>Verification your details before submission.</small>
                       </div>
                     </>
                   )}
@@ -306,13 +305,15 @@ export default function Register() {
                     <>
                       <div className={styles.membersHeader}>
                         <h3 className={styles.membersTitle}>Team Members</h3>
-                        <SqBtn onClick={addMember} lineColor="#71a7ff" baseColor="#0d1625" textColor="#71a7ff">+ Add</SqBtn>
+                        {(form.watch('members') || []).length === 2 && (
+                          <SqBtn onClick={addMember}>+ Add</SqBtn>
+                        )}
                       </div>
                       {(form.watch('members') || []).map((_, index) => (
                         <div key={index} className={styles.memberCard}>
                           <div className={styles.memberCardHeader}>
                             <span className={styles.memberNum}>Member {index + 1}</span>
-                            {index > 0 && (
+                            {index > 0 && (form.watch('members') || []).length === 3 && (
                               <SqBtn onClick={() => removeMember(index)} danger>Remove</SqBtn>
                             )}
                           </div>
@@ -463,13 +464,13 @@ export default function Register() {
             )}
             <div className={styles.formActions}>
               {step > 0 ? (
-                <SqBtn type="button" onClick={goBack} lineColor="#71a7ff" baseColor="#0d1625" textColor="#71a7ff">← Back</SqBtn>
+                <SqBtn type="button" onClick={goBack}>← Back</SqBtn>
               ) : <span />}
 
               {step < steps.length - 1 ? (
-                <SqBtn type="button" onClick={goNext} lineColor="#ffffff" baseColor="#2d5bff" textColor="#ffffff" intensity={1.2}>Next →</SqBtn>
+                <SqBtn type="button" onClick={goNext} intensity={1.2}>Next →</SqBtn>
               ) : (
-                <SqBtn type="submit" lineColor="#ffffff" baseColor="#2d5bff" textColor="#ffffff" intensity={1.5}>Submit Registration ✦</SqBtn>
+                <SqBtn type="submit" intensity={1.5}>Submit Registration ✦</SqBtn>
               )}
             </div>
           </form>

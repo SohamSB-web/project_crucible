@@ -249,17 +249,17 @@ router.post('/teams/shortlist', requireAuth, requireRole('admin'), async (req, r
   }
 
   try {
-    await prisma.$transaction(
-      updates.map(({ teamId, status }) =>
-        prisma.result.upsert({
-          where: { team_id: teamId },
-          create: { team_id: teamId, shortlisted: status === 'Shortlisted', shortlist_status: status },
-          update: { shortlisted: status === 'Shortlisted', shortlist_status: status },
-        })
-      )
-    );
+    const savedResults = [];
+    for (const { teamId, status } of updates) {
+      const result = await prisma.result.upsert({
+        where: { team_id: teamId },
+        create: { team_id: teamId, shortlisted: status === 'Shortlisted', shortlist_status: status },
+        update: { shortlisted: status === 'Shortlisted', shortlist_status: status },
+      });
+      savedResults.push(result);
+    }
 
-    return res.json({ success: true, data: { teamStatuses: updates } });
+    return res.json({ success: true, data: { teamStatuses: updates, results: savedResults } });
   } catch (err) {
     console.error('[Admin/Shortlist]', err);
     return res.status(500).json({ success: false, error: 'Failed to update shortlist.' });
@@ -514,8 +514,13 @@ router.post('/teams/:teamId/verify-payment', requireAuth, requireRole('admin'), 
   try {
     const { teamId } = req.params;
 
+    const payment = await prisma.payment.findUnique({ where: { team_id: teamId } });
+    if (!payment) {
+      return res.status(404).json({ success: false, error: 'Payment has not been uploaded for this team.' });
+    }
+
     const updatedPayment = await prisma.payment.update({
-      where: { team_id: teamId },
+      where: { id: payment.id },
       data: { status: 'Verified' },
     });
 
@@ -530,9 +535,19 @@ router.patch('/teams/:teamId/payment-status', requireAuth, requireRole('admin', 
   try {
     const { teamId } = req.params;
     const { status } = req.body;
+    const validStatuses = new Set(['Pending', 'Verified', 'Rejected']);
+
+    if (!validStatuses.has(status)) {
+      return res.status(400).json({ success: false, error: 'Invalid payment status.' });
+    }
+
+    const payment = await prisma.payment.findUnique({ where: { team_id: teamId } });
+    if (!payment) {
+      return res.status(404).json({ success: false, error: 'Payment has not been uploaded for this team.' });
+    }
 
     const updatedPayment = await prisma.payment.update({
-      where: { team_id: teamId },
+      where: { id: payment.id },
       data: { status },
     });
 

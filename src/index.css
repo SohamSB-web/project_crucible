@@ -397,7 +397,7 @@ button {
 }
 
 .footer-desc {
-  color: #8f9bba;
+  color: rgba(255, 255, 255, 0.86);
   font-size: 0.9rem;
   line-height: 1.65;
   margin: 0;
@@ -445,7 +445,7 @@ button {
 }
 
 .footer-links-list a {
-  color: #8f9bba;
+  color: rgba(255, 255, 255, 0.86);
   font-size: 0.9rem;
   transition: color 0.2s ease, transform 0.2s ease;
   display: inline-block;
@@ -468,7 +468,7 @@ button {
   align-items: center;
   justify-content: space-between;
   font-size: 0.82rem;
-  color: #6a7b9e;
+  color: rgba(255, 255, 255, 0.78);
   gap: 12px;
 }
 
@@ -477,7 +477,7 @@ button {
 }
 
 .footer-credit {
-  color: #8f9bba;
+  color: rgba(255, 255, 255, 0.78);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.78rem;
 }

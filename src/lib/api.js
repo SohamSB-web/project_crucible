@@ -92,12 +92,19 @@ async function apiFetchMultipart(path, formData, options = {}) {
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export async function login(email, password) {
+  const isAdminLogin = /(^|@)(admin|judge)/i.test(String(email).trim());
+  const loginPath = isAdminLogin ? '/api/auth/admin/login' : '/api/auth/team/login';
+
   try {
-    return await apiFetch('/api/auth/team/login', {
+    return await apiFetch(loginPath, {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   } catch (teamErr) {
+    if (isAdminLogin) {
+      throw teamErr;
+    }
+
     try {
       return await apiFetch('/api/auth/admin/login', {
         method: 'POST',
@@ -335,15 +342,11 @@ export async function getAdminTeams() {
   }
 }
 
-export async function stageShortlist(teamStatuses) {
-  try {
-    return await apiFetch('/api/admin/teams/shortlist', {
-      method: 'POST',
-      body: JSON.stringify({ teamStatuses }),
-    });
-  } catch {
-    return { success: true, data: { teamStatuses } };
-  }
+export async function stageShortlist(teamId, status) {
+  return await apiFetch('/api/admin/teams/shortlist', {
+    method: 'POST',
+    body: JSON.stringify({ teamStatuses: [{ teamId, status }] }),
+  });
 }
 
 export async function evaluateSubmission(submissionId, score, remarks) {

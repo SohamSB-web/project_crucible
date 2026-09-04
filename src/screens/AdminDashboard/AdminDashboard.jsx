@@ -123,6 +123,58 @@ const SqBtn = ({ children, onClick, type = 'button', danger = false, success = f
   );
 };
 
+const WinnerTeamSelect = ({ teams, value, onChange, accentColor = '#FAB600' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selectedTeam = teams.find((team) => team.id === value);
+  const selectedLabel = selectedTeam ? `${selectedTeam.name || selectedTeam.teamName} (${selectedTeam.id})` : '';
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredTeams = teams.filter((team) => {
+    const label = `${team.name || team.teamName || ''} ${team.id || ''}`.toLowerCase();
+    return label.includes(normalizedQuery);
+  });
+
+  return (
+    <div className={styles.winnerSelect} style={{ '--winner-accent': accentColor }}>
+      <input
+        type="text"
+        className={styles.winnerSelectInput}
+        value={isOpen ? query : selectedLabel}
+        placeholder="Select or search team"
+        onFocus={() => {
+          setQuery('');
+          setIsOpen(true);
+        }}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setIsOpen(true);
+        }}
+        onBlur={() => setTimeout(() => setIsOpen(false), 120)}
+        aria-label="Search teams for rank assignment"
+      />
+      <span className={styles.winnerSelectChevron}>⌄</span>
+      {isOpen && (
+        <div className={styles.winnerSelectMenu}>
+          <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { onChange(''); setIsOpen(false); }}>
+            Select Team
+          </button>
+          {filteredTeams.map((team) => (
+            <button
+              type="button"
+              key={team.id}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => { onChange(team.id); setQuery(''); setIsOpen(false); }}
+            >
+              {team.name || team.teamName} ({team.id})
+            </button>
+          ))}
+          {!filteredTeams.length && <span className={styles.winnerSelectEmpty}>No teams found</span>}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const NAV_TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: NavIcons.dashboard },
   { id: 'problems', label: 'Problem Statements', icon: NavIcons.problems },
@@ -331,17 +383,8 @@ export default function AdminDashboard() {
   const handleToggleShortlist = async (teamId, status) => {
     // status is one of: 'Shortlisted' | 'Waitlisted' | 'Under-Review' | 'Eliminated'
     try {
-      const updatedTeams = teams.map((team) =>
-        team.id === teamId ? { ...team, shortlisted: status === 'Shortlisted', shortlistStatus: status } : team
-      );
-
-      const teamStatuses = updatedTeams.map((team) => ({
-        teamId: team.id,
-        status: team.shortlistStatus || (team.shortlisted ? 'Shortlisted' : 'Under-Review'),
-      }));
-
-      await stageShortlist(teamStatuses);
-      await fetchData();
+      await stageShortlist(teamId, status);
+  await fetchData();
       showToast(`Status updated to: ${status}`);
     } catch (err) {
       console.error('Error updating shortlist status:', err);
@@ -420,8 +463,8 @@ export default function AdminDashboard() {
               top: 20,
               right: 20,
               zIndex: 2000,
-              background: '#142034',
-              border: '1px solid #71a7ff',
+              background: '#261005',
+              border: '1px solid #FAB600',
               color: '#ffffff',
               padding: '12px 20px',
               borderRadius: '12px',
@@ -542,7 +585,7 @@ export default function AdminDashboard() {
                   <tbody>
                     {teams.map((t) => (
                       <tr key={t.id}>
-                        <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', whiteSpace: 'nowrap' }}>{t.id}</td>
+                        <td style={{ fontFamily: 'JetBrains Mono', color: '#FAB600', whiteSpace: 'nowrap' }}>{t.id}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <strong>{t.name}</strong>
                         </td>
@@ -684,7 +727,7 @@ export default function AdminDashboard() {
 
                     return (
                       <tr key={t.id}>
-                        <td style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', whiteSpace: 'nowrap' }}>{t.id}</td>
+                        <td style={{ fontFamily: 'JetBrains Mono', color: '#FAB600', whiteSpace: 'nowrap' }}>{t.id}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <strong>{t.name || t.teamName}</strong>
                         </td>
@@ -759,14 +802,14 @@ export default function AdminDashboard() {
                             value={t.shortlistStatus || (t.shortlisted ? 'Shortlisted' : 'Under-Review')}
                             onChange={(e) => handleToggleShortlist(t.id, e.target.value)}
                             style={{
-                              background: '#0a0e17',
+                              background: '#140800',
                               color:
                                 (t.shortlistStatus || (t.shortlisted ? 'Shortlisted' : 'Under-Review')) === 'Shortlisted' ? '#22c55e' :
                                   (t.shortlistStatus || '') === 'Waitlisted' ? '#eab308' :
                                     (t.shortlistStatus || '') === 'Eliminated' ? '#ef4444' : '#94a3b8',
                               padding: '6px 10px',
                               borderRadius: '8px',
-                              border: '1px solid rgba(113,167,255,0.25)',
+                              border: '1px solid rgba(250,182,0,0.25)',
                               fontSize: '0.78rem',
                               cursor: 'pointer',
                               width: '100%',
@@ -808,7 +851,7 @@ export default function AdminDashboard() {
                     return (
                       <tr key={t.id}>
                         <td style={{ whiteSpace: 'nowrap' }}>
-                          <strong>{t.teamName || t.name}</strong> <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff' }}>({t.id})</span>
+                          <strong>{t.teamName || t.name}</strong> <span style={{ fontFamily: 'JetBrains Mono', color: '#FAB600' }}>({t.id})</span>
                         </td>
                         <td style={{ minWidth: 160 }}>
                           {t.submission?.original_name || t.submissionFile || '—'}
@@ -851,18 +894,11 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '0.85rem', color: '#eab308' }}>
                     {teams.find((t) => t.id === winners.first)?.teamName || 'Unassigned'}
                   </span>
-                  <select
-                    style={{ background: '#0a0e17', color: '#fff', padding: '8px', borderRadius: '8px', width: '100%' }}
-                    value={winners.first || ''}
-                    onChange={(e) => handleAssignWinner('first', e.target.value)}
-                  >
-                    <option value="">Select Team</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name || t.teamName} ({t.id})
-                      </option>
-                    ))}
-                  </select>
+                  <WinnerTeamSelect
+                    teams={teams}
+                    value={winners.first}
+                    onChange={(teamId) => handleAssignWinner('first', teamId)}
+                  />
 
                 </div>
 
@@ -870,21 +906,15 @@ export default function AdminDashboard() {
                 <div className={`${styles.winnerBox} ${winners.second ? styles.assigned : ''}`}>
                   <span className={styles.medalIcon}>{NavIcons.medal('#94a3b8')}</span>
                   <strong>2nd Place Winner</strong>
-                  <span style={{ fontSize: '0.85rem', color: '#71a7ff' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#FAB600' }}>
                     {teams.find((t) => t.id === winners.second)?.teamName || 'Unassigned'}
                   </span>
-                  <select
-                    style={{ background: '#0a0e17', color: '#fff', padding: '8px', borderRadius: '8px', width: '100%' }}
-                    value={winners.second || ''}
-                    onChange={(e) => handleAssignWinner('second', e.target.value)}
-                  >
-                    <option value="">Select Team</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teamName} ({t.id})
-                      </option>
-                    ))}
-                  </select>
+                  <WinnerTeamSelect
+                    teams={teams}
+                    value={winners.second}
+                    accentColor="#94a3b8"
+                    onChange={(teamId) => handleAssignWinner('second', teamId)}
+                  />
                 </div>
 
                 {/* 3rd Place */}
@@ -894,23 +924,17 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '0.85rem', color: '#f97316' }}>
                     {teams.find((t) => t.id === winners.third)?.teamName || 'Unassigned'}
                   </span>
-                  <select
-                    style={{ background: '#0a0e17', color: '#fff', padding: '8px', borderRadius: '8px', width: '100%' }}
-                    value={winners.third || ''}
-                    onChange={(e) => handleAssignWinner('third', e.target.value)}
-                  >
-                    <option value="">Select Team</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teamName} ({t.id})
-                      </option>
-                    ))}
-                  </select>
+                  <WinnerTeamSelect
+                    teams={teams}
+                    value={winners.third}
+                    accentColor="#f97316"
+                    onChange={(teamId) => handleAssignWinner('third', teamId)}
+                  />
                 </div>
               </div>
 
               {/* ─── ADD THIS BELOW YOUR RESULTS SECTION ─── */}
-              <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(250, 182, 0, 0.06)', border: '1px solid rgba(250, 182, 0, 0.22)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem' }}>Publish Hackathon Results</h3>
                   <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
@@ -923,7 +947,7 @@ export default function AdminDashboard() {
                   disabled={isPublishing}
                   style={{
                     padding: '0.75rem 1.5rem',
-                    backgroundColor: isPublishing ? '#93c5fd' : '#2563eb',
+                    backgroundColor: isPublishing ? '#E07B00' : '#FAB600',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '6px',

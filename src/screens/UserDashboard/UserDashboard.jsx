@@ -475,11 +475,27 @@ export default function UserDashboard() {
       }
     });
 
+    const refreshPaymentStatus = async () => {
+      const teamRes = await getMyTeam().catch(() => null);
+      if (cancelled || !teamRes?.data) return;
+
+      setLiveTeam(teamRes.data);
+      if (teamRes.data.payment) {
+        setPaymentRecord({
+          fileName: teamRes.data.payment.original_name,
+          status: teamRes.data.payment.status,
+        });
+      }
+    };
+
+    window.addEventListener('focus', refreshPaymentStatus);
+
     // 3. Keep the event listener for local storage updates
     window.addEventListener('repoforge_storage_update', handleSync);
 
     return () => {
       cancelled = true;
+      window.removeEventListener('focus', refreshPaymentStatus);
       window.removeEventListener('repoforge_storage_update', handleSync);
     };
   }, [teamId]);
@@ -559,8 +575,8 @@ export default function UserDashboard() {
 
   const handleSaveTeamMembers = async (e) => {
     e.preventDefault();
-    if (!membersForm.length) {
-      alert('Team must have at least one member.');
+    if (membersForm.length < 3 || membersForm.length > 4) {
+      alert('A team must have between 3 and 4 members.');
       return;
     }
 
@@ -580,16 +596,16 @@ export default function UserDashboard() {
   };
 
   const handleAddMemberForm = () => {
-    if (membersForm.length >= 4) {
-      alert('Maximum 4 members allowed per team.');
+    if (membersForm.length !== 3) {
+      alert('Add Member is available only when the team has 3 members.');
       return;
     }
     setMembersForm([...membersForm, { name: '', role: 'Developer', avatar: 'TM' }]);
   };
 
   const handleRemoveMemberForm = (index) => {
-    if (membersForm.length <= 1) {
-      alert('Team must have at least 1 member.');
+    if (membersForm.length !== 4 || index === 0) {
+      alert('Remove is available only for non-lead members when the team has 4 members.');
       return;
     }
     setMembersForm(membersForm.filter((_, i) => i !== index));
@@ -785,32 +801,25 @@ export default function UserDashboard() {
           </div>
 
           <div style={{ display: 'flex', marginTop: 8, width: '100%' }}>
-            <SpecularButton
-              size="sm"
-              radius={12}
-              lineColor="#FAB600"
-              baseColor="#261005"
-              textColor="#ffffff"
-              intensity={1}
-              speed={0.35}
+            <button
+              type="button"
+              className={styles.sidebarAction}
               onClick={() => {
                 setShowNotifModal(true);
                 setNotifications(markNotificationsRead());
               }}
-              className="full-width"
-              style={{ width: '100%' }}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, position: 'relative', width: '100%' }}>
                 {Icons.bell} Notifications
                 {hasUnreadNotifs && <span className={styles.notifDot} />}
               </span>
-            </SpecularButton>
+            </button>
           </div>
 
           <div style={{ marginTop: 8, width: '100%' }}>
-            <SqBtn onClick={handleLogout} danger size="sm" fullWidth style={{ width: '100%' }}>
+            <button type="button" className={`${styles.sidebarAction} ${styles.sidebarActionDanger}`} onClick={handleLogout}>
               Logout
-            </SqBtn>
+            </button>
           </div>
         </div>
       </aside>
@@ -945,11 +954,9 @@ export default function UserDashboard() {
                   <span className={styles.cardIcon} style={{ color: '#eab308' }}>{Icons.award}</span>
                   <span className={styles.cardLabel}>Final Hackathon Verdict</span>
                   <span className={styles.cardValue} style={{ fontSize: '1.1rem', color: '#eab308', fontWeight: 800 }}>
-                    {teamResult.rank
+                    {teamResult.rank >= 1 && teamResult.rank <= 3
                       ? `🎉 Winner! Secured Rank #${teamResult.rank}`
-                      : teamResult.shortlisted
-                        ? '🌟 Shortlisted for Final Pitches!'
-                        : '💡 Don’t give up! Keep building and try again for the next hackathon.'}
+                      : '💡 Results are out. Better luck next time!'}
                   </span>
                 </div>
               )}
@@ -1058,7 +1065,7 @@ export default function UserDashboard() {
                     <div
                       key={prob.id}
                       style={{
-                        background: 'rgba(16,23,38,0.75)',
+                        background: 'linear-gradient(145deg, rgba(38,16,5,0.92), rgba(26,12,5,0.88))',
                         backdropFilter: 'blur(16px)',
                         WebkitBackdropFilter: 'blur(16px)',
                         border: isSelected ? '1.5px solid #FAB600' : '1px solid rgba(255,255,255,0.1)',
@@ -1068,7 +1075,9 @@ export default function UserDashboard() {
                         flexDirection: 'column',
                         justifyContent: 'space-between',
                         gap: 16,
-                        boxShadow: isSelected ? '0 0 20px rgba(113,167,255,0.25)' : '0 8px 32px rgba(0,0,0,0.3)',
+                        boxShadow: isSelected
+                          ? '0 0 20px rgba(250,182,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)'
+                          : '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)',
                       }}
                     >
                       {/* Card content mapping (Keep your existing card markup here) */}
@@ -1177,7 +1186,7 @@ export default function UserDashboard() {
                   {Icons.checkCircle} Presentation Submitted!
                 </h3>
                 <p style={{ color: '#ffffff', marginTop: 12, fontSize: '0.95rem' }}>
-                  File Name: <strong style={{ color: '#71a7ff' }}>{submission.fileName}</strong>
+                  File Name: <strong style={{ color: '#FAB600' }}>{submission.fileName}</strong>
                   <span style={{ color: 'rgba(255,255,255,0.5)', marginLeft: 8 }}>({submission.fileSize || 'PDF/PPT'})</span>
                 </p>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.82rem', marginTop: 4, fontFamily: 'JetBrains Mono' }}>
@@ -1291,7 +1300,7 @@ export default function UserDashboard() {
               >
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{ width: '100%', marginBottom: 12 }}>
-                    <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    <span style={{ fontFamily: 'JetBrains Mono', color: '#FAB600', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                       Official Registration Fee
                     </span>
                     <h3 style={{ fontSize: '1.9rem', fontWeight: 900, color: '#ffffff', margin: '4px 0 0' }}>₹300 / Team</h3>
@@ -1300,7 +1309,7 @@ export default function UserDashboard() {
                   {/* QR Code Container */}
                   <div
                     style={{
-                      background: '#ffffff',
+                      background: '#000000',
                       padding: 14,
                       borderRadius: 18,
                       boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
@@ -1319,8 +1328,8 @@ export default function UserDashboard() {
                 <div style={{ width: '100%' }}>
                   <div
                     style={{
-                      background: 'rgba(113,167,255,0.08)',
-                      border: '1px solid rgba(113,167,255,0.2)',
+                      background: 'rgba(250,182,0,0.08)',
+                      border: '1px solid rgba(250,182,0,0.2)',
                       borderRadius: 12,
                       padding: '10px 16px',
                       width: '100%',
@@ -1329,7 +1338,7 @@ export default function UserDashboard() {
                     }}
                   >
                     <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', fontFamily: 'JetBrains Mono' }}>UPI ID</span>
-                    <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#71a7ff', fontFamily: 'JetBrains Mono' }}>parabkesarp20@okhdfcbank</div>
+                    <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#FAB600', fontFamily: 'JetBrains Mono' }}>parabkesarp20@okhdfcbank</div>
                   </div>
 
                   <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.5 }}>
@@ -1358,7 +1367,7 @@ export default function UserDashboard() {
                   {paymentRecord ? (
                     <div style={{ padding: 20, background: 'rgba(255,255,255,0.04)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)' }}>
                       <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'JetBrains Mono' }}>UPLOADED SCREENSHOT</span>
-                      <div style={{ fontSize: '1rem', fontWeight: 600, color: '#71a7ff', marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontSize: '1rem', fontWeight: 600, color: '#FAB600', marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                         {Icons.fileText} {paymentRecord.fileName}
                       </div>
                       <button
@@ -1370,7 +1379,7 @@ export default function UserDashboard() {
                           border: '1px solid rgba(113, 167, 255, 0.25)',
                           borderRadius: 8,
                           padding: '8px 16px',
-                          color: '#71a7ff',
+                          color: '#FAB600',
                           fontSize: '0.82rem',
                           fontWeight: 600,
                           cursor: 'pointer',
@@ -1406,7 +1415,7 @@ export default function UserDashboard() {
                       onClick={() => document.getElementById('payment-screenshot-input').click()}
                       style={{ padding: '36px 20px', cursor: 'pointer', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <span className={styles.dropIcon} style={{ display: 'inline-flex', justifyContent: 'center', color: '#71a7ff', marginBottom: 8 }}>
+                      <span className={styles.dropIcon} style={{ display: 'inline-flex', justifyContent: 'center', color: '#FAB600', marginBottom: 8 }}>
                         {Icons.camera}
                       </span>
                       <strong style={{ fontSize: '1.02rem', color: '#ffffff' }}>Click or Drag & Drop Payment Screenshot</strong>
@@ -1543,15 +1552,15 @@ export default function UserDashboard() {
             onClick={(e) => e.stopPropagation()}
             data-lenis-prevent="true"
           >
-            <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontWeight: 700 }}>{viewProblemModal.id}</span>
+            <span style={{ fontFamily: 'JetBrains Mono', color: '#FAB600', fontWeight: 700 }}>{viewProblemModal.id}</span>
             <h2>{viewProblemModal.title}</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{viewProblemModal.description}</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
               <StarBorder
                 onClick={() => setViewProblemModal(null)}
-                color="#71a7ff"
-                backgroundColor="#142034"
-                borderColor="rgba(113, 167, 255, 0.4)"
+                color="#FAB600"
+                backgroundColor="#261005"
+                borderColor="rgba(250, 182, 0, 0.4)"
                 textColor="#ffffff"
               >
                 Close
@@ -1607,7 +1616,7 @@ export default function UserDashboard() {
                 >
                   <strong style={{ fontSize: '0.96rem', color: '#ffffff' }}>{n.title}</strong>
                   <p style={{ margin: '6px 0 0', fontSize: '0.86rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.5 }}>{n.detail}</p>
-                  <span style={{ fontSize: '0.72rem', color: '#71a7ff', fontFamily: 'JetBrains Mono', marginTop: 8, display: 'inline-block' }}>{n.time}</span>
+                  <span style={{ fontSize: '0.72rem', color: '#FAB600', fontFamily: 'JetBrains Mono', marginTop: 8, display: 'inline-block' }}>{n.time}</span>
                 </div>
               ))}
             </div>
@@ -1626,16 +1635,19 @@ export default function UserDashboard() {
           <div
             className={styles.modal}
             onClick={(e) => e.stopPropagation()}
-            style={{ width: 'min(100%, 620px)', maxHeight: '85vh', overflowY: 'auto' }}
+            style={{ width: 'min(100%, 620px)', maxHeight: '85vh', overflow: 'hidden' }}
             data-lenis-prevent="true"
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Edit Team Members</h2>
-              <SqBtn onClick={handleAddMemberForm} size="sm">+ Add Member</SqBtn>
+              {membersForm.length === 3 && (
+                <SqBtn onClick={handleAddMemberForm} size="sm">+ Add Member</SqBtn>
+              )}
             </div>
 
-            <form onSubmit={handleSaveTeamMembers} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {membersForm.map((m, idx) => (
+            <div className={styles.editMembersScroll} data-lenis-prevent="true">
+              <form onSubmit={handleSaveTeamMembers} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {membersForm.map((m, idx) => (
                 <div
                   key={idx}
                   style={{
@@ -1649,10 +1661,10 @@ export default function UserDashboard() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'JetBrains Mono', color: '#71a7ff', fontSize: '0.85rem', fontWeight: 700 }}>
+                    <span style={{ fontFamily: 'JetBrains Mono', color: '#FAB600', fontSize: '0.85rem', fontWeight: 700 }}>
                       Member {idx + 1} {idx === 0 ? '(Team Leader)' : ''}
                     </span>
-                    {idx > 0 && (
+                    {membersForm.length === 4 && idx > 0 && (
                       <SqBtn onClick={() => handleRemoveMemberForm(idx)} danger size="sm">
                         Remove
                       </SqBtn>
@@ -1699,17 +1711,18 @@ export default function UserDashboard() {
                     </div>
                   </div>
                 </div>
-              ))}
+                ))}
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
-                <SqBtn onClick={() => setShowEditTeamModal(false)} danger>
-                  Cancel
-                </SqBtn>
-                <SqBtn type="submit" lineColor="#22c55e" baseColor="#0a2a16" textColor="#22c55e">
-                  Save Changes
-                </SqBtn>
-              </div>
-            </form>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+                  <SqBtn onClick={() => setShowEditTeamModal(false)} danger>
+                    Cancel
+                  </SqBtn>
+                  <SqBtn type="submit" lineColor="#22c55e" baseColor="#0a2a16" textColor="#22c55e">
+                    Save Changes
+                  </SqBtn>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

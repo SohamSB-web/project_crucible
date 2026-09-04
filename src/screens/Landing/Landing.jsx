@@ -89,7 +89,7 @@ const isDateReached = (dateStr) => {
 
 export default function Landing() {
   const location = useLocation();
-  const [openFaq, setOpenFaq] = useState(0);
+  const [openFaq, setOpenFaq] = useState(-1);
   const [selectedTrack, setSelectedTrack] = useState(null);
 
   // ── Parallax refs ────────────────────────────────────────────────────────

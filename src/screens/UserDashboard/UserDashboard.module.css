@@ -54,6 +54,47 @@
   width: 100%;
 }
 
+.sidebarAction {
+  width: 100%;
+  min-height: 38px;
+  padding: 10px 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(250, 182, 0, 0.4);
+  border-radius: 10px;
+  background: rgba(38, 16, 5, 0.88);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.sidebarAction:hover {
+  transform: translateY(-1.5px);
+  border-color: #FAB600;
+  box-shadow: 0 6px 20px rgba(250, 182, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.sidebarAction:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.sidebarActionDanger {
+  border-color: rgba(255, 107, 117, 0.4);
+  background: rgba(42, 18, 21, 0.88);
+  color: #ff6b75;
+}
+
+.sidebarActionDanger:hover {
+  border-color: #ff6b75;
+  box-shadow: 0 6px 20px rgba(255, 107, 117, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
 /* ── Left Side Navbar / Sidebar ────────────────────────────────────────────── */
 .sidebar {
   width: 270px;
@@ -540,6 +581,35 @@
   flex-direction: column;
   gap: 14px;
   padding-right: 6px;
+}
+
+.editMembersScroll {
+  max-height: calc(85vh - 108px);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(250, 182, 0, 0.4) transparent;
+}
+
+.editMembersScroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.editMembersScroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+
+.editMembersScroll::-webkit-scrollbar-thumb {
+  background: rgba(250, 182, 0, 0.35);
+  border-radius: 999px;
+}
+
+.editMembersScroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(250, 182, 0, 0.65);
 }
 
 .modalScrollBody::-webkit-scrollbar {

@@ -24,11 +24,15 @@ export const registerSchema = z
         year: z.string().min(1, 'Year is required.'),
         dept: z.string().min(1, 'Department is required.'),
       }),
-    ),
+    ).min(2, 'A team must have at least 3 members including the lead.').max(3, 'A team cannot have more than 4 members.'),
     password: z.string().min(6, 'Password must be at least 6 characters.'),
     confirmPassword: z.string().min(1, 'Please confirm your password.'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match.',
     path: ['confirmPassword'],
+  })
+  .refine((data) => data.members.length === data.teamSize - 1, {
+    message: 'Add or remove members to match the selected team size.',
+    path: ['members'],
   });

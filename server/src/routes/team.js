@@ -38,7 +38,7 @@ const registerSchema = z.object({
   college: z.string().min(2, 'College is required.'),
   year: z.string().min(1, 'Year is required.'),
   dept: z.string().optional().default(''),
-  members: z.array(memberSchema).min(0).max(MAX_TEAM_SIZE - 1),
+  members: z.array(memberSchema).min(2, 'At least 3 total members are required.').max(MAX_TEAM_SIZE - 1, 'A team cannot have more than 4 total members.'),
   password: z.string().min(4).optional(),
   confirmPassword: z.string().optional(),
   // themeTrack is optional; falls back to problemStatementId
