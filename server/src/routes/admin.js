@@ -514,12 +514,12 @@ router.post('/teams/:teamId/verify-payment', requireAuth, requireRole('admin'), 
   try {
     const { teamId } = req.params;
 
-    const updatedTeam = await prisma.team.update({
-      where: { id: teamId }, // Adjust to Number(teamId) if your ID is an integer
-      data: { paymentVerified: true }
+    const updatedPayment = await prisma.payment.update({
+      where: { team_id: teamId },
+      data: { status: 'Verified' },
     });
 
-    return res.json({ success: true, data: updatedTeam });
+    return res.json({ success: true, data: updatedPayment });
   } catch (err) {
     console.error('[Admin/VerifyPayment]', err);
     return res.status(500).json({ success: false, error: 'Failed to verify payment.' });

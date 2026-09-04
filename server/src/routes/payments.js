@@ -61,6 +61,14 @@ router.post(
                 return res.status(400).json({ success: false, error: 'User team ID not found.' });
             }
 
+            const existingPayment = await prisma.payment.findUnique({ where: { team_id: teamId } });
+            if (existingPayment?.status === 'Verified') {
+                return res.status(409).json({
+                    success: false,
+                    error: 'Payment is already verified. Re-uploading the screenshot is disabled.',
+                });
+            }
+
             const ext = file.originalname.slice(file.originalname.lastIndexOf('.')).toLowerCase();
             const storagePath = `${teamId}/payment-receipt${ext}`;
             console.log(`[Payment Route] Attempting Supabase upload to path: ${storagePath}`);

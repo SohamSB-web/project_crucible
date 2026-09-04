@@ -5,6 +5,7 @@ import SpecularButton from '../../components/ui/SpecularButton';
 import StarBorder from '../../components/ui/StarBorder';
 import { useAuth } from '../../context/AuthContext';
 import { useLenis } from '../../context/LenisContext.jsx';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 import {
 
   getProblemStatements,
@@ -345,31 +346,47 @@ export default function UserDashboard() {
       .catch(() => { });
 
     refreshDashboardSettings();
-    const settingsRefresh = window.setInterval(refreshDashboardSettings, 15000);
-    getMyTeam()
-      .then((res) => {
-        if (!cancelled && res?.data) {
-          setLiveTeam(res.data);
-          if (res.data.problem_statement_id || res.data.problem_statement) {
-            setSelectedProb({
-              id: res.data.problem_statement_id || 'PS-REG',
-              title: res.data.problem_statement || res.data.theme_track || 'Selected Track',
-              description: 'Selected during team registration.',
-            });
-          }
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
-          } catch { }
-
-        }
-      })
-      .catch(() => { /* silently fall back to neutral placeholder */ })
-      .finally(() => { if (!cancelled) setTeamLoading(false); });
     return () => {
       cancelled = true;
-      window.clearInterval(settingsRefresh);
     };
   }, [cacheKey]);
+
+  useLiveRefresh(async () => {
+    const [teamRes, subRes, settingsRes, tracksRes] = await Promise.all([
+      getMyTeam().catch(() => null),
+      getMySubmission().catch(() => null),
+      getTeamDashboardSettings().catch(() => null),
+      getParticipantTracks().catch(() => null),
+    ]);
+
+    if (teamRes?.data) {
+      setLiveTeam(teamRes.data);
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(teamRes.data));
+      } catch { }
+    }
+    if (subRes?.data) {
+      setSubmissionState({
+        fileName: subRes.data.original_name || subRes.data.fileName,
+        fileSize: subRes.data.file_size || 'PDF/PPT',
+        date: new Date(subRes.data.uploaded_at || Date.now()).toLocaleDateString(),
+      });
+    }
+    if (settingsRes?.data) {
+      setSettings(settingsRes.data.settings || settingsRes.data);
+      setDynamicSettings(settingsRes.data.settings || settingsRes.data);
+      if (settingsRes.data.result) setTeamResult(settingsRes.data.result);
+    }
+    if (tracksRes?.data) {
+      setProblems(tracksRes.data.map((track) => ({
+        id: track.id || track.track_id,
+        title: track.title || track.name,
+        description: track.description,
+        domain: track.domain || track.category || track.theme || 'General',
+        tags: track.tags || [],
+      })));
+    }
+  });
 
   // User selection & submission & payment state
   // Inside your UserDashboard component function:
@@ -519,6 +536,8 @@ export default function UserDashboard() {
           fileName: res.data.fileName,
           status: res.data.status,
         });
+          const teamRes = await getMyTeam();
+          if (teamRes?.data) setLiveTeam(teamRes.data);
         showToast('Payment screenshot uploaded successfully! Pending verification.');
       }
     } catch (err) {
@@ -549,13 +568,11 @@ export default function UserDashboard() {
       // Call your update API function here (await it)
       await updateTeamMembers(currentTeam?.id || teamId, membersForm);
 
-      // Refresh local/cached state if needed
+      const teamRes = await getMyTeam();
+      if (teamRes?.data) setLiveTeam(teamRes.data);
       setTeams(getTeamsData());
       setShowEditTeamModal(false);
       showToast('Team member details updated successfully!');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error) {
       console.error('Failed to update members:', error);
       alert('Failed to update team members. Please try again.');
@@ -611,6 +628,8 @@ export default function UserDashboard() {
           problem_statement: prob.title,
           theme_track: prob.category || prob.domain
         }));
+        const teamRes = await getMyTeam();
+        if (teamRes?.data) setLiveTeam(teamRes.data);
 
         alert('Problem statement selected successfully!');
       }
@@ -650,6 +669,15 @@ export default function UserDashboard() {
           date: res.data.date || new Date(res.data.uploadedAt || Date.now()).toLocaleDateString(),
           status: 'Submitted',
         });
+        const submissionRes = await getMySubmission();
+        if (submissionRes?.data) {
+          setSubmissionState({
+            fileName: submissionRes.data.original_name || submissionRes.data.fileName,
+            fileSize: submissionRes.data.file_size || 'PDF/PPT',
+            date: new Date(submissionRes.data.uploaded_at || Date.now()).toLocaleDateString(),
+            status: 'Submitted',
+          });
+        }
         showToast('Presentation submitted successfully to Supabase & Neon!');
       }
     } catch (err) {
@@ -882,15 +910,15 @@ export default function UserDashboard() {
                   <span className={styles.cardIcon}>{Icons.creditCard}</span>
                   <span className={styles.cardLabel}>Offline Round Eligibility</span>
                   <span className={styles.cardValue} style={{ fontSize: '0.88rem' }}>
-                    {paymentRecord?.status === 'Verified' || currentTeam?.paymentStatus === 'Verified' ? (
+                    {paymentStatus === 'Verified' ? (
                       <span style={{ color: '#22c55e', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
                         {Icons.checkCircle} Verified & Eligible
                       </span>
-                    ) : paymentRecord?.status === 'Pending' || currentTeam?.paymentStatus === 'Pending' ? (
+                    ) : paymentStatus === 'Pending' ? (
                       <span style={{ color: '#eab308', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
                         {Icons.clock} Pending Verification
                       </span>
-                    ) : paymentRecord?.status === 'Rejected' || currentTeam?.paymentStatus === 'Rejected' ? (
+                    ) : paymentStatus === 'Rejected' ? (
                       <span style={{ color: '#ef4444', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
                         {Icons.alertTriangle} Payment Rejected
                       </span>
@@ -1215,28 +1243,28 @@ export default function UserDashboard() {
                   alignItems: 'center',
                   gap: 6,
                   background:
-                    paymentRecord?.status === 'Verified'
+                    paymentStatus === 'Verified'
                       ? 'rgba(34, 197, 94, 0.15)'
-                      : paymentRecord?.status === 'Pending'
+                      : paymentStatus === 'Pending'
                         ? 'rgba(234, 179, 8, 0.15)'
                         : 'rgba(255, 107, 117, 0.15)',
                   color:
-                    paymentRecord?.status === 'Verified'
+                    paymentStatus === 'Verified'
                       ? '#22c55e'
-                      : paymentRecord?.status === 'Pending'
+                      : paymentStatus === 'Pending'
                         ? '#eab308'
                         : '#ff6b75',
-                  border: `1px solid ${paymentRecord?.status === 'Verified'
+                  border: `1px solid ${paymentStatus === 'Verified'
                     ? 'rgba(34, 197, 94, 0.3)'
-                    : paymentRecord?.status === 'Pending'
+                    : paymentStatus === 'Pending'
                       ? 'rgba(234, 179, 8, 0.3)'
                       : 'rgba(255, 107, 117, 0.3)'
                     }`,
                 }}
               >
-                {paymentRecord?.status === 'Verified' ? (
+                {paymentStatus === 'Verified' ? (
                   <>{Icons.checkCircle} Payment Verified</>
-                ) : paymentRecord?.status === 'Pending' ? (
+                ) : paymentStatus === 'Pending' ? (
                   <>{Icons.clock} Pending Verification</>
                 ) : (
                   <>{Icons.alertTriangle} Registration Unpaid</>
@@ -1398,7 +1426,7 @@ export default function UserDashboard() {
 
                 {/* Status Box */}
                 <div style={{ marginTop: 16 }}>
-                  {paymentRecord?.status === 'Verified' ? (
+                  {paymentStatus === 'Verified' ? (
                     <div
                       style={{
                         padding: 18,
@@ -1417,7 +1445,7 @@ export default function UserDashboard() {
                         Congratulations! Your team <strong>{currentTeam?.teamName}</strong> is officially verified and eligible to compete in the Offline Hackathon Round at the Main Campus Auditorium!
                       </p>
                     </div>
-                  ) : paymentRecord?.status === 'Pending' ? (
+                  ) : paymentStatus === 'Pending' ? (
                     <div
                       style={{
                         padding: 16,

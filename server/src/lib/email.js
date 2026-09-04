@@ -53,6 +53,8 @@ const FROM = process.env.EMAIL_FROM || 'Mission Crucible <noreply@example.com>';
 // ─── Unified send function ─────────────────────────────────────────────────────
 
 async function sendMail({ to, subject, html }) {
+  const configuredTransport = String(process.env.EMAIL_TRANSPORT || '').toLowerCase();
+
   // 1. Try SMTP (Nodemailer)
   const smtp = getSmtpTransport();
   if (smtp) {
@@ -61,8 +63,15 @@ async function sendMail({ to, subject, html }) {
       console.log('[Email/SMTP] Sent to:', to, '| Subject:', subject);
       return;
     } catch (smtpErr) {
+      if (configuredTransport === 'smtp') {
+        throw new Error(`SMTP send failed: ${smtpErr.message}`);
+      }
       console.warn('[Email/SMTP] Failed (' + smtpErr.message + '), falling back to Resend/console...');
     }
+  }
+
+  if (configuredTransport === 'smtp') {
+    throw new Error('SMTP is selected but SMTP_HOST, SMTP_USER, or SMTP_PASS is missing.');
   }
 
   // 2. Try Resend

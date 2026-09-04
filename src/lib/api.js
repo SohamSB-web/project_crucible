@@ -152,28 +152,27 @@ export async function login(email, password) {
 // already builds; `members` gets JSON-stringified since multipart fields
 // are plain strings.
 export async function register(payload, idsFile) {
+  if (idsFile?.size > 1 * 1024 * 1024) {
+    throw new Error('Participant ID proofs PDF must be 1 MB or smaller.');
+  }
+
+  const formData = new FormData();
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    formData.append(key, key === 'members' ? JSON.stringify(value) : value);
+  });
+  if (idsFile) {
+    formData.append('idsFile', idsFile);
+  }
+
   try {
-    if (idsFile?.size > 1 * 1024 * 1024) {
-      throw new Error('Participant ID proofs PDF must be 1 MB or smaller.');
-    }
-    const formData = new FormData();
-    Object.entries(payload).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
-      formData.append(key, key === 'members' ? JSON.stringify(value) : value);
-    });
-    if (idsFile) {
-      formData.append('idsFile', idsFile);
-    }
     return await apiFetchMultipart('/api/team/register', formData);
   } catch (err) {
-    // Offline fallback (backend unreachable) — mirrors the other endpoints'
-    // mock behavior. A real "Failed to fetch" is the only case we swallow;
-    // anything the server actually responded with (e.g. validation errors,
-    // missing PDF) should surface to the user.
-    if (err?.message && !err.message.includes('Failed to fetch')) {
-      throw err;
+    const message = String(err?.message || '').toLowerCase();
+    if (err?.name === 'TypeError' || message.includes('failed to fetch') || message.includes('fetch failed')) {
+      throw new Error('Registration server is unavailable. Please try again when the server is running.');
     }
-    return { success: true, data: { teamId: 'PHX024', message: 'Registration successful!' } };
+    throw err;
   }
 }
 

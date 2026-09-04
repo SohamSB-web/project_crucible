@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLenis } from '../../context/LenisContext.jsx';
+import useLiveRefresh from '../../hooks/useLiveRefresh';
 import {
   getTracks,
   createTrack,
@@ -200,6 +201,15 @@ export default function AdminDashboard() {
     });
   }, []);
 
+  useLiveRefresh(async () => {
+    await Promise.all([
+      fetchData(),
+      getHackathonSettings().then((res) => {
+        if (res?.success && res.data) setSettings(res.data);
+      }),
+    ]);
+  });
+
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
@@ -230,7 +240,7 @@ export default function AdminDashboard() {
       const res = await verifyTeamPayment(teamId);
       if (res?.success) {
         alert("✅ Payment successfully verified!");
-        // Refresh your teams list state here if needed
+        await fetchData();
       } else {
         alert(res?.error || "Failed to verify payment.");
       }
@@ -251,6 +261,7 @@ export default function AdminDashboard() {
               : t
           )
         );
+        await fetchData();
         alert(`Payment status updated to ${newStatus}`);
       } else {
         alert(res?.error || "Failed to update status.");
@@ -330,7 +341,7 @@ export default function AdminDashboard() {
       }));
 
       await stageShortlist(teamStatuses);
-      setTeams(updatedTeams);
+      await fetchData();
       showToast(`Status updated to: ${status}`);
     } catch (err) {
       console.error('Error updating shortlist status:', err);

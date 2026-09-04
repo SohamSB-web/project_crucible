@@ -9,6 +9,7 @@ const teamRouter = require('./routes/team');
 const submissionRouter = require('./routes/submission');
 const adminRouter = require('./routes/admin');
 const paymentRoutes = require('./routes/payments');
+const { addClient, publishChange } = require('./lib/realtime');
 
 const app = express();
 
@@ -45,6 +46,28 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development',
   });
+});
+
+// Lightweight invalidation stream. Clients refetch their own authorized data
+// after a successful write instead of receiving data through this channel.
+app.get('/api/events', (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+  });
+  res.flushHeaders?.();
+  res.write('retry: 3000\n\n');
+  addClient(res);
+});
+
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    if (req.path.startsWith('/api/') && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && res.statusCode >= 200 && res.statusCode < 300) {
+      publishChange();
+    }
+  });
+  next();
 });
 
 // ─── API routes ───────────────────────────────────────────────────────────────
