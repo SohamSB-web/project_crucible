@@ -159,7 +159,7 @@ export default function Landing() {
 
               {/* Meta Line */}
               <div className={styles.heroMetaLine}>
-                AUGUST 20th to SEPTEMBER 3rd, 2026 &nbsp;•&nbsp; HYBRID &nbsp;•&nbsp; 3 ROUNDS
+                20th SEPTEMBER to 3rd OCTOBER, 2026 &nbsp;•&nbsp; HYBRID &nbsp;•&nbsp; 3 ROUNDS
               </div>
 
               {/* Action Buttons */}
@@ -196,7 +196,7 @@ export default function Landing() {
 
               {/* Digital Countdown Timer */}
               <div className={styles.countdownContainer}>
-                <CountdownTimer targetDate="2026-10-03T18:00:00Z" />
+                <CountdownTimer targetDate="2026-09-26T00:00:00Z" />
               </div>
             </motion.div>
           </div>
@@ -384,10 +384,7 @@ export default function Landing() {
               <div className={styles.milestoneGridTop}>
                 {/* 01: Registrations Ongoing */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['01']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.cardTopStatus}>
-                    <span className={styles.statusMuted}>ONGOING</span>
-                    <span className={styles.statusPillActive}>ACTIVE</span>
-                  </div>
+                  <div className={styles.dateLabelDark}>6 SEPT</div>
                   <h3>Registrations OPEN</h3>
                   <p>Register via this website to secure your spot in RepoForge Hackathon 2026.</p>
                 </div>
@@ -418,7 +415,7 @@ export default function Landing() {
 
                 {/* 05: Shortlisting */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['05']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>30 SEPT</div>
+                  <div className={styles.dateLabelDark}>30 SEPT</div>
                   <div className={styles.dateSubtextGreen}></div>
                   <h3>Shortlisting</h3>
                   <p>Shortlisted teams based on pitch deck will be released.</p>
@@ -426,7 +423,7 @@ export default function Landing() {
 
                 {/* 06: Final Registration */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['06']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>2 OCT</div>
+                  <div className={styles.dateLabelDark}>2 OCT</div>
                   <div className={styles.dateSubtextGreen}></div>
                   <h3>Final Registration</h3>
                   <p>Shortlisted teams based have to pay and complete register for final round.</p>
@@ -459,28 +456,28 @@ export default function Landing() {
               <div className={styles.milestoneGridBottom}>
                 {/* 07: Hackathon Begins */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['07']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>8:00 AM</div>
+                  <div className={styles.dateLabelDark}>8:00 AM</div>
                   <h3>Registration Begins</h3>
                   <p>Entry for offline hackathon begins. Please be on time.</p>
                 </div>
 
                 {/* 08: Inauguration */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['08']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>8:30 AM</div>
+                  <div className={styles.dateLabelDark}>8:30 AM</div>
                   <h3>Inuguration Ceremony</h3>
                   <p>A short ceremony to declare the hackathon open.</p>
                 </div>
 
                 {/* 09: Coding Begins */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['09']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>9:00 AM</div>
+                  <div className={styles.dateLabelDark}>9:00 AM</div>
                   <h3>Coding Begins</h3>
                   <p>Labs will be allotted and participants can work on their projects.</p>
                 </div>
 
                 {/* 10: Judging Round 1 */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['10']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>11:00 AM</div>
+                  <div className={styles.dateLabelDark}>11:00 AM</div>
                   <h3>Judging Round 1</h3>
                   <p>Panel of judges will judge the product and shortlist teams for final round</p>
                 </div>
@@ -510,28 +507,28 @@ export default function Landing() {
               <div className={styles.milestoneGridBottom}>
                 {/* 11: Lunch */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['11']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>1:00 PM</div>
+                  <div className={styles.dateLabelDark}>1:00 PM</div>
                   <h3>Lunch</h3>
                   <p>Lunch will be served to all participants</p>
                 </div>
 
                 {/* 12: Result of Judging 1 */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['12']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>2:00 PM</div>
+                  <div className={styles.dateLabelDark}>2:00 PM</div>
                   <h3>Results of Judging Round 1</h3>
                   <p>The final Shortlisted teams will be announced</p>
                 </div>
 
                 {/* 13: Judging Round 2 */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['13']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>3:00 PM</div>
+                  <div className={styles.dateLabelDark}>3:00 PM</div>
                   <h3>Judging Round 2</h3>
                   <p>Present the final product on-stage in front of the full judging panel and audience.</p>
                 </div>
 
                 {/* 14 : Valedictory Ceremony */}
                 <div className={`${styles.milestoneCard} ${isDateReached(milestoneDates['14']) ? styles.cardActive : styles.cardDark}`}>
-                  <div className={styles.dateLabelGreen}>5:00 PM</div>
+                  <div className={styles.dateLabelDark}>5:00 PM</div>
                   <h3>Valedictory Ceremony</h3>
                   <p>Felicitation of the winners and closing of the event.</p>
                 </div>
